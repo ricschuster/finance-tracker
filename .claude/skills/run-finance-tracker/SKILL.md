@@ -22,6 +22,9 @@ after any test run.
 xvfb-run -a -s "-screen 0 1440x900x24" node .claude/skills/run-finance-tracker/tour.mjs
 ```
 
+`tour.mjs` covers search, rules and import; `reports.mjs` covers the dashboard,
+reports and the drill-down. The app opens on the Dashboard tab.
+
 `lib.mjs` exports `launch()` returning `{ app, page, errors, shot, stubOpenDialog }`.
 Write new flows as small scripts that import it. Then read the PNGs.
 

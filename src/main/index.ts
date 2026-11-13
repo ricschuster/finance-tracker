@@ -7,6 +7,7 @@ import { seedDemoData } from '../core/dev/seed'
 import { registerImportIpc } from './import-ipc'
 import { registerLedgerIpc } from './ledger-ipc'
 import { registerRulesIpc } from './rules-ipc'
+import { registerReportsIpc } from './reports-ipc'
 import { registerSearchIpc } from './search-ipc'
 
 function createWindow(): void {
@@ -43,6 +44,7 @@ void app.whenReady().then(() => {
   registerImportIpc(db)
   registerRulesIpc(db)
   registerSearchIpc(db)
+  registerReportsIpc(db)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

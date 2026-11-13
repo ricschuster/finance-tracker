@@ -12,7 +12,7 @@ Phased plan. Open GitHub issues are the live tracker; this is the shape.
    preview and apply to past, manual-edit locking, payee cleanup.
 5. **Search**: instant search, filters, saved searches, bulk actions.
 6. **Reports and dashboard**: category, income vs expenses, trends, top
-   payees, periods.
+   payees, periods. See `07_reports.md`.
 7. **Data safety**: whole-database export/import, CSV export, periodic
    backups.
 8. **Packaging**: installers for Mac, Windows, Linux built in CI.

@@ -3,8 +3,10 @@ import type { RuleInput } from '../../core/rules/types'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountForm } from './AccountForm'
+import { Dashboard } from './Dashboard'
 import { ImportHistory } from './ImportHistory'
 import { ImportWizard } from './ImportWizard'
+import { Reports } from './Reports'
 import { RulesEditor } from './RulesEditor'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
@@ -21,7 +23,15 @@ declare global {
 export function App() {
   const [accountId, setAccountId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
-  const [view, setView] = useState<'ledger' | 'import' | 'history' | 'rules'>('ledger')
+  const [view, setView] = useState<
+    'dashboard' | 'reports' | 'ledger' | 'import' | 'history' | 'rules'
+  >('dashboard')
+  const [preset, setPreset] = useState<{
+    key: number
+    categoryId: number
+    from: string
+    to: string
+  } | null>(null)
   const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
   const clearDraft = useCallback(() => setRuleDraft(null), [])
   const ledger = useLedger(accountId)
@@ -29,6 +39,15 @@ export function App() {
   useEffect(() => {
     void window.api.getAppInfo().then(setInfo)
   }, [])
+
+  const openCategory = (categoryId: number, from: string, to: string) => {
+    setPreset({ key: Date.now(), categoryId, from, to })
+    setView('ledger')
+  }
+  const reviewUncategorized = () => {
+    const u = ledger.categories.find((c) => c.name === 'Uncategorized' && c.parentId === null)
+    if (u) openCategory(u.id, '', '')
+  }
 
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
 
@@ -73,24 +92,45 @@ export function App() {
           </div>
         )}
         <div className="tabs" role="tablist">
-          {(['ledger', 'import', 'history', 'rules'] as const).map((v) => (
+          {(['dashboard', 'reports', 'ledger', 'import', 'history', 'rules'] as const).map((v) => (
             <button
               key={v}
               type="button"
               role="tab"
               aria-selected={view === v}
-              onClick={() => setView(v)}
+              onClick={() => {
+                setPreset(null)
+                setView(v)
+              }}
             >
-              {v === 'ledger'
-                ? 'Transactions'
-                : v === 'import'
-                  ? 'Import'
-                  : v === 'history'
-                    ? 'Import history'
-                    : 'Rules'}
+              {v === 'dashboard'
+                ? 'Dashboard'
+                : v === 'reports'
+                  ? 'Reports'
+                  : v === 'ledger'
+                    ? 'Transactions'
+                    : v === 'import'
+                      ? 'Import'
+                      : v === 'history'
+                        ? 'Import history'
+                        : 'Rules'}
             </button>
           ))}
         </div>
+        {view === 'dashboard' && (
+          <Dashboard
+            version={ledger.version}
+            onOpenCategory={openCategory}
+            onReviewUncategorized={reviewUncategorized}
+          />
+        )}
+        {view === 'reports' && (
+          <Reports
+            accounts={ledger.accounts}
+            version={ledger.version}
+            onOpenCategory={openCategory}
+          />
+        )}
         {view === 'import' && (
           <ImportWizard
             accounts={ledger.accounts}
@@ -123,6 +163,7 @@ export function App() {
               run={ledger.run}
               version={ledger.version}
               accountId={accountId}
+              preset={preset}
               onSuggestRule={(id) =>
                 void ledger.run(async () => {
                   const s = await window.api.rules.suggestRule(id)

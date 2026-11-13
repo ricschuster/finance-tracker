@@ -78,9 +78,18 @@ export function TransactionSearch({
   version,
   accountId,
   onSuggestRule,
+  preset,
 }: Pick<LedgerState, 'accounts' | 'categories' | 'run' | 'version'> & {
   accountId: number | null
   onSuggestRule: (id: number) => void
+  /** A drill-down from reports; a new `key` replaces the filters with this category and range. */
+  preset?: {
+    key: number
+    categoryId: number
+    from: string
+    to: string
+    direction?: 'expense'
+  } | null
 }) {
   const [filters, setFilters] = useState<Filters>(empty)
   const [showMore, setShowMore] = useState(false)
@@ -94,6 +103,20 @@ export function TransactionSearch({
   const [bulkCategory, setBulkCategory] = useState(0)
   const [bulkTag, setBulkTag] = useState('')
   const [bulkStatus, setBulkStatus] = useState<TransactionStatus>('reconciled')
+
+  const presetKey = preset?.key
+  useEffect(() => {
+    if (!preset) return
+    const next = {
+      ...empty,
+      categoryId: preset.categoryId,
+      from: preset.from,
+      to: preset.to,
+    }
+    setFilters(next)
+    setApplied(next)
+    // Only a new key counts as a new drill-down.
+  }, [presetKey])
 
   // Fetch shortly after typing stops, not on every keystroke.
   useEffect(() => {

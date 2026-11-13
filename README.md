@@ -6,6 +6,18 @@ and get monthly reports. No bank connections, so your data stays yours.
 
 Status: skeleton app in place (Electron, React, SQLite). See `docs/design/00_project_brief.md`.
 
+## Installing
+
+Download the installer for your OS from the GitHub releases page. Builds are
+unsigned, so the first launch shows a warning:
+
+- macOS: right-click the app and choose Open, then confirm.
+- Windows: in SmartScreen choose More info, then Run anyway.
+- Linux: `chmod +x` the AppImage and run it.
+
+There is no auto-update; install a newer version over the old one and your data
+is kept. See `docs/design/09_packaging.md`.
+
 ## Development
 
 See `CONTRIBUTING.md`. Quick start: `npm ci && npm run dev`.

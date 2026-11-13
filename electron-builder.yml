@@ -1,0 +1,26 @@
+appId: io.github.ricschuster.finance-tracker
+productName: Finance Tracker
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+# better-sqlite3 is a native module: it must be unpacked so it can be loaded.
+asarUnpack:
+  - node_modules/better-sqlite3/**
+npmRebuild: false
+# Unsigned builds (ADR 0004). Name files predictably for the release page.
+artifactName: finance-tracker-${version}-${os}-${arch}.${ext}
+mac:
+  category: public.app-category.finance
+  target: [dmg]
+  identity: null
+win:
+  target: [nsis]
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+linux:
+  category: Office
+  target: [AppImage]

@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Milestone 3 (import) is built: CSV, OFX/QFX and Mint CSV, mapping profiles, duplicate detection, undo, history, and bank presets for RBC, TD and Tangerine, verified against real export headers and date formats (see `docs/design/04_import.md`). Milestone 4 (rules) is built in core, IPC and a basic editor (see `docs/design/05_rules.md`). Milestone 5 (search) is built: filters, saved searches and bulk actions (see `docs/design/06_search.md`). Milestone 6 (reports and dashboard) is built: category, income vs expenses, trend, payee and biggest-transaction reports, a dashboard home screen and category drill-down (see `docs/design/07_reports.md`). Milestone 7 (data safety) is built: database export and restore, transactions CSV export and automatic backups (see `docs/design/08_data_safety.md`). OFX/QFX and Mint import were clicked through headless (`import-formats.mjs`). Next: milestone 8, packaging.
+Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Milestone 3 (import) is built: CSV, OFX/QFX and Mint CSV, mapping profiles, duplicate detection, undo, history, and bank presets for RBC, TD and Tangerine, verified against real export headers and date formats (see `docs/design/04_import.md`). Milestone 4 (rules) is built in core, IPC and a basic editor (see `docs/design/05_rules.md`). Milestone 5 (search) is built: filters, saved searches and bulk actions (see `docs/design/06_search.md`). Milestone 6 (reports and dashboard) is built: category, income vs expenses, trend, payee and biggest-transaction reports, a dashboard home screen and category drill-down (see `docs/design/07_reports.md`). Milestone 7 (data safety) is built: database export and restore, transactions CSV export and automatic backups (see `docs/design/08_data_safety.md`). OFX/QFX and Mint import were clicked through headless (`import-formats.mjs`). Milestone 8 (packaging) is built: unsigned installers via electron-builder and a tag-triggered release workflow (see `docs/design/09_packaging.md`, ADR 0004); the CI release run on all three OSes is untested until the first tag. Next: first release tag, then post-MVP (budgets).
 
 ## Scope
 
@@ -35,6 +35,7 @@ Electron, TypeScript, React, SQLite (better-sqlite3). See ADR 0002. Keep busines
 - `npm run dev:demo`: launch on a synthetic demo database (`.dev-data/`, gitignored); `dev:demo:reset` wipes it. Never touches real data.
 - `npm test`: unit tests for `src/core/` (rebuilds better-sqlite3 for Node first). Gate.
 - `npm run lint`, `npm run typecheck`, `npm run format:check`: gates.
+- `npm run package:dir` / `npm run package`: unpacked app / installer for the current OS (rebuilds better-sqlite3 for Electron first).
 - `npm run check`: everything CI runs, about a minute. Gate.
 
 ## Repo structure

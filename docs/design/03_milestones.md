@@ -15,7 +15,7 @@ Phased plan. Open GitHub issues are the live tracker; this is the shape.
    payees, periods. See `07_reports.md`.
 7. **Data safety**: whole-database export/import, CSV export, periodic
    backups.
-8. **Packaging**: installers for Mac, Windows, Linux built in CI.
+8. **Packaging**: installers for Mac, Windows, Linux built in CI. See `09_packaging.md`.
 
 After MVP: budgets and goals, receipt attachments, PDF statement import,
 merge import between devices.

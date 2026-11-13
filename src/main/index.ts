@@ -6,6 +6,7 @@ import { openDatabase } from '../core/db/open'
 import { seedDemoData } from '../core/dev/seed'
 import { registerImportIpc } from './import-ipc'
 import { registerLedgerIpc } from './ledger-ipc'
+import { registerRulesIpc } from './rules-ipc'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -39,6 +40,7 @@ void app.whenReady().then(() => {
   }))
   registerLedgerIpc(db)
   registerImportIpc(db)
+  registerRulesIpc(db)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

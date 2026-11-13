@@ -1,0 +1,66 @@
+# 05 Rules
+
+Milestone 4. Rules clean the payee, set the category and add tags. They are
+transparent, ordered and editable. See the brief and ADR 0003.
+
+## Model
+
+A rule has a name, a position, an enabled flag, a list of conditions (all must
+hold) and a list of actions. Rules run in position order and the first rule
+whose conditions all hold wins; later rules are not consulted.
+
+Conditions:
+
+- `text`: `field` is `description` (the raw bank text) or `payee` (the current
+  payee); `op` is `contains`, `starts_with`, `equals` or `regex`. All are case
+  insensitive. Regex is validated when the rule is saved.
+- `amount`: optional `direction` (`expense` or `income`), optional `min` and
+  `max` in positive integer cents, compared against the absolute amount.
+- `account`: `accountId`.
+
+Actions:
+
+- `setPayee`: replace the payee.
+- `setCategory`: set the category of an unsplit transaction.
+- `addTags`: add tags, keeping the existing ones.
+
+"Mark transfer" from the brief is not an action: a transfer needs a peer, so
+transfers stay with import matching and the transfer form. Rules skip any
+transaction that is part of a transfer.
+
+## Locking
+
+A rule never writes a field listed in `edited_fields` (`payee`, `categories`,
+`tags`). Rule writes do not add to `edited_fields`, so a rule can be edited and
+re-run and its own earlier results are replaced. Split transactions keep their
+lines: `setCategory` is skipped for them. A locked or skipped action is
+reported, not an error. A rule still "wins" when some of its actions are
+locked, so a later rule cannot touch the transaction either.
+
+## Apply
+
+- On import, rules run over the newly added rows inside the same database
+  transaction as the commit, so undo of the batch removes them as before.
+- Apply to past: `previewRules` returns the changes it would make (before and
+  after per transaction) without writing; `applyRules` writes them. Both take
+  an optional list of transaction ids and otherwise cover everything.
+- Rules only change a category when the result differs, so applying twice is a
+  no-op.
+
+## Suggestions
+
+When the user changes the payee or category by hand, `suggestRule` builds a
+draft: a `description contains` condition from the raw description with
+reference numbers (digit runs, `#1234`) and trailing noise removed and the
+first three words kept, plus `setPayee` and `setCategory` actions from the edit.
+It also reports how many existing unlocked transactions the draft would change.
+The user reviews and saves it; nothing is created silently.
+
+## Known gaps
+
+- Rows imported with a category (Mint) can have it replaced by a matching
+  rule, because the category is not recorded as a hand edit.
+- The editor has one slot per kind of condition and action; a rule with two
+  text conditions can be stored but not edited in the UI.
+- A rule whose category was deleted keeps matching; its category action is
+  skipped.

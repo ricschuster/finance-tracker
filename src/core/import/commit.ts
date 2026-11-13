@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import { createTransaction } from '../ledger/transactions'
+import { applyRules } from '../rules/apply'
 import type { Candidate } from './mapping'
 import type { ExistingTxn } from './match'
 
@@ -105,6 +106,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
       'INSERT INTO import_changes (batch_id, transaction_id, kind, before) VALUES (?, ?, ?, ?)',
     )
     const claimed = new Set<number>()
+    const addedIds: number[] = []
     let added = 0
     let merged = 0
     let skipped = 0
@@ -167,8 +169,11 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         id,
       )
       if (d.linkTransferId !== undefined) linkTransfer(db, batchId, id, d.linkTransferId, change)
+      addedIds.push(id)
       added++
     }
+    // Rules run inside the same database transaction, so undoing the batch removes the rows.
+    if (addedIds.length) applyRules(db, { ids: addedIds })
 
     db.prepare(
       `UPDATE import_batches SET rows_total = ?, rows_added = ?, rows_merged = ?,

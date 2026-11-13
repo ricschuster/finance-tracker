@@ -10,8 +10,10 @@ export function TransactionList({
   categories,
   run,
   showAccount,
+  onSuggestRule,
 }: Pick<LedgerState, 'transactions' | 'accounts' | 'categories' | 'run'> & {
   showAccount: boolean
+  onSuggestRule: (transactionId: number) => void
 }) {
   const [splitting, setSplitting] = useState<number | null>(null)
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
@@ -79,6 +81,15 @@ export function TransactionList({
                       onClick={() => setSplitting(t.id)}
                     >
                       Split
+                    </button>
+                  )}{' '}
+                  {!isTransfer && (
+                    <button
+                      type="button"
+                      aria-label={`Suggest a rule from transaction ${t.id}`}
+                      onClick={() => onSuggestRule(t.id)}
+                    >
+                      Rule
                     </button>
                   )}{' '}
                   <button

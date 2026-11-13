@@ -79,7 +79,6 @@ See `docs/design/03_milestones.md` for the phased plan.
 
 ## Open questions
 
-- Final children of each starter category (parents fixed in ADR 0003).
 - Merge import (combining two devices' data) is deferred; whole-file restore
   only for now.
 - Auto-update mechanism for installers.

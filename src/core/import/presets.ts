@@ -28,7 +28,7 @@ export const PRESETS: readonly Preset[] = [
   {
     id: 'td',
     name: 'TD (headerless: date, description, debit, credit, balance)',
-    verified: false,
+    verified: true,
     config: {
       hasHeader: false,
       headerRow: 0,

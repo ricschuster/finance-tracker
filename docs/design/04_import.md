@@ -237,5 +237,5 @@ Each step is usable on its own and goes through the session PR.
 
 Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
 the per-account mapping step, and RBC, TD and Tangerine presets (marked
-unverified in the UI until checked against a real export header). Not built:
+unverified in the UI until checked against a real export header; TD was checked against a real export on 2026-11-13, RBC headers match but its date format is still unchecked). Not built:
 presets for other banks, and Mint label-to-tag import.

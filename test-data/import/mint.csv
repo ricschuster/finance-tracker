@@ -1,0 +1,8 @@
+"Date","Description","Original Description","Amount","Transaction Type","Category","Account Name","Labels","Notes"
+"3/1/2026","Safeway","SAFEWAY #4412","84.17","debit","Groceries","Sample Chequing","",""
+"3/2/2026","Acme Corp","PAYROLL ACME CORP","2450.00","credit","Paycheck","Sample Chequing","",""
+"3/3/2026","Shell","SHELL GAS 1182","52.30","debit","Gas & Fuel","Sample Chequing","",""
+"3/5/2026","Tim Hortons","TIM HORTONS #221","6.45","debit","Coffee Shops","Sample Visa","",""
+"3/8/2026","Dentist","DR SMITH DENTAL","140.00","debit","Dentist","Sample Visa","","Checkup"
+"3/14/2026","Netflix","NETFLIX.COM","16.99","debit","Television","Sample Visa","",""
+"3/20/2026","Weird Shop","WEIRD SHOP 99","31.10","debit","Obscure Category","Sample Visa","",""

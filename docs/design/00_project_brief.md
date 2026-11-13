@@ -2,53 +2,52 @@
 
 ## What this is
 
-{{One or two sentences: what {{PROJECT_NAME}} is and the problem it addresses.}}
+finance-tracker is a personal finance organizer modeled on Intuit Mint, with
+manual transaction entry instead of bank syncing.
 
-It is {{a teaching tool / an internal tool / a production service / ...}}, not
-{{whatever it is explicitly not}}. The goal is to {{the outcome for the person
-using it}}.
+It is a private, single-user tool, not a bank aggregator or a multi-tenant
+service. The goal is to let one person record transactions, have them sorted
+automatically, and see where their money goes each month.
 
 ## Who it is for
 
-- {{Primary audience or user.}}
-- {{Secondary audience, if any.}}
-
-{{Any assumptions about the audience: technical level, prior knowledge, access
-requirements.}}
+- The repo owner, as a daily personal-finance tool.
+- Anyone who wants a self-hosted, privacy-first Mint alternative.
 
 ## The core idea (one screen)
 
-{{Describe the central loop or workflow in a few sentences, as if explaining it
-to someone seeing the project for the first time. What does the user do, what
-does the system do in response, what do they see change?}}
-
-## Scope layers (if applicable)
-
-{{If the project has a staged or layered scope (an MVP plus deeper layers over
-the same core), describe each layer briefly and how they share the same
-underlying engine or model. Delete this section if the project is a single
-flat scope.}}
+You enter a transaction (date, amount, payee, account, optional notes). Rules
+you define (for example "payee contains COSTCO sets category Groceries")
+categorize it automatically; anything unmatched is flagged for manual
+categorization, and you can turn that choice into a new rule. You can search
+across all transactions and view a monthly report of spending by category,
+income versus expenses, and trends.
 
 ## MVP scope
 
-{{The smallest version that proves the core idea. Enumerate the concrete
-pieces.}}
-
-1.
-2.
-3.
+1. Transactions: add, edit, delete; accounts and categories.
+2. Rules engine: match on payee, amount, account, notes; set category; apply
+   to new and existing transactions.
+3. Search and filters: text, date range, category, account, amount.
+4. Monthly report: spending by category, income vs expenses, month over month.
+5. Local persistent storage, with export to CSV.
 
 See `docs/design/03_milestones.md` (if present) for the phased plan.
 
 ## Explicit non-goals (for now)
 
-- {{What this project is deliberately not trying to be or do, and why.}}
+- Bank or card syncing (the point is manual control and privacy).
+- Multi-user, sharing, or cloud accounts.
+- Investment and net-worth tracking.
 
 ## Design principles
 
-1. {{A principle that should guide tradeoffs, and why it matters here.}}
-2. {{...}}
+1. Your data stays local and exportable; no lock-in.
+2. Rules are transparent and editable; no opaque auto-categorization.
+3. Manual entry must be fast (keyboard-first, sensible defaults).
 
 ## Open questions
 
-- {{Anything still undecided that a reader should know is open, not settled.}}
+- Tech stack (web app vs CLI vs desktop; storage choice).
+- CSV import in MVP or just after.
+- Budgets and recurring transactions: which milestone.

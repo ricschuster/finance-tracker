@@ -5,47 +5,37 @@ context automatically, so keep it to direction and rules, not a task list.
 
 ## Project name
 
-{{PROJECT_NAME}}
+finance-tracker
 
 ## Project purpose
 
-{{One or two paragraphs: what this project is, who it is for, and the core
-idea in plain terms. See `docs/design/00_project_brief.md` for the full
-brief.}}
+A personal finance organizer like Intuit Mint, but fed by manual entry (and
+CSV import later). The user adds transactions; the app categorizes them via
+user-defined rules, supports full-text search, and produces monthly reports.
+See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-{{Where things stand right now: design, pre-build, MVP in progress, etc., and
-what the next milestone is. Open GitHub issues are the live task tracker;
-`docs/design/03_milestones.md` (if present) is the shape of the plan.}}
+Design phase. Stack not yet chosen. Next milestone: pick a stack (ADR) and build the MVP.
 
 ## Scope
 
-{{What this project is, and just as importantly, what it deliberately is NOT.
-Do not expand scope without a design note in `docs/design/` or an ADR in
-`docs/decisions/`.}}
+In: manual transaction entry, accounts, categories, rules-based auto-categorization,
+search and filters, monthly reports, budgets (post-MVP). Out for now: bank
+syncing, multi-user, mobile apps, investment tracking. Do not expand scope
+without a design note in `docs/design/` or an ADR.
 
 ## Stack
 
-{{Languages, frameworks, test runner, deployment target, and any hard
-architectural constraints (for example: "business logic stays framework-free
-under `src/core/` so it is unit-testable"). Link to the relevant ADR(s) in
-`docs/decisions/` for the reasoning.}}
+Undecided. Keep business logic (rules engine, reporting) framework-free so it is unit-testable. Financial data is private: never commit real transaction data.
 
 ## Commands
 
-{{The everyday commands: run, test, lint/typecheck, build. One line each, and
-mark which ones are gates (non-zero exit blocks a merge). Say how long the
-slow ones take and which ones CI skips, so nobody runs a 20 minute suite by
-accident. Fill in once the stack is chosen; `CONTRIBUTING.md` Setup should
-match.}}
+To be filled in once the stack is chosen.
 
 ## Repo structure
 
-{{Optional: a short map of top-level directories, only if it adds real
-orientation beyond exploring the tree. State layering rules here too, such as "`core/` never imports from `ui/`".
-Keep it brief and expect it to drift; when in doubt, explore the tree rather
-than trusting this section.}}
+See the tree; `docs/` holds design notes, ADRs and handoffs.
 
 ## Working rules
 

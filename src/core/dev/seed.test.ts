@@ -31,6 +31,21 @@ describe('seedDemoData', () => {
     expect(dates[dates.length - 1]! <= opts.today).toBe(true)
   })
 
+  it('files spending under child categories', () => {
+    const db = fresh()
+    seedDemoData(db, opts)
+    const used = db
+      .prepare(
+        `SELECT DISTINCT c.name FROM transaction_lines l JOIN categories c ON c.id = l.category_id
+         WHERE c.parent_id IS NOT NULL`,
+      )
+      .all() as { name: string }[]
+    const names = used.map((r) => r.name)
+    expect(names).toEqual(
+      expect.arrayContaining(['Restaurants', 'Rent', 'Paycheque', 'Gas & Fuel']),
+    )
+  })
+
   it('keeps every transaction balanced and every transfer paired', () => {
     const db = fresh()
     seedDemoData(db, opts)

@@ -82,6 +82,63 @@ INSERT INTO categories (name, kind, is_system, sort_order) VALUES
 `
 
 /**
+ * Starter child categories (ADR 0003). Names are unique across the whole tree.
+ * This literal is frozen once shipped; later changes go in a new migration.
+ */
+const STARTER_CHILDREN: Record<string, string[]> = {
+  'Auto & Transport': [
+    'Gas & Fuel',
+    'Parking',
+    'Public Transit',
+    'Ride Share',
+    'Auto Insurance',
+    'Service & Parts',
+    'Vehicle Registration',
+  ],
+  'Bills & Utilities': [
+    'Electricity',
+    'Natural Gas',
+    'Water & Sewer',
+    'Internet',
+    'Mobile Phone',
+    'TV & Streaming Bundles',
+    'Home Insurance',
+  ],
+  'Food & Dining': ['Restaurants', 'Coffee Shops', 'Fast Food', 'Bars & Alcohol', 'Food Delivery'],
+  'Health & Fitness': ['Doctor & Dental', 'Pharmacy', 'Vision', 'Gym & Sports', 'Health Insurance'],
+  Home: [
+    'Rent',
+    'Mortgage',
+    'Furnishings',
+    'Home Improvement',
+    'Lawn & Garden',
+    'Home Services',
+    'Property Tax',
+  ],
+  Income: ['Paycheque', 'Bonus', 'Interest', 'Reimbursement', 'Tax Refund', 'Other Income'],
+  Shopping: ['Clothing', 'Electronics & Software', 'Books & Media', 'Hobbies', 'Online Shopping'],
+  Travel: ['Flights', 'Hotels & Lodging', 'Rental Car', 'Vacation Activities'],
+  Entertainment: ['Movies & Events', 'Music', 'Games', 'Subscriptions'],
+  Fees: ['Bank Fees', 'Interest Charges', 'Late Fees', 'Annual Fees'],
+  'Gifts & Donations': ['Gifts', 'Charity'],
+  Kids: ['Childcare', 'School & Supplies', 'Activities', 'Toys'],
+  'Personal Care': ['Hair & Beauty', 'Spa & Massage', 'Laundry'],
+  Taxes: ['Income Tax', 'Other Taxes'],
+}
+
+/** Migration 3: children inherit the parent's kind. */
+const CATEGORY_CHILDREN = Object.entries(STARTER_CHILDREN)
+  .flatMap(([parent, kids]) =>
+    kids.map(
+      (kid, i) =>
+        `INSERT INTO categories (parent_id, name, kind, sort_order)
+         SELECT id, '${kid.replace(/'/g, "''")}', kind, ${i + 1} FROM categories
+         WHERE name = '${parent.replace(/'/g, "''")}' AND parent_id IS NULL;`,
+    ),
+  )
+  .join('\n')
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -92,6 +149,7 @@ export const migrations: readonly string[] = [
    );
    INSERT INTO settings (key, value) VALUES ('home_currency', 'CAD');`,
   LEDGER_SCHEMA,
+  CATEGORY_CHILDREN,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

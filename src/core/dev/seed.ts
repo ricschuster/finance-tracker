@@ -1,6 +1,5 @@
 import type Database from 'better-sqlite3'
 import { createAccount, type AccountType } from '../ledger/accounts'
-import { getCategoryByName } from '../ledger/categories'
 import { createTransaction, createTransfer, type LineInput } from '../ledger/transactions'
 
 /** Deterministic PRNG so the demo data is the same every run. */
@@ -50,62 +49,74 @@ const DINING: Merchant[] = [
   {
     raw: 'TIM HORTONS #0921',
     payee: 'Tim Hortons',
-    category: 'Food & Dining',
+    category: 'Coffee Shops',
     min: 300,
     max: 1400,
   },
-  { raw: 'STARBUCKS 08812', payee: 'Starbucks', category: 'Food & Dining', min: 450, max: 1800 },
-  { raw: 'SQ *PHO HOUSE', payee: '', category: 'Food & Dining', min: 1800, max: 4800 },
+  { raw: 'STARBUCKS 08812', payee: 'Starbucks', category: 'Coffee Shops', min: 450, max: 1800 },
+  { raw: 'SQ *PHO HOUSE', payee: '', category: 'Restaurants', min: 1800, max: 4800 },
   {
     raw: 'DOORDASH*THAI EXPRESS',
     payee: 'DoorDash',
-    category: 'Food & Dining',
+    category: 'Food Delivery',
     min: 2800,
     max: 6500,
   },
-  { raw: 'THE KEG STEAKHOUSE', payee: 'The Keg', category: 'Food & Dining', min: 6500, max: 16000 },
+  { raw: 'THE KEG STEAKHOUSE', payee: 'The Keg', category: 'Restaurants', min: 6500, max: 16000 },
 ]
 const TRANSPORT: Merchant[] = [
   {
     raw: 'SHELL C28812 BURNABY',
     payee: 'Shell',
-    category: 'Auto & Transport',
+    category: 'Gas & Fuel',
     min: 4500,
     max: 9500,
   },
   {
     raw: 'COMPASS TOPUP TRANSLINK',
     payee: 'TransLink',
-    category: 'Auto & Transport',
+    category: 'Public Transit',
     min: 2000,
     max: 5000,
   },
-  { raw: 'IMPARK 0334 PARKING', payee: '', category: 'Auto & Transport', min: 500, max: 2400 },
+  { raw: 'IMPARK 0334 PARKING', payee: '', category: 'Parking', min: 500, max: 2400 },
 ]
 const SHOPPING: Merchant[] = [
-  { raw: 'AMZN MKTP CA*2K4TY8', payee: 'Amazon', category: 'Shopping', min: 1200, max: 14000 },
-  { raw: 'CANADIAN TIRE #512', payee: 'Canadian Tire', category: 'Home', min: 900, max: 12000 },
+  {
+    raw: 'AMZN MKTP CA*2K4TY8',
+    payee: 'Amazon',
+    category: 'Online Shopping',
+    min: 1200,
+    max: 14000,
+  },
+  {
+    raw: 'CANADIAN TIRE #512',
+    payee: 'Canadian Tire',
+    category: 'Home Improvement',
+    min: 900,
+    max: 12000,
+  },
   {
     raw: 'LONDON DRUGS #28',
     payee: 'London Drugs',
-    category: 'Health & Fitness',
+    category: 'Pharmacy',
     min: 700,
     max: 6500,
   },
-  { raw: 'WINNERS STORE 1180', payee: '', category: 'Shopping', min: 2500, max: 9000 },
-  { raw: 'IKEA VANCOUVER', payee: 'IKEA', category: 'Home', min: 2000, max: 30000 },
+  { raw: 'WINNERS STORE 1180', payee: '', category: 'Clothing', min: 2500, max: 9000 },
+  { raw: 'IKEA VANCOUVER', payee: 'IKEA', category: 'Furnishings', min: 2000, max: 30000 },
 ]
 const FUN: Merchant[] = [
-  { raw: 'CINEPLEX #7011', payee: 'Cineplex', category: 'Entertainment', min: 1400, max: 4200 },
-  { raw: 'STEAM PURCHASE', payee: 'Steam', category: 'Entertainment', min: 1000, max: 6000 },
-  { raw: 'ROGERS ARENA TICKETS', payee: '', category: 'Entertainment', min: 6000, max: 22000 },
+  { raw: 'CINEPLEX #7011', payee: 'Cineplex', category: 'Movies & Events', min: 1400, max: 4200 },
+  { raw: 'STEAM PURCHASE', payee: 'Steam', category: 'Games', min: 1000, max: 6000 },
+  { raw: 'ROGERS ARENA TICKETS', payee: '', category: 'Movies & Events', min: 6000, max: 22000 },
 ]
 const SUBSCRIPTIONS: (Merchant & { day: number })[] = [
-  { raw: 'NETFLIX.COM', payee: 'Netflix', category: 'Entertainment', min: 1699, max: 1699, day: 6 },
+  { raw: 'NETFLIX.COM', payee: 'Netflix', category: 'Subscriptions', min: 1699, max: 1699, day: 6 },
   {
     raw: 'SPOTIFY P1A2B3',
     payee: 'Spotify',
-    category: 'Entertainment',
+    category: 'Subscriptions',
     min: 1199,
     max: 1199,
     day: 11,
@@ -113,7 +124,7 @@ const SUBSCRIPTIONS: (Merchant & { day: number })[] = [
   {
     raw: 'GOODLIFE FITNESS',
     payee: 'GoodLife Fitness',
-    category: 'Health & Fitness',
+    category: 'Gym & Sports',
     min: 4999,
     max: 4999,
     day: 3,
@@ -121,7 +132,7 @@ const SUBSCRIPTIONS: (Merchant & { day: number })[] = [
   {
     raw: 'TELUS MOBILITY',
     payee: 'Telus',
-    category: 'Bills & Utilities',
+    category: 'Mobile Phone',
     min: 7500,
     max: 7500,
     day: 17,
@@ -129,7 +140,7 @@ const SUBSCRIPTIONS: (Merchant & { day: number })[] = [
   {
     raw: 'SHAW CABLESYSTEMS',
     payee: 'Shaw',
-    category: 'Bills & Utilities',
+    category: 'Internet',
     min: 8900,
     max: 8900,
     day: 20,
@@ -166,7 +177,8 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
   const today = fromDate(opts.today ?? new Date().toISOString().slice(0, 10))
   const start = today - (opts.months ?? 12) * 30 * DAY
   const cat = (name: string) => {
-    const c = getCategoryByName(db, name)
+    const c = db.prepare('SELECT id FROM categories WHERE name = ?').get(name) as
+      { id: number } | undefined
     if (!c) throw new Error(`Missing starter category ${name}`)
     return c.id
   }
@@ -220,7 +232,7 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
           amount: 205_075,
           rawDescription: 'PAYROLL DEPOSIT ACME CORP',
           payee: 'Acme Corp',
-          lines: [{ categoryId: cat('Income'), amount: 205_075 }],
+          lines: [{ categoryId: cat('Paycheque'), amount: 205_075 }],
         })
         count++
       }
@@ -232,7 +244,7 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
           m: {
             raw: 'E-TRANSFER RENT MAPLE PROPERTIES',
             payee: 'Maple Properties',
-            category: 'Home',
+            category: 'Rent',
             min: 0,
             max: 0,
           },
@@ -256,7 +268,7 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
           m: {
             raw: 'BC HYDRO BILL PAYMENT',
             payee: 'BC Hydro',
-            category: 'Bills & Utilities',
+            category: 'Electricity',
             min: 0,
             max: 0,
           },
@@ -313,7 +325,7 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
           },
           lines: [
             { categoryId: cat('Groceries'), amount: -groceries },
-            { categoryId: cat('Home'), amount: -household, memo: 'household' },
+            { categoryId: cat('Furnishings'), amount: -household, memo: 'household' },
           ],
         })
       }
@@ -322,22 +334,34 @@ export function seedDemoData(db: Database.Database, opts: SeedOptions = {}): See
     // A tagged trip and a couple of one-offs so tags and large amounts show up.
     const tripStart = toDate(today - 75 * DAY)
     const trip: Merchant[] = [
-      { raw: 'AIR CANADA 0142', payee: 'Air Canada', category: 'Travel', min: 38_000, max: 38_000 },
-      { raw: 'AIRBNB * HM4K2', payee: 'Airbnb', category: 'Travel', min: 52_000, max: 52_000 },
-      { raw: 'AVIS RENT A CAR', payee: '', category: 'Travel', min: 28_500, max: 28_500 },
+      {
+        raw: 'AIR CANADA 0142',
+        payee: 'Air Canada',
+        category: 'Flights',
+        min: 38_000,
+        max: 38_000,
+      },
+      {
+        raw: 'AIRBNB * HM4K2',
+        payee: 'Airbnb',
+        category: 'Hotels & Lodging',
+        min: 52_000,
+        max: 52_000,
+      },
+      { raw: 'AVIS RENT A CAR', payee: '', category: 'Rental Car', min: 28_500, max: 28_500 },
     ]
     for (const m of trip) spend(m, tripStart, visa, ['trip', 'summer'])
     add({
       accountId: visa,
       date: toDate(today - 40 * DAY),
       amount: -cents(1500, 2500),
-      m: { raw: 'ANNUAL FEE', payee: 'Visa', category: 'Fees', min: 0, max: 0 },
+      m: { raw: 'ANNUAL FEE', payee: 'Visa', category: 'Annual Fees', min: 0, max: 0 },
     })
     add({
       accountId: chequing,
       date: toDate(today - 20 * DAY),
       amount: -25_000,
-      m: { raw: 'E-TRANSFER GIFT MOM', payee: '', category: 'Gifts & Donations', min: 0, max: 0 },
+      m: { raw: 'E-TRANSFER GIFT MOM', payee: '', category: 'Gifts', min: 0, max: 0 },
       tags: ['birthday'],
     })
 

@@ -42,7 +42,9 @@ describe('migrate', () => {
     it('seeds the starter parent categories, with system ones locked', () => {
       const db = fresh()
       const rows = db
-        .prepare('SELECT name, is_system FROM categories ORDER BY sort_order')
+        .prepare(
+          'SELECT name, is_system FROM categories WHERE parent_id IS NULL ORDER BY sort_order',
+        )
         .all() as {
         name: string
         is_system: number
@@ -99,6 +101,24 @@ describe('migrate', () => {
       ).run()
       expect(() => db.prepare('DELETE FROM categories WHERE id = 1').run()).toThrow(/FOREIGN KEY/)
       expect(() => db.prepare('DELETE FROM accounts WHERE id = 1').run()).toThrow(/FOREIGN KEY/)
+    })
+
+    it('seeds children that inherit kind, with globally unique names', () => {
+      const db = fresh()
+      const kids = db
+        .prepare(
+          `SELECT c.name, c.kind, p.name AS parent, p.kind AS parent_kind
+           FROM categories c JOIN categories p ON p.id = c.parent_id`,
+        )
+        .all() as { name: string; kind: string; parent: string; parent_kind: string }[]
+      expect(kids.length).toBeGreaterThan(60)
+      expect(kids.every((k) => k.kind === k.parent_kind)).toBe(true)
+      const names = (db.prepare('SELECT name FROM categories').all() as { name: string }[]).map(
+        (r) => r.name.toLowerCase(),
+      )
+      expect(new Set(names).size).toBe(names.length)
+      expect(kids.filter((k) => k.parent === 'Income').every((k) => k.kind === 'income')).toBe(true)
+      expect(kids.some((k) => k.parent === 'Transfer' || k.parent === 'Uncategorized')).toBe(false)
     })
   })
 })

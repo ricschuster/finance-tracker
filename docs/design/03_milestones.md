@@ -17,5 +17,6 @@ Phased plan. Open GitHub issues are the live tracker; this is the shape.
    backups.
 8. **Packaging**: installers for Mac, Windows, Linux built in CI. See `09_packaging.md`.
 
-After MVP: budgets and goals, receipt attachments, PDF statement import,
+After MVP, first: balances, net worth and reconciliation (see
+`10_balances_and_reconciliation.md`). Then: budgets and goals, receipt attachments, PDF statement import,
 merge import between devices.

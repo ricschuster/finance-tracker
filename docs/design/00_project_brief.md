@@ -79,8 +79,7 @@ See `docs/design/03_milestones.md` for the phased plan.
 
 ## Open questions
 
-- Exact starter category list.
+- Final children of each starter category (parents fixed in ADR 0003).
 - Merge import (combining two devices' data) is deferred; whole-file restore
   only for now.
-- Amount sign convention and how credit card balances display.
 - Auto-update mechanism for installers.

@@ -4,16 +4,11 @@ A personal finance organizer in the spirit of Intuit Mint, built around manual
 entry. Add transactions yourself, let rules categorize them, search everything,
 and get monthly reports. No bank connections, so your data stays yours.
 
-Status: design phase. See `docs/design/00_project_brief.md`.
+Status: skeleton app in place (Electron, React, SQLite). See `docs/design/00_project_brief.md`.
 
-## Remaining setup
+## Development
 
-- Choose a tech stack and record it as an ADR in `docs/decisions/`.
-- Fill in `## Setup` in `CONTRIBUTING.md` and add a stack job to
-  `.github/workflows/ci.yml` and an ecosystem to `.github/dependabot.yml`.
-- Run `scripts/bootstrap-repo-settings.sh` once (branch protection, auto-merge,
-  labels).
-- Replace this section with real usage instructions.
+See `CONTRIBUTING.md`. Quick start: `npm ci && npm run dev`.
 
 ## Solo-maintainer auto-merge (optional)
 

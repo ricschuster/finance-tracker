@@ -12,12 +12,17 @@ The workflow is:
 
 ## Setup
 
-TODO: setup and local-run instructions once the stack is chosen. A good shape:
+Prerequisites: Node.js 22 and npm.
 
-- Prerequisites (tool and version).
-- A short block that installs, runs, and checks. Make its last line the
-  command CI runs, and say so.
-- Pointers to `CLAUDE.md` for anything stack-specific or slow.
+```bash
+npm ci            # install
+npm run dev       # rebuild native module for Electron, then launch the app
+npm run check     # format, lint, typecheck, test, build (what CI runs)
+```
+
+`better-sqlite3` is a native module built for either Node (tests) or Electron
+(the app). `npm test` rebuilds it for Node and `npm run dev` rebuilds it for
+Electron, so just use those scripts. See `CLAUDE.md` for architecture rules.
 
 ## Conventions
 

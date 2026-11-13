@@ -19,7 +19,7 @@ statements, multi-currency, merging two devices' databases.
 
 ## Pipeline
 
-```
+```text
 file bytes -> parse -> rows of strings -> map -> candidates -> match -> plan
                                                                   |
                                           preview (user decisions)
@@ -191,7 +191,7 @@ Uncategorized line, so rules can run over them later.
 
 ## Core module layout
 
-```
+```text
 src/core/import/
   csv.ts        parser, delimiter sniffing, decoding
   dates.ts      format detection and parsing

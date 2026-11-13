@@ -7,7 +7,7 @@ Phased plan. Open GitHub issues are the live tracker; this is the shape.
 2. **Ledger**: accounts, categories (starter set), transactions with splits,
    tags, notes, status, transfers. Transaction list.
 3. **Import**: CSV with column mapping, OFX/QFX, Mint CSV, duplicate handling,
-   import preview and history.
+   import preview and history. See `04_import.md`.
 4. **Rules**: engine, editor, ordered list, suggestions from manual edits,
    preview and apply to past, manual-edit locking, payee cleanup.
 5. **Search**: instant search, filters, saved searches, bulk actions.

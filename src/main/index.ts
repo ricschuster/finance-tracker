@@ -1,6 +1,10 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
+import { mkdirSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { openDatabase } from '../core/db/open'
+import { seedDemoData } from '../core/dev/seed'
+import { registerLedgerIpc } from './ledger-ipc'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -21,11 +25,18 @@ function createWindow(): void {
 }
 
 void app.whenReady().then(() => {
-  const db = openDatabase(join(app.getPath('userData'), 'finance.sqlite'))
+  // FT_DB_PATH points at a separate file (used by `npm run dev:demo`); FT_SEED=demo fills it if empty.
+  const dbPath = process.env['FT_DB_PATH'] ?? join(app.getPath('userData'), 'finance.sqlite')
+  mkdirSync(dirname(dbPath), { recursive: true })
+  const db = openDatabase(dbPath)
+  if (process.env['FT_SEED'] === 'demo' && !db.prepare('SELECT 1 FROM accounts LIMIT 1').get()) {
+    seedDemoData(db)
+  }
   ipcMain.handle('app:info', () => ({
     version: app.getVersion(),
     schemaVersion: db.pragma('user_version', { simple: true }) as number,
   }))
+  registerLedgerIpc(db)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

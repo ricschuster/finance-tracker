@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Milestone 1 (skeleton) done. Next: milestone 2, the ledger (see `docs/design/03_milestones.md`).
+Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Next: milestone 3, import (see `docs/design/03_milestones.md`).
 
 ## Scope
 
@@ -32,6 +32,7 @@ Electron, TypeScript, React, SQLite (better-sqlite3). See ADR 0002. Keep busines
 ## Commands
 
 - `npm run dev`: launch the app (rebuilds better-sqlite3 for Electron first).
+- `npm run dev:demo`: launch on a synthetic demo database (`.dev-data/`, gitignored); `dev:demo:reset` wipes it. Never touches real data.
 - `npm test`: unit tests for `src/core/` (rebuilds better-sqlite3 for Node first). Gate.
 - `npm run lint`, `npm run typecheck`, `npm run format:check`: gates.
 - `npm run check`: everything CI runs, about a minute. Gate.

@@ -138,6 +138,50 @@ const CATEGORY_CHILDREN = Object.entries(STARTER_CHILDREN)
   )
   .join('\n')
 
+/** Migration 4: import batches, mapping profiles, and external ids. See docs/design/04_import.md. */
+const IMPORT_SCHEMA = `
+CREATE TABLE import_batches (
+  id            INTEGER PRIMARY KEY,
+  account_id    INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+  source_name   TEXT NOT NULL,
+  format        TEXT NOT NULL CHECK (format IN ('csv','ofx','mint')),
+  profile_id    INTEGER,
+  imported_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  rows_total    INTEGER NOT NULL DEFAULT 0,
+  rows_added    INTEGER NOT NULL DEFAULT 0,
+  rows_merged   INTEGER NOT NULL DEFAULT 0,
+  rows_skipped  INTEGER NOT NULL DEFAULT 0,
+  rows_error    INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE import_profiles (
+  id                 INTEGER PRIMARY KEY,
+  name               TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  account_id         INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+  header_fingerprint TEXT,
+  config             TEXT NOT NULL,
+  created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at         TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX import_profiles_fingerprint ON import_profiles (header_fingerprint);
+
+ALTER TABLE transactions ADD COLUMN external_id TEXT;
+ALTER TABLE transactions ADD COLUMN import_batch_id INTEGER REFERENCES import_batches(id) ON DELETE SET NULL;
+CREATE UNIQUE INDEX transactions_external_id ON transactions (account_id, external_id)
+  WHERE external_id IS NOT NULL;
+CREATE INDEX transactions_import_batch ON transactions (import_batch_id);
+
+-- Before images so a batch can be undone: merged fields and transfer links.
+CREATE TABLE import_changes (
+  id             INTEGER PRIMARY KEY,
+  batch_id       INTEGER NOT NULL REFERENCES import_batches(id) ON DELETE CASCADE,
+  transaction_id INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  kind           TEXT NOT NULL CHECK (kind IN ('merge','transfer')),
+  before         TEXT NOT NULL
+);
+CREATE INDEX import_changes_batch ON import_changes (batch_id);
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -150,6 +194,7 @@ export const migrations: readonly string[] = [
    INSERT INTO settings (key, value) VALUES ('home_currency', 'CAD');`,
   LEDGER_SCHEMA,
   CATEGORY_CHILDREN,
+  IMPORT_SCHEMA,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

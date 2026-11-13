@@ -45,9 +45,9 @@ changes, so main keeps no wizard state.
 
 ## Parsing CSV
 
-- Own small RFC 4180 parser (quotes, doubled quotes, embedded newlines),
-  roughly 80 lines with tests, instead of a dependency. Revisit if real files
-  prove it inadequate.
+- Use the `csv-parse` dependency (sync API) for RFC 4180 handling: quotes,
+  doubled quotes, embedded newlines, ragged rows. Our code wraps it and adds
+  decoding, delimiter sniffing and the limits below.
 - Strip a UTF-8 BOM. Decode as UTF-8, falling back to Windows-1252 when the
   bytes are not valid UTF-8 (older bank exports).
 - Sniff the delimiter among comma, semicolon and tab from the first lines.
@@ -89,10 +89,18 @@ step. Headerless files match on column count plus the profile the user picks
 for that account.
 
 Built-in presets ship for common banks, but every one is only a starting
-mapping the user can edit. Layouts I believe are right and must be verified
-against the user's own exports before shipping: RBC (headered, with a CAD$
-and USD$ column), TD and CIBC (headerless, separate debit and credit
-columns). Fixtures are synthetic files in that shape, never real data.
+mapping the user can edit. The generic mapping wizard covers any other bank,
+so presets are a convenience, not a requirement. First presets: RBC
+(headered, with a CAD$ and USD$ column), TD (headerless, separate debit and
+credit columns) and Tangerine. CIBC, BMO, Scotiabank and others follow once a
+real export header has been checked. Layouts written from memory must be
+verified against the user's own exports (header row and date format only)
+before shipping. Fixtures are synthetic files in that shape, never real data.
+
+**Foreign currency columns**: rows whose amount is in a foreign currency
+column (for example RBC USD$) are skipped with a warning by default. The
+preview offers a per-import override to import them at face value, labelled
+as treating the amount as account currency. No conversion in this milestone.
 
 ## Sanity checks in the preview
 
@@ -242,12 +250,14 @@ Each step is usable on its own and goes through the session PR.
   importing it once.
 - Fixtures are synthetic. Real bank files are never committed.
 
-## Open questions
+## Decisions
 
-1. Which banks and card issuers do you actually use? That decides which
-   presets and fixtures come first.
-2. Should a possible match default to Merge (proposed) or to Import as new?
-3. Is a three-day window right for possible matches and transfers?
-4. Own CSV parser (proposed) or a dependency such as `csv-parse`?
-5. Rows in a foreign currency column (RBC has a USD$ column): skip with a
-   warning (proposed) or import at face value?
+Answered by the owner on 2026-11-13:
+
+1. Banks: RBC, TD and Tangerine first, then other major Canadian banks as
+   real export headers become available. The generic wizard covers the rest.
+2. A possible match defaults to Merge (subject to the rule in Duplicates).
+3. The window for possible matches and transfers is three days.
+4. Use `csv-parse` instead of an own parser.
+5. Foreign currency rows are skipped with a warning by default, with a
+   per-import override to import at face value.

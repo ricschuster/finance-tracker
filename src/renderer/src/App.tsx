@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import type { RuleInput } from '../../core/rules/types'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountForm } from './AccountForm'
 import { ImportHistory } from './ImportHistory'
 import { ImportWizard } from './ImportWizard'
+import { RulesEditor } from './RulesEditor'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionList } from './TransactionList'
@@ -19,7 +21,9 @@ declare global {
 export function App() {
   const [accountId, setAccountId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
-  const [view, setView] = useState<'ledger' | 'import' | 'history'>('ledger')
+  const [view, setView] = useState<'ledger' | 'import' | 'history' | 'rules'>('ledger')
+  const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
+  const clearDraft = useCallback(() => setRuleDraft(null), [])
   const ledger = useLedger(accountId)
 
   useEffect(() => {
@@ -69,7 +73,7 @@ export function App() {
           </div>
         )}
         <div className="tabs" role="tablist">
-          {(['ledger', 'import', 'history'] as const).map((v) => (
+          {(['ledger', 'import', 'history', 'rules'] as const).map((v) => (
             <button
               key={v}
               type="button"
@@ -77,7 +81,13 @@ export function App() {
               aria-selected={view === v}
               onClick={() => setView(v)}
             >
-              {v === 'ledger' ? 'Transactions' : v === 'import' ? 'Import' : 'Import history'}
+              {v === 'ledger'
+                ? 'Transactions'
+                : v === 'import'
+                  ? 'Import'
+                  : v === 'history'
+                    ? 'Import history'
+                    : 'Rules'}
             </button>
           ))}
         </div>
@@ -86,6 +96,15 @@ export function App() {
             accounts={ledger.accounts}
             run={ledger.run}
             onFinished={() => setView('ledger')}
+          />
+        )}
+        {view === 'rules' && (
+          <RulesEditor
+            accounts={ledger.accounts}
+            categories={ledger.categories}
+            run={ledger.run}
+            draft={ruleDraft}
+            onDraftUsed={clearDraft}
           />
         )}
         {view === 'history' && <ImportHistory run={ledger.run} />}
@@ -104,6 +123,17 @@ export function App() {
               categories={ledger.categories}
               run={ledger.run}
               showAccount={accountId === null}
+              onSuggestRule={(id) =>
+                void ledger.run(async () => {
+                  const s = await window.api.rules.suggestRule(id)
+                  if (!s) {
+                    window.alert('Edit the payee or category by hand first, then suggest a rule.')
+                    return
+                  }
+                  setRuleDraft(s.draft)
+                  setView('rules')
+                })
+              }
             />
           </>
         )}

@@ -182,6 +182,21 @@ CREATE TABLE import_changes (
 CREATE INDEX import_changes_batch ON import_changes (batch_id);
 `
 
+/** Migration 5: categorization rules. See docs/design/05_rules.md. */
+const RULES_SCHEMA = `
+CREATE TABLE rules (
+  id         INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL DEFAULT '',
+  position   INTEGER NOT NULL,
+  enabled    INTEGER NOT NULL DEFAULT 1 CHECK (enabled IN (0,1)),
+  conditions TEXT NOT NULL,
+  actions    TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX rules_position ON rules (position);
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -195,6 +210,7 @@ export const migrations: readonly string[] = [
   LEDGER_SCHEMA,
   CATEGORY_CHILDREN,
   IMPORT_SCHEMA,
+  RULES_SCHEMA,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

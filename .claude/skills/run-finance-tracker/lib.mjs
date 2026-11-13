@@ -27,7 +27,7 @@ export async function launch({ outDir = '/tmp/ft-shots', dbName = 'ui.sqlite', f
     d.accept()
   })
   await page.setViewportSize({ width: 1400, height: 900 })
-  await page.getByRole('tab', { name: 'Transactions' }).waitFor()
+  await page.getByRole('tab', { name: 'Dashboard' }).waitFor()
   const shot = (name) => page.screenshot({ path: path.join(outDir, name + '.png') })
   /** Replace the native open-file dialog so the import wizard gets this file. */
   const stubOpenDialog = (file) =>

@@ -9,6 +9,7 @@ const { app, page, errors, shot, stubOpenDialog } = await launch({ outDir })
 const csv = path.join(outDir, 'sample.csv')
 fs.writeFileSync(csv, 'Date,Description,Amount\n2026-11-01,SPOTIFY P1234,-12.00\n2026-11-02,TIM HORTONS #55,-4.75\n2026-11-03,PAYROLL ACME,2500.00\n')
 
+await page.getByRole('tab', { name: 'Transactions' }).click()
 await page.getByPlaceholder(/Search payee/).fill('costco')
 await page.waitForTimeout(800)
 await shot('search')

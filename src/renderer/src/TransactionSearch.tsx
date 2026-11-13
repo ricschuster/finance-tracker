@@ -89,6 +89,8 @@ export function TransactionSearch({
   const [badInput, setBadInput] = useState<string | null>(null)
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set())
   const [saved, setSaved] = useState<SavedSearch[]>([])
+  // window.prompt() is unsupported in Electron, so naming a search uses an inline field.
+  const [saveName, setSaveName] = useState<string | null>(null)
   const [bulkCategory, setBulkCategory] = useState(0)
   const [bulkTag, setBulkTag] = useState('')
   const [bulkStatus, setBulkStatus] = useState<TransactionStatus>('reconciled')
@@ -177,14 +179,15 @@ export function TransactionSearch({
     return ids
   }
 
-  async function saveCurrent() {
-    if (!fullQuery) return
-    const name = window.prompt('Name this search')
-    if (!name?.trim()) return
+  async function saveCurrent(name: string) {
+    if (!fullQuery || !name.trim()) return
     // Account scoping comes from the sidebar, so it is not stored with the search.
     const stored = { ...fullQuery }
     delete stored.accountIds
-    if (await run(() => window.api.search.saveSearch(name, stored))) loadSaved()
+    if (await run(() => window.api.search.saveSearch(name.trim(), stored))) {
+      setSaveName(null)
+      loadSaved()
+    }
   }
 
   const hasSelection = selected.size > 0
@@ -225,9 +228,33 @@ export function TransactionSearch({
             </option>
           ))}
         </select>{' '}
-        <button type="button" onClick={() => void saveCurrent()}>
-          Save search
-        </button>
+        {saveName === null ? (
+          <button type="button" onClick={() => setSaveName('')}>
+            Save search
+          </button>
+        ) : (
+          <form
+            style={{ display: 'inline' }}
+            onSubmit={(e) => {
+              e.preventDefault()
+              void saveCurrent(saveName)
+            }}
+          >
+            <input
+              autoFocus
+              aria-label="Saved search name"
+              placeholder="Name this search"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+            />{' '}
+            <button type="submit" disabled={!saveName.trim()}>
+              Save
+            </button>{' '}
+            <button type="button" onClick={() => setSaveName(null)}>
+              Cancel
+            </button>
+          </form>
+        )}
         {saved.length > 0 && (
           <>
             {' '}

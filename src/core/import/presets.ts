@@ -16,7 +16,7 @@ export const PRESETS: readonly Preset[] = [
   {
     id: 'rbc',
     name: 'RBC (chequing, savings, cards)',
-    verified: false,
+    verified: true,
     config: {
       hasHeader: true,
       headerRow: 0,

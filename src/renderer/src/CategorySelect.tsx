@@ -6,6 +6,8 @@ export function CategorySelect(props: {
   value: number
   onChange: (id: number) => void
   'aria-label'?: string
+  /** When set, adds a leading option with value 0 (for example "Any category"). */
+  anyLabel?: string
 }) {
   const parents = props.categories.filter((c) => c.parentId === null)
   return (
@@ -14,6 +16,7 @@ export function CategorySelect(props: {
       value={props.value}
       onChange={(e) => props.onChange(Number(e.target.value))}
     >
+      {props.anyLabel && <option value={0}>{props.anyLabel}</option>}
       {parents.map((p) => {
         const kids = props.categories.filter((c) => c.parentId === p.id)
         if (kids.length === 0) {

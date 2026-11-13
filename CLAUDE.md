@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Design phase. Stack not yet chosen. Next milestone: pick a stack (ADR) and build the MVP.
+Design phase, stack chosen (ADR 0002). Next milestone: skeleton app (see `docs/design/03_milestones.md`).
 
 ## Scope
 
@@ -27,7 +27,7 @@ without a design note in `docs/design/` or an ADR.
 
 ## Stack
 
-Undecided. Keep business logic (rules engine, reporting) framework-free so it is unit-testable. Financial data is private: never commit real transaction data.
+Electron, TypeScript, React, SQLite (better-sqlite3). See ADR 0002. Keep business logic (rules engine, import parsers, reports) framework-free under `core/` so it is unit-testable; `core/` never imports from the UI or Electron. Financial data is private: never commit real transaction data.
 
 ## Commands
 

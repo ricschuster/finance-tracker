@@ -40,7 +40,7 @@ export const PRESETS: readonly Preset[] = [
   {
     id: 'tangerine',
     name: 'Tangerine',
-    verified: false,
+    verified: true,
     config: {
       hasHeader: true,
       headerRow: 0,

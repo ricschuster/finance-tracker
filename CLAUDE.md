@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Design phase, stack chosen (ADR 0002). Next milestone: skeleton app (see `docs/design/03_milestones.md`).
+Milestone 1 (skeleton) done. Next: milestone 2, the ledger (see `docs/design/03_milestones.md`).
 
 ## Scope
 
@@ -31,11 +31,20 @@ Electron, TypeScript, React, SQLite (better-sqlite3). See ADR 0002. Keep busines
 
 ## Commands
 
-To be filled in once the stack is chosen.
+- `npm run dev`: launch the app (rebuilds better-sqlite3 for Electron first).
+- `npm test`: unit tests for `src/core/` (rebuilds better-sqlite3 for Node first). Gate.
+- `npm run lint`, `npm run typecheck`, `npm run format:check`: gates.
+- `npm run check`: everything CI runs, about a minute. Gate.
 
 ## Repo structure
 
-See the tree; `docs/` holds design notes, ADRs and handoffs.
+- `src/core/`: framework-free logic (money, db migrations, later rules, import,
+  reports). Never imports Electron, React, `main/` or `renderer/` (enforced by
+  ESLint).
+- `src/main/`: Electron main process, owns the database and IPC handlers.
+- `src/preload/`: the typed bridge exposed to the UI.
+- `src/renderer/`: React UI. Talks to data only through the preload API.
+- Conventions: ADR 0003 (integer cents, expenses negative, split lines).
 
 ## Working rules
 
@@ -47,3 +56,4 @@ See the tree; `docs/` holds design notes, ADRs and handoffs.
 - Significant technical or design decisions get an ADR in `docs/decisions/`.
 - Design notes live in `docs/design/`; session handoffs in `docs/handoffs/`.
 - Keep changes small and focused; update docs when behaviour or design changes.
+- One pull request per working session: keep adding commits to the session's open PR rather than opening several.

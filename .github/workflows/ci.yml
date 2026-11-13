@@ -43,29 +43,22 @@ jobs:
             echo "code=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Example stack job, to copy once the stack is chosen. Add its name to the
-  # `needs` list of `checks` below.
-  #
-  # build:
-  #   needs: changes
-  #   if: needs.changes.outputs.code == 'true'
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v7
-  #     # Setup, install, then format/lint/typecheck/test/build for your stack.
-  #     #
-  #     # Caching a slow-to-fetch dependency or tool: restore it with
-  #     # actions/cache and a key from your lockfile. A PR can read caches
-  #     # saved on main but not caches saved by another PR, so also add
-  #     # workflows-optional/warm-cache.yml with the same key.
-  #     - uses: actions/cache@v6
-  #       with:
-  #         path: PATH_TO_CACHE
-  #         key: cache-${{ runner.os }}-${{ hashFiles('LOCKFILE') }}
-  #     - run: YOUR_BUILD_AND_TEST_COMMAND
+  build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Format, lint, typecheck, test, build
+        run: npm run check
 
   checks:
-    needs: [changes, repo-hygiene]
+    needs: [changes, repo-hygiene, build]
     if: always()
     runs-on: ubuntu-latest
     steps:

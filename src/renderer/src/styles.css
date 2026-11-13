@@ -276,3 +276,33 @@ button.link {
     color: #f5e6b0;
   }
 }
+
+.category-tree,
+.category-tree ul {
+  list-style: none;
+  padding-left: 0;
+}
+.category-tree ul {
+  padding-left: 1.5rem;
+}
+.category-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0;
+}
+.category-name {
+  min-width: 12rem;
+  font-weight: 500;
+}
+.category-child .category-name {
+  font-weight: 400;
+}
+.category-delete,
+.category-add {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+}

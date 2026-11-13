@@ -4,6 +4,7 @@ import { migrate } from '../db/migrations'
 import {
   accountBalance,
   createAccount,
+  categoryUsage,
   createCategory,
   createTransaction,
   createTransfer,
@@ -65,6 +66,17 @@ describe('categories', () => {
     })
     expect(() => createCategory(db, { name: 'Deep', parentId: child })).toThrow(/one level/)
     expect(() => createCategory(db, { name: 'salary', parentId: income })).toThrow(/UNIQUE/)
+  })
+
+  it('counts transaction lines per category', () => {
+    createTransaction(db, {
+      accountId: chq,
+      date: '2026-01-05',
+      amount: -400,
+      lines: [{ categoryId: groceries, amount: -400 }],
+    })
+    expect(categoryUsage(db)[groceries]).toBe(1)
+    expect(categoryUsage(db)[dining]).toBeUndefined()
   })
 
   it('protects system categories', () => {

@@ -7,6 +7,7 @@ export const LEDGER_METHODS = [
   'createCategory',
   'renameCategory',
   'deleteCategory',
+  'categoryUsage',
   'listTags',
   'getTransaction',
   'listTransactions',

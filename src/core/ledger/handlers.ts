@@ -1,6 +1,12 @@
 import type Database from 'better-sqlite3'
 import { createAccount, listAccountsWithBalance, updateAccount } from './accounts'
-import { createCategory, deleteCategory, listCategories, renameCategory } from './categories'
+import {
+  categoryUsage,
+  createCategory,
+  deleteCategory,
+  listCategories,
+  renameCategory,
+} from './categories'
 import type { LedgerMethod } from './methods'
 import { listTags } from './tags'
 import {
@@ -27,6 +33,7 @@ export function createLedgerHandlers(db: Database.Database) {
     createCategory: (input: Parameters<typeof createCategory>[1]) => createCategory(db, input),
     renameCategory: (id: number, name: string) => renameCategory(db, id, name),
     deleteCategory: (id: number, reassignTo?: number) => deleteCategory(db, id, reassignTo),
+    categoryUsage: () => categoryUsage(db),
     listTags: () => listTags(db),
     getTransaction: (id: number) => getTransaction(db, id) ?? null,
     listTransactions: (filter?: Parameters<typeof listTransactions>[1]) =>

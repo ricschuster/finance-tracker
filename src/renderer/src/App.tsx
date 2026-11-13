@@ -3,6 +3,7 @@ import type { RuleInput } from '../../core/rules/types'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountForm } from './AccountForm'
+import { CategoriesEditor } from './CategoriesEditor'
 import { Dashboard } from './Dashboard'
 import { DataPanel } from './DataPanel'
 import { ImportHistory } from './ImportHistory'
@@ -15,6 +16,17 @@ import { TransactionSearch } from './TransactionSearch'
 import { useLedger } from './useLedger'
 import './styles.css'
 
+const VIEW_LABELS = {
+  dashboard: 'Dashboard',
+  reports: 'Reports',
+  ledger: 'Transactions',
+  import: 'Import',
+  history: 'Import history',
+  rules: 'Rules',
+  categories: 'Categories',
+  data: 'Data',
+} as const
+
 declare global {
   interface Window {
     api: Api
@@ -24,9 +36,7 @@ declare global {
 export function App() {
   const [accountId, setAccountId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
-  const [view, setView] = useState<
-    'dashboard' | 'reports' | 'ledger' | 'import' | 'history' | 'rules' | 'data'
-  >('dashboard')
+  const [view, setView] = useState<keyof typeof VIEW_LABELS>('dashboard')
   const [preset, setPreset] = useState<{
     key: number
     categoryId: number
@@ -93,34 +103,20 @@ export function App() {
           </div>
         )}
         <div className="tabs" role="tablist">
-          {(['dashboard', 'reports', 'ledger', 'import', 'history', 'rules', 'data'] as const).map(
-            (v) => (
-              <button
-                key={v}
-                type="button"
-                role="tab"
-                aria-selected={view === v}
-                onClick={() => {
-                  setPreset(null)
-                  setView(v)
-                }}
-              >
-                {v === 'dashboard'
-                  ? 'Dashboard'
-                  : v === 'reports'
-                    ? 'Reports'
-                    : v === 'ledger'
-                      ? 'Transactions'
-                      : v === 'import'
-                        ? 'Import'
-                        : v === 'history'
-                          ? 'Import history'
-                          : v === 'rules'
-                            ? 'Rules'
-                            : 'Data'}
-              </button>
-            ),
-          )}
+          {(Object.keys(VIEW_LABELS) as (keyof typeof VIEW_LABELS)[]).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => {
+                setPreset(null)
+                setView(v)
+              }}
+            >
+              {VIEW_LABELS[v]}
+            </button>
+          ))}
         </div>
         {view === 'dashboard' && (
           <Dashboard
@@ -152,6 +148,7 @@ export function App() {
             onDraftUsed={clearDraft}
           />
         )}
+        {view === 'categories' && <CategoriesEditor ledger={ledger} />}
         {view === 'data' && <DataPanel run={ledger.run} />}
         {view === 'history' && <ImportHistory run={ledger.run} />}
         {view === 'ledger' && (

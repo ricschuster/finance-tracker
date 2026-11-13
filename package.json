@@ -7,6 +7,8 @@
   "main": "./out/main/index.js",
   "scripts": {
     "dev": "npm run rebuild:electron && electron-vite dev",
+    "dev:demo": "npm run rebuild:electron && FT_DB_PATH=.dev-data/demo.sqlite FT_SEED=demo electron-vite dev",
+    "dev:demo:reset": "rm -f .dev-data/demo.sqlite*",
     "build": "electron-vite build",
     "rebuild:electron": "electron-rebuild -f -w better-sqlite3",
     "rebuild:node": "npm rebuild better-sqlite3",

@@ -17,6 +17,8 @@ Prerequisites: Node.js 22 and npm.
 ```bash
 npm ci            # install
 npm run dev       # rebuild native module for Electron, then launch the app
+npm run dev:demo  # same, on a separate .dev-data/demo.sqlite filled with synthetic data
+npm run dev:demo:reset  # delete the demo database so it regenerates
 npm run check     # format, lint, typecheck, test, build (what CI runs)
 ```
 

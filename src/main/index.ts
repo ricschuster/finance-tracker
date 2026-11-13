@@ -1,6 +1,7 @@
 import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { openDatabase } from '../core/db/open'
+import { registerLedgerIpc } from './ledger-ipc'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -26,6 +27,7 @@ void app.whenReady().then(() => {
     version: app.getVersion(),
     schemaVersion: db.pragma('user_version', { simple: true }) as number,
   }))
+  registerLedgerIpc(db)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

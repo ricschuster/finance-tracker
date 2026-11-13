@@ -5,6 +5,8 @@ import { IMPORT_METHODS } from '../core/import/methods'
 import { LEDGER_METHODS } from '../core/ledger/methods'
 import type { RulesApi } from '../core/rules/handlers'
 import { RULES_METHODS } from '../core/rules/methods'
+import type { SearchApi } from '../core/search/handlers'
+import { SEARCH_METHODS } from '../core/search/methods'
 
 const ledger = Object.fromEntries(
   LEDGER_METHODS.map((name) => [
@@ -19,6 +21,13 @@ const rules = Object.fromEntries(
     (...args: unknown[]) => ipcRenderer.invoke(`rules:${name}`, ...args),
   ]),
 ) as unknown as RulesApi
+
+const search = Object.fromEntries(
+  SEARCH_METHODS.map((name) => [
+    name,
+    (...args: unknown[]) => ipcRenderer.invoke(`search:${name}`, ...args),
+  ]),
+) as unknown as SearchApi
 
 const importer = {
   ...(Object.fromEntries(
@@ -37,6 +46,7 @@ const api = {
   ledger,
   importer,
   rules,
+  search,
 }
 
 export type Api = typeof api

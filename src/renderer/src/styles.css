@@ -177,3 +177,20 @@ th.num {
   max-width: 100%;
   font-size: 12px;
 }
+.searchbar {
+  margin-bottom: 12px;
+}
+.searchbar input[type='search'] {
+  min-width: 320px;
+}
+.bulkbar {
+  background: #e5eefc;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  .bulkbar {
+    background: #243552;
+  }
+}

@@ -2,8 +2,10 @@ import { join } from 'node:path'
 import { app, BrowserWindow, ipcMain } from 'electron'
 import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
+import { applyPendingRestore } from '../core/backup'
 import { openDatabase } from '../core/db/open'
 import { seedDemoData } from '../core/dev/seed'
+import { registerDataIpc } from './data-ipc'
 import { registerImportIpc } from './import-ipc'
 import { registerLedgerIpc } from './ledger-ipc'
 import { registerRulesIpc } from './rules-ipc'
@@ -32,6 +34,12 @@ void app.whenReady().then(() => {
   // FT_DB_PATH points at a separate file (used by `npm run dev:demo`); FT_SEED=demo fills it if empty.
   const dbPath = process.env['FT_DB_PATH'] ?? join(app.getPath('userData'), 'finance.sqlite')
   mkdirSync(dirname(dbPath), { recursive: true })
+  // A restore staged by the Data tab is swapped in here, before the database is opened.
+  const keptRestoreCopy = applyPendingRestore(
+    dbPath,
+    join(dirname(dbPath), 'pre-restore'),
+    new Date(),
+  )
   const db = openDatabase(dbPath)
   if (process.env['FT_SEED'] === 'demo' && !db.prepare('SELECT 1 FROM accounts LIMIT 1').get()) {
     seedDemoData(db)
@@ -45,6 +53,7 @@ void app.whenReady().then(() => {
   registerRulesIpc(db)
   registerSearchIpc(db)
   registerReportsIpc(db)
+  registerDataIpc(db, dbPath, keptRestoreCopy)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

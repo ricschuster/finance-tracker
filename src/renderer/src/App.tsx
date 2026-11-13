@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountForm } from './AccountForm'
+import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionList } from './TransactionList'
 import { useLedger } from './useLedger'
@@ -70,6 +71,7 @@ export function App() {
           run={ledger.run}
           accountId={accountId}
         />
+        <TransferForm accounts={ledger.accounts} run={ledger.run} />
         <TransactionList
           transactions={ledger.transactions}
           accounts={ledger.accounts}

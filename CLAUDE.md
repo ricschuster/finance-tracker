@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Milestone 1 (skeleton) done. Next: milestone 2, the ledger (see `docs/design/03_milestones.md`).
+Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Next: milestone 3, import (see `docs/design/03_milestones.md`).
 
 ## Scope
 

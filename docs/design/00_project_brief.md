@@ -3,51 +3,84 @@
 ## What this is
 
 finance-tracker is a personal finance organizer modeled on Intuit Mint, with
-manual transaction entry instead of bank syncing.
+manual entry and file import instead of bank syncing.
 
-It is a private, single-user tool, not a bank aggregator or a multi-tenant
-service. The goal is to let one person record transactions, have them sorted
-automatically, and see where their money goes each month.
+It is a local, private desktop app, not a bank aggregator or a hosted service.
+The goal is to let one household record or import transactions, have them
+sorted automatically by transparent rules, find anything quickly, and see where
+the money goes each month.
 
 ## Who it is for
 
-- The repo owner, as a daily personal-finance tool.
-- Anyone who wants a self-hosted, privacy-first Mint alternative.
+- The repo owner and their partner. Each device runs its own copy with its own
+  data. Sharing between devices is a manual export and import.
+- Anyone who wants a privacy-first Mint alternative.
+
+Assumptions: one home currency (CAD, Canadian English, YYYY-MM-DD dates). Under
+1 percent of transactions are foreign, so multi-currency is out of scope.
+Runs on Mac (primary), Windows and Linux.
 
 ## The core idea (one screen)
 
-You enter a transaction (date, amount, payee, account, optional notes). Rules
-you define (for example "payee contains COSTCO sets category Groceries")
-categorize it automatically; anything unmatched is flagged for manual
-categorization, and you can turn that choice into a new rule. You can search
-across all transactions and view a monthly report of spending by category,
-income versus expenses, and trends.
+Transactions arrive by manual entry or by importing bank files (CSV with column
+mapping, OFX/QFX, Mint export CSV; PDF later). Duplicates are skipped or
+flagged. An ordered list of rules (first match wins) cleans the payee, sets the
+category, and adds tags. Anything unmatched is flagged Uncategorized. When the
+user fixes one by hand, the app offers to create a rule. Manually edited fields
+are never overwritten by rules. The dashboard shows the current month, and
+reports cover spending by category, income vs expenses, trends and top payees.
 
 ## MVP scope
 
-1. Transactions: add, edit, delete; accounts and categories.
-2. Rules engine: match on payee, amount, account, notes; set category; apply
-   to new and existing transactions.
-3. Search and filters: text, date range, category, account, amount.
-4. Monthly report: spending by category, income vs expenses, month over month.
-5. Local persistent storage, with export to CSV.
+1. Accounts: chequing/savings, credit cards, cash, and snapshot-only
+   loans/mortgage/investments.
+2. Transactions: add, edit, delete, split across categories, notes, tags,
+   pending/reconciled status. Transfers between accounts, with match
+   suggestions on import.
+3. Categories: two levels with a Mint-like starter set, editable, plus tags.
+4. Import: CSV with saved per-bank column mapping, OFX/QFX, Mint export CSV.
+   Exact duplicates skipped, near matches flagged.
+5. Rules: text match on payee/description (contains, starts with, regex),
+   amount and account conditions, multiple actions (rename payee, set
+   category, add tags, mark transfer). Ordered, first match wins. Suggest
+   rules from manual edits. Preview then apply to past transactions, skipping
+   manual edits.
+6. Search: instant text search, filters (date, amount, account, category, tag,
+   status), saved searches, bulk actions on results.
+7. Reports: spending by category with drill-down, income vs expenses and
+   savings rate, trends over months, top payees and biggest transactions.
+   Calendar months, quarters, year, and custom ranges.
+8. Dashboard as the home screen.
+9. Data: single SQLite file; export/import the whole database as one file;
+   transactions to CSV; automatic periodic backups to a chosen folder.
+10. Distribution: single installer per OS, built in CI.
 
-See `docs/design/03_milestones.md` (if present) for the phased plan.
+See `docs/design/03_milestones.md` for the phased plan.
 
 ## Explicit non-goals (for now)
 
-- Bank or card syncing (the point is manual control and privacy).
-- Multi-user, sharing, or cloud accounts.
-- Investment and net-worth tracking.
+- Bank or card syncing.
+- Multi-user, accounts, shared live view or cloud sync.
+- Multi-currency.
+- Budgets and savings goals (planned after MVP).
+- Receipt attachments (planned after MVP).
+- PDF statement import (planned after MVP).
+- Investment tracking beyond balance snapshots.
+- Database encryption; protection relies on OS disk encryption.
 
 ## Design principles
 
-1. Your data stays local and exportable; no lock-in.
-2. Rules are transparent and editable; no opaque auto-categorization.
-3. Manual entry must be fast (keyboard-first, sensible defaults).
+1. Data stays local, in one file, and is always exportable.
+2. Rules are transparent, ordered and editable; no opaque auto-categorization.
+3. Never silently overwrite what the user set by hand.
+4. Manual entry and review must be fast and keyboard friendly.
+5. Business logic (rules, import parsing, reports) is framework-free and unit
+   tested, separate from the UI.
 
 ## Open questions
 
-- Tech stack (web app vs CLI vs desktop; storage choice).
-- CSV import in MVP or just after.
-- Budgets and recurring transactions: which milestone.
+- Exact starter category list.
+- Merge import (combining two devices' data) is deferred; whole-file restore
+  only for now.
+- Amount sign convention and how credit card balances display.
+- Auto-update mechanism for installers.

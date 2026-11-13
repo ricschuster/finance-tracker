@@ -21,8 +21,9 @@ changes go through one PR per session.
 - `src/core/` has money helpers and a migration runner with a single
   `settings` table. No ledger tables yet.
 - The UI is a placeholder page showing app version and schema version.
-- The window was launched by hand only after the PR was merged; see the PR
-  discussion if anything looked wrong.
+- The Electron window had not been launched when this was written (no
+  display in the build session); the first `npm run dev` is still to be
+  verified.
 - `better-sqlite3` flips between Node and Electron builds; use `npm test` and
   `npm run dev`, which rebuild it first.
 

@@ -197,6 +197,16 @@ CREATE TABLE rules (
 CREATE INDEX rules_position ON rules (position);
 `
 
+/** Migration 6: saved searches. See docs/design/06_search.md. */
+const SEARCH_SCHEMA = `
+CREATE TABLE saved_searches (
+  id         INTEGER PRIMARY KEY,
+  name       TEXT NOT NULL COLLATE NOCASE UNIQUE,
+  query      TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -211,6 +221,7 @@ export const migrations: readonly string[] = [
   CATEGORY_CHILDREN,
   IMPORT_SCHEMA,
   RULES_SCHEMA,
+  SEARCH_SCHEMA,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

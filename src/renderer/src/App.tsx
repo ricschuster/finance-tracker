@@ -8,7 +8,7 @@ import { ImportWizard } from './ImportWizard'
 import { RulesEditor } from './RulesEditor'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
-import { TransactionList } from './TransactionList'
+import { TransactionSearch } from './TransactionSearch'
 import { useLedger } from './useLedger'
 import './styles.css'
 
@@ -117,12 +117,12 @@ export function App() {
               accountId={accountId}
             />
             <TransferForm accounts={ledger.accounts} run={ledger.run} />
-            <TransactionList
-              transactions={ledger.transactions}
+            <TransactionSearch
               accounts={ledger.accounts}
               categories={ledger.categories}
               run={ledger.run}
-              showAccount={accountId === null}
+              version={ledger.version}
+              accountId={accountId}
               onSuggestRule={(id) =>
                 void ledger.run(async () => {
                   const s = await window.api.rules.suggestRule(id)

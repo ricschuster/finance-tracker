@@ -11,17 +11,31 @@ export function TransactionList({
   run,
   showAccount,
   onSuggestRule,
+  selected,
+  onToggle,
+  onToggleAll,
 }: Pick<LedgerState, 'transactions' | 'accounts' | 'categories' | 'run'> & {
   showAccount: boolean
   onSuggestRule: (transactionId: number) => void
+  selected: ReadonlySet<number>
+  onToggle: (id: number) => void
+  onToggleAll: () => void
 }) {
   const [splitting, setSplitting] = useState<number | null>(null)
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
-  if (transactions.length === 0) return <p className="muted">No transactions yet.</p>
+  if (transactions.length === 0) return <p className="muted">No matching transactions.</p>
   return (
     <table>
       <thead>
         <tr>
+          <th>
+            <input
+              type="checkbox"
+              aria-label="Select all shown"
+              checked={transactions.every((t) => selected.has(t.id))}
+              onChange={onToggleAll}
+            />
+          </th>
           <th>Date</th>
           {showAccount && <th>Account</th>}
           <th>Payee</th>
@@ -39,6 +53,14 @@ export function TransactionList({
           return (
             <Fragment key={t.id}>
               <tr>
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={`Select transaction ${t.id}`}
+                    checked={selected.has(t.id)}
+                    onChange={() => onToggle(t.id)}
+                  />
+                </td>
                 <td>{t.date}</td>
                 {showAccount && <td>{accountName.get(t.accountId)}</td>}
                 <td>{t.payee || t.rawDescription || <span className="muted">(none)</span>}</td>
@@ -113,7 +135,7 @@ export function TransactionList({
               </tr>
               {splitting === t.id && (
                 <tr>
-                  <td colSpan={showAccount ? 8 : 7}>
+                  <td colSpan={showAccount ? 9 : 8}>
                     <SplitEditor
                       transaction={t}
                       categories={categories}

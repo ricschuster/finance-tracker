@@ -8,6 +8,8 @@ export interface LedgerState {
   categories: Category[]
   transactions: Transaction[]
   error: string | null
+  /** Bumps after every reload, so views with their own queries can refetch. */
+  version: number
   /** Run a mutation, then reload; surfaces any error in `error`. */
   run: (action: () => Promise<unknown>) => Promise<boolean>
   clearError: () => void
@@ -19,6 +21,7 @@ export function useLedger(accountId: number | null): LedgerState {
   const [categories, setCategories] = useState<Category[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [version, setVersion] = useState(0)
 
   const reload = useCallback(async () => {
     const { ledger } = window.api
@@ -30,6 +33,7 @@ export function useLedger(accountId: number | null): LedgerState {
     setAccounts(a)
     setCategories(c)
     setTransactions(t)
+    setVersion((v) => v + 1)
   }, [accountId])
 
   useEffect(() => {
@@ -51,7 +55,15 @@ export function useLedger(accountId: number | null): LedgerState {
     [reload],
   )
 
-  return { accounts, categories, transactions, error, run, clearError: () => setError(null) }
+  return {
+    accounts,
+    categories,
+    transactions,
+    error,
+    version,
+    run,
+    clearError: () => setError(null),
+  }
 }
 
 /** Electron wraps IPC errors as "Error invoking remote method '...': Error: <message>". */

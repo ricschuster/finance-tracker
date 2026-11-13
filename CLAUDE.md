@@ -16,7 +16,7 @@ See `docs/design/00_project_brief.md`.
 
 ## Project status
 
-Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Milestone 3 (import) is built: CSV, OFX/QFX and Mint CSV, mapping profiles, duplicate detection, undo, history, and unverified bank presets (see `docs/design/04_import.md`). Milestone 4 (rules) is built in core, IPC and a basic editor (see `docs/design/05_rules.md`). Next: verify bank presets against real export headers, click through the import and rules UI, then milestone 5, search.
+Milestones 1 (skeleton) and 2 (ledger: schema, core queries, IPC, transaction list, transfers, splits) are built. Milestone 3 (import) is built: CSV, OFX/QFX and Mint CSV, mapping profiles, duplicate detection, undo, history, and unverified bank presets (see `docs/design/04_import.md`). Milestone 4 (rules) is built in core, IPC and a basic editor (see `docs/design/05_rules.md`). Milestone 5 (search) is built: filters, saved searches and bulk actions (see `docs/design/06_search.md`). Next: verify bank presets against real export headers, click through the import, rules and search UI, then milestone 6, reports and dashboard.
 
 ## Scope
 

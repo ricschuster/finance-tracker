@@ -322,7 +322,7 @@ export function deleteTransaction(db: Database.Database, id: number): void {
   })()
 }
 
-interface TxnRow {
+export interface TxnRow {
   id: number
   account_id: number
   date: string
@@ -335,7 +335,7 @@ interface TxnRow {
   edited_fields: string
 }
 
-function hydrate(db: Database.Database, rows: TxnRow[]): Transaction[] {
+export function hydrate(db: Database.Database, rows: TxnRow[]): Transaction[] {
   if (rows.length === 0) return []
   const ids = rows.map((r) => r.id)
   const marks = ids.map(() => '?').join(',')

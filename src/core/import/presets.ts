@@ -44,7 +44,7 @@ export const PRESETS: readonly Preset[] = [
     config: {
       hasHeader: true,
       headerRow: 0,
-      date: { column: 'Transaction date', format: 'MM/DD/YYYY' },
+      date: { column: 'Date', format: 'MM/DD/YYYY' },
       amount: { mode: 'signed', column: 'Amount' },
       description: ['Name', 'Memo'],
     },

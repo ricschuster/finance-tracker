@@ -50,6 +50,15 @@ the period picker (month, quarter, year, custom), the account filter and the
 four reports. Charts are plain CSS bars, no charting dependency. Clicking a
 category opens the Transactions tab filtered to that category and period.
 
+## Dashboard customization
+
+A Customize button on the dashboard opens a checklist of sections: income,
+spending, net and savings rate, the uncategorized reminder, top categories,
+last six months and biggest this month. The choice is saved as JSON in the
+`settings` table (`dashboard_widgets`), so it travels with database export and
+restore. Everything is shown until the user changes it; display order is fixed.
+Logic is in `src/core/reports/widgets.ts`.
+
 ## Out of scope
 
 Budgets, forecasts, net worth over time, and report export (milestone 7 covers

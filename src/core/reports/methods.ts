@@ -6,6 +6,8 @@ export const REPORTS_METHODS = [
   'topPayees',
   'biggestTransactions',
   'dashboard',
+  'getDashboardWidgets',
+  'setDashboardWidgets',
 ] as const
 
 export type ReportsMethod = (typeof REPORTS_METHODS)[number]

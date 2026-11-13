@@ -98,3 +98,48 @@ export function listAccountsWithBalance(
 ): AccountWithBalance[] {
   return listAccounts(db, opts).map((a) => ({ ...a, balance: accountBalance(db, a.id) }))
 }
+
+export interface AccountImpact {
+  /** Transactions in the account itself. */
+  transactions: number
+  /** Transfer halves in other accounts that would be deleted with them. */
+  transferPeers: number
+}
+
+export function accountImpact(db: Database.Database, id: number): AccountImpact {
+  if (!getAccount(db, id)) throw new Error(`Account ${id} not found`)
+  const own = db.prepare('SELECT COUNT(*) AS n FROM transactions WHERE account_id = ?').get(id) as {
+    n: number
+  }
+  const peers = db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM transactions
+       WHERE account_id <> ? AND id IN (SELECT transfer_peer_id FROM transactions WHERE account_id = ?)`,
+    )
+    .get(id, id) as { n: number }
+  return { transactions: own.n, transferPeers: peers.n }
+}
+
+/**
+ * Delete an account. An account with transactions is only deleted when `deleteTransactions` is
+ * set, and then its transactions go with it, including the other half of any transfer.
+ */
+export function deleteAccount(
+  db: Database.Database,
+  id: number,
+  opts: { deleteTransactions?: boolean } = {},
+): void {
+  db.transaction(() => {
+    const impact = accountImpact(db, id)
+    if (impact.transactions > 0 && !opts.deleteTransactions) {
+      throw new Error(
+        `Account has ${impact.transactions} transactions. Archive it, or confirm deleting them too.`,
+      )
+    }
+    db.prepare(
+      'DELETE FROM transactions WHERE id IN (SELECT transfer_peer_id FROM transactions WHERE account_id = ? AND transfer_peer_id IS NOT NULL)',
+    ).run(id)
+    db.prepare('DELETE FROM transactions WHERE account_id = ?').run(id)
+    db.prepare('DELETE FROM accounts WHERE id = ?').run(id)
+  })()
+}

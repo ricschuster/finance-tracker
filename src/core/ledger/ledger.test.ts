@@ -6,6 +6,8 @@ import {
   createAccount,
   categoryUsage,
   createCategory,
+  deleteAccount,
+  accountImpact,
   createTransaction,
   createTransfer,
   deleteCategory,
@@ -53,6 +55,28 @@ describe('accounts', () => {
     createTransaction(db, { accountId: chq, date: '2026-11-02', amount: 50_000 })
     expect(accountBalance(db, chq)).toBe(100_000 - 2_500 + 50_000)
     expect(accountBalance(db, visa)).toBe(0)
+  })
+})
+
+describe('account deletion', () => {
+  it('deletes an empty account', () => {
+    deleteAccount(db, visa)
+    expect(listAccounts(db, { includeArchived: true }).map((a) => a.name)).toEqual(['Chequing'])
+  })
+
+  it('refuses an account with transactions unless told to delete them', () => {
+    createTransaction(db, { accountId: visa, date: '2026-01-05', amount: -100 })
+    expect(accountImpact(db, visa)).toEqual({ transactions: 1, transferPeers: 0 })
+    expect(() => deleteAccount(db, visa)).toThrow(/transactions/)
+    deleteAccount(db, visa, { deleteTransactions: true })
+    expect(listAccounts(db).map((a) => a.name)).toEqual(['Chequing'])
+  })
+
+  it('removes the other half of a transfer too', () => {
+    createTransfer(db, { fromAccountId: chq, toAccountId: visa, date: '2026-01-06', amount: 5_000 })
+    expect(accountImpact(db, visa)).toEqual({ transactions: 1, transferPeers: 1 })
+    deleteAccount(db, visa, { deleteTransactions: true })
+    expect(accountBalance(db, chq)).toBe(100_000)
   })
 })
 

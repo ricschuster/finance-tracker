@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 import type { RuleInput } from '../../core/rules/types'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
+import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
+import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { CategoriesEditor } from './CategoriesEditor'
 import { Dashboard } from './Dashboard'
 import { DataPanel } from './DataPanel'
@@ -60,6 +62,17 @@ export function App() {
     if (u) openCategory(u.id, '', '')
   }
 
+  const [archived, setArchived] = useState<AccountWithBalance[]>([])
+  useEffect(() => {
+    void window.api.ledger
+      .listAccounts({ includeArchived: true })
+      .then((all) => setArchived(all.filter((a) => a.archived)))
+  }, [ledger.version])
+  const selected =
+    accountId === null
+      ? undefined
+      : (ledger.accounts.find((a) => a.id === accountId) ??
+        archived.find((a) => a.id === accountId))
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
 
   return (
@@ -90,6 +103,28 @@ export function App() {
             </li>
           ))}
         </ul>
+        {archived.length > 0 && (
+          <details>
+            <summary>Archived ({archived.length})</summary>
+            <ul>
+              {archived.map((a) => (
+                <li key={a.id}>
+                  <button
+                    type="button"
+                    aria-current={accountId === a.id}
+                    onClick={() => setAccountId(a.id)}
+                  >
+                    <span>{a.name}</span>
+                    <span>{formatCents(a.balance)}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </details>
+        )}
+        {selected && (
+          <AccountEditor account={selected} run={ledger.run} onDeleted={() => setAccountId(null)} />
+        )}
         <AccountForm run={ledger.run} />
         <p className="muted">{info ? `v${info.version}, schema ${info.schemaVersion}` : ''}</p>
       </nav>

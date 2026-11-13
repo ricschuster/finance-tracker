@@ -4,6 +4,7 @@ import { migrate } from '../db/migrations'
 import { createLedgerHandlers } from '../ledger/handlers'
 import { createReportsHandlers } from './handlers'
 import { REPORTS_METHODS } from './methods'
+import { DASHBOARD_WIDGETS } from './widgets'
 import { monthPeriod, monthsBetween, previousPeriod, quarterPeriod, yearPeriod } from './period'
 
 function setup() {
@@ -201,5 +202,21 @@ describe('reports', () => {
   it('returns structured-clone-safe results', () => {
     const { reports } = setup()
     expect(() => structuredClone(reports.dashboard('2026-11-10'))).not.toThrow()
+  })
+})
+
+describe('dashboard widgets', () => {
+  it('shows everything by default and saves a chosen subset in display order', () => {
+    const { reports } = setup()
+    expect(reports.getDashboardWidgets()).toEqual(DASHBOARD_WIDGETS.map((w) => w.id))
+    expect(reports.setDashboardWidgets(['trend', 'income'])).toEqual(['income', 'trend'])
+    expect(reports.getDashboardWidgets()).toEqual(['income', 'trend'])
+    expect(reports.setDashboardWidgets([])).toEqual([])
+    expect(reports.getDashboardWidgets()).toEqual([])
+  })
+
+  it('rejects unknown widgets', () => {
+    const { reports } = setup()
+    expect(() => reports.setDashboardWidgets(['nope'])).toThrow(/Unknown/)
   })
 })

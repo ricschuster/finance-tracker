@@ -2,6 +2,9 @@
 export const IMPORT_METHODS = [
   'inspectCsv',
   'inspectOfx',
+  'inspectMint',
+  'previewMint',
+  'commitMint',
   'previewImport',
   'commitImport',
   'listImportBatches',

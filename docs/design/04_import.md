@@ -235,34 +235,7 @@ user change the choice for possible matches in bulk or one by one.
 
 Each step is usable on its own and goes through the session PR.
 
-Status (2026-11-13): steps 1 to 4 are built, plus RBC, TD and Tangerine
-presets (marked unverified in the UI until checked against a real export
-header). Not built: the Mint CSV profile with its per-account mapping step,
-and presets for other banks.
-
-## Testing
-
-- Parser: quotes, embedded newlines, BOM, odd delimiters, ragged rows.
-- Dates: every format, ambiguity detection, invalid dates such as 30 Feb.
-- Amounts: all three modes, flipped sign, decimal comma, blanks and
-  parentheses.
-- Match: re-importing the same file adds nothing; two identical rows in a
-  file against one in the ledger add exactly one; manual entry matches a
-  posted row three days later; merge never overwrites an edited field.
-- Commit: a failure part way leaves nothing behind; undo restores the ledger
-  exactly.
-- Property test: for random ledgers and files, importing a file twice equals
-  importing it once.
-- Fixtures are synthetic. Real bank files are never committed.
-
-## Decisions
-
-Answered by the owner on 2026-11-13:
-
-1. Banks: RBC, TD and Tangerine first, then other major Canadian banks as
-   real export headers become available. The generic wizard covers the rest.
-2. A possible match defaults to Merge (subject to the rule in Duplicates).
-3. The window for possible matches and transfers is three days.
-4. Use `csv-parse` instead of an own parser.
-5. Foreign currency rows are skipped with a warning by default, with a
-   per-import override to import at face value.
+Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
+the per-account mapping step, and RBC, TD and Tangerine presets (marked
+unverified in the UI until checked against a real export header). Not built:
+presets for other banks, and Mint label-to-tag import.

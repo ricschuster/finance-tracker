@@ -74,6 +74,14 @@ interface TransferBefore {
   newLines: Array<{ id: number; category_id: number }>
 }
 
+/** Category ids are matched by name (unique across the tree, case-insensitive); unknown names give null. */
+export function categoryIdByName(db: Database.Database, name: string): number | null {
+  const r = db
+    .prepare('SELECT id FROM categories WHERE name = ? COLLATE NOCASE')
+    .get(name.trim()) as { id: number } | undefined
+  return r?.id ?? null
+}
+
 function transferCategoryId(db: Database.Database): number {
   return (
     db.prepare("SELECT id FROM categories WHERE name = 'Transfer' AND parent_id IS NULL").get() as {
@@ -142,6 +150,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         continue
       }
 
+      const categoryId = c.categoryName ? categoryIdByName(db, c.categoryName) : null
       const id = createTransaction(db, {
         accountId: input.accountId,
         date: c.date,
@@ -150,6 +159,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         payee: c.payee,
         notes: c.memo,
         status: c.status,
+        ...(categoryId !== null && { lines: [{ categoryId, amount: c.amount }] }),
       })
       db.prepare('UPDATE transactions SET external_id = ?, import_batch_id = ? WHERE id = ?').run(
         c.externalId,

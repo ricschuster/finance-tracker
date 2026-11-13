@@ -37,6 +37,9 @@ export interface Candidate {
   memo: string
   externalId: string | null
   status: 'pending' | 'cleared'
+  /** Mint only: the source account name and category name. */
+  accountName?: string
+  categoryName?: string
 }
 
 export interface RowIssue {

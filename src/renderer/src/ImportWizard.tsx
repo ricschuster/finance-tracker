@@ -4,6 +4,7 @@ import { guessDateFormat, type DateFormat } from '../../core/import/dates'
 import type {
   ChoiceOverride,
   CsvInspection,
+  MintInspection,
   ImportPreview,
   PreviewItem,
 } from '../../core/import/handlers'
@@ -11,6 +12,7 @@ import type { ForeignPolicy, MappingProfile } from '../../core/import/mapping'
 import type { PossibleChoice } from '../../core/import/match'
 import { PRESETS } from '../../core/import/presets'
 import { formatCents } from '../../core/money'
+import { MintImport } from './MintImport'
 import type { LedgerState } from './useLedger'
 
 const DATE_FORMATS: DateFormat[] = [
@@ -151,7 +153,8 @@ export function ImportWizard({
   const [file, setFile] = useState<{ name: string; text: string } | null>(null)
   const [info, setInfo] = useState<CsvInspection | null>(null)
   const [accountId, setAccountId] = useState<number | null>(null)
-  const [format, setFormat] = useState<'csv' | 'ofx'>('csv')
+  const [format, setFormat] = useState<'csv' | 'ofx' | 'mint'>('csv')
+  const [mint, setMint] = useState<MintInspection | null>(null)
   const [map, setMap] = useState<MapState | null>(null)
   const [profileId, setProfileId] = useState<number | null>(null)
   const [saveName, setSaveName] = useState('')
@@ -214,6 +217,15 @@ export function ImportWizard({
         setOverrides({})
         setResult(null)
         setUndone(false)
+        setError(null)
+        setStep('map')
+        return
+      }
+      const mintInfo = await window.api.importer.inspectMint(f.text)
+      if (mintInfo) {
+        setFile(f)
+        setFormat('mint')
+        setMint(mintInfo)
         setError(null)
         setStep('map')
         return
@@ -314,6 +326,7 @@ export function ImportWizard({
     setResult(null)
     setSaveName('')
     setFormat('csv')
+    setMint(null)
     setForeign('skip')
     setError(null)
   }
@@ -349,6 +362,17 @@ export function ImportWizard({
             Choose file...
           </button>
         </div>
+      )}
+
+      {step === 'map' && format === 'mint' && mint && file && (
+        <MintImport
+          file={file}
+          inspection={mint}
+          accounts={accounts}
+          run={run}
+          onBack={reset}
+          onFinished={onFinished}
+        />
       )}
 
       {step === 'map' && format === 'ofx' && (

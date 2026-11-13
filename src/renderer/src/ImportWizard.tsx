@@ -150,6 +150,7 @@ export function ImportWizard({
   const [file, setFile] = useState<{ name: string; text: string } | null>(null)
   const [info, setInfo] = useState<CsvInspection | null>(null)
   const [accountId, setAccountId] = useState<number | null>(null)
+  const [format, setFormat] = useState<'csv' | 'ofx'>('csv')
   const [map, setMap] = useState<MapState | null>(null)
   const [profileId, setProfileId] = useState<number | null>(null)
   const [saveName, setSaveName] = useState('')
@@ -176,10 +177,16 @@ export function ImportWizard({
       ),
     )
 
-  const loadPreview = (p: MappingProfile, pol: ForeignPolicy) => {
+  const loadPreview = (p: MappingProfile | null, pol: ForeignPolicy) => {
     if (!file || !account) return
     window.api.importer
-      .previewImport({ text: file.text, profile: p, accountId: account.id, foreign: pol })
+      .previewImport({
+        text: file.text,
+        format,
+        ...(p && { profile: p }),
+        accountId: account.id,
+        foreign: pol,
+      })
       .then((r) => {
         setPreview(r)
         setError(null)
@@ -189,14 +196,29 @@ export function ImportWizard({
 
   // Refresh the preview whenever the mapping, account or foreign policy changes.
   useEffect(() => {
-    if (step === 'preview' && profile) loadPreview(profile, foreign)
+    if (step === 'preview' && (profile || format === 'ofx')) loadPreview(profile, foreign)
   }, [step, profile, foreign, account?.id])
 
   async function chooseFile() {
     try {
       const f = await window.api.importer.pickFile()
       if (!f) return
+      const ofx = await window.api.importer.inspectOfx(f.text)
+      if (ofx) {
+        setFile(f)
+        setFormat('ofx')
+        setInfo(null)
+        setMap(null)
+        setProfileId(null)
+        setOverrides({})
+        setResult(null)
+        setUndone(false)
+        setError(null)
+        setStep('map')
+        return
+      }
       const i = await window.api.importer.inspectCsv(f.text)
+      setFormat('csv')
       setFile(f)
       setInfo(i)
       setOverrides({})
@@ -242,10 +264,10 @@ export function ImportWizard({
   }
 
   async function doImport() {
-    if (!file || !profile || !account) return
+    if (!file || (!profile && format !== 'ofx') || !account) return
     let pid = profileId
     const ok = await run(async () => {
-      if (saveName.trim()) {
+      if (saveName.trim() && profile) {
         pid = await window.api.importer.saveImportProfile({
           id: profileId ?? undefined,
           name: saveName.trim(),
@@ -256,7 +278,8 @@ export function ImportWizard({
       }
       const r = await window.api.importer.commitImport({
         text: file.text,
-        profile,
+        format,
+        ...(profile && { profile }),
         accountId: account.id,
         foreign,
         sourceName: file.name,
@@ -289,6 +312,7 @@ export function ImportWizard({
     setOverrides({})
     setResult(null)
     setSaveName('')
+    setFormat('csv')
     setForeign('skip')
     setError(null)
   }
@@ -326,7 +350,33 @@ export function ImportWizard({
         </div>
       )}
 
-      {step === 'map' && info && map && (
+      {step === 'map' && format === 'ofx' && (
+        <div>
+          <p>
+            <strong>{file?.name}</strong> is an OFX/QFX file, so no column mapping is needed.
+          </p>
+          <label>
+            Import into{' '}
+            <select value={account?.id} onChange={(e) => setAccountId(Number(e.target.value))}>
+              {accounts.map((a: AccountWithBalance) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <p>
+            <button type="button" onClick={reset}>
+              Back
+            </button>{' '}
+            <button type="button" onClick={() => setStep('preview')}>
+              Preview
+            </button>
+          </p>
+        </div>
+      )}
+
+      {step === 'map' && format === 'csv' && info && map && (
         <div>
           <p>
             <strong>{file?.name}</strong>, {info.totalRows} rows.
@@ -620,16 +670,18 @@ export function ImportWizard({
               </ul>
             </details>
           )}
-          <p>
-            <label>
-              Save this mapping as{' '}
-              <input
-                value={saveName}
-                onChange={(e) => setSaveName(e.target.value)}
-                placeholder="optional profile name"
-              />
-            </label>
-          </p>
+          {format === 'csv' && (
+            <p>
+              <label>
+                Save this mapping as{' '}
+                <input
+                  value={saveName}
+                  onChange={(e) => setSaveName(e.target.value)}
+                  placeholder="optional profile name"
+                />
+              </label>
+            </p>
+          )}
           <p>
             <button type="button" onClick={() => setStep('map')}>
               Back

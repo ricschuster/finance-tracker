@@ -82,4 +82,16 @@ describe('import handlers', () => {
     })
     expect(prev.warnings.join(' ')).toMatch(/inverted/)
   })
+
+  it('imports OFX without a profile, keeps FITIDs, and warns on foreign currency', () => {
+    const { accountId, api } = setup()
+    const ofx = `<OFX><CURDEF>USD<ACCTID>1<STMTTRN><DTPOSTED>20260108<TRNAMT>-45.00<FITID>F1<NAME>SAFEWAY</STMTTRN></OFX>`
+    expect(api.inspectOfx(ofx)).toMatchObject({ currency: 'USD', count: 1 })
+    expect(api.inspectOfx('a,b\n1,2')).toBeNull()
+    const prev = api.previewImport({ text: ofx, format: 'ofx', accountId })
+    expect(prev.warnings.join(' ')).toMatch(/USD/)
+    const req = { text: ofx, format: 'ofx' as const, accountId, sourceName: 'x.qfx' }
+    expect(api.commitImport(req)).toMatchObject({ added: 1 })
+    expect(api.commitImport(req)).toMatchObject({ added: 0 })
+  })
 })

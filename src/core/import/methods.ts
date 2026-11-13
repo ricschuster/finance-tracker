@@ -1,6 +1,7 @@
 /** Names of the import API methods shared by main (handlers) and preload (bridge). No imports on purpose. */
 export const IMPORT_METHODS = [
   'inspectCsv',
+  'inspectOfx',
   'previewImport',
   'commitImport',
   'listImportBatches',

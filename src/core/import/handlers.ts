@@ -1,5 +1,6 @@
 import type Database from 'better-sqlite3'
 import { commitImport, loadExistingForMatching, type ImportFormat } from './commit'
+import { looksLikeOfx, parseOfx } from './ofx'
 import { guessHeaderRow, parseCsv, type Delimiter } from './csv'
 import { getBatchRows, listBatches, previewUndo, undoBatch } from './history'
 import {
@@ -39,7 +40,10 @@ export interface CsvInspection {
 export interface PreviewRequest {
   text: string
   delimiter?: Delimiter
-  profile: MappingProfile
+  /** Required for CSV; ignored for OFX/QFX. */
+  profile?: MappingProfile
+  /** Defaults to `csv`; `ofx` covers OFX and QFX files. */
+  format?: ImportFormat
   accountId: number
   foreign?: ForeignPolicy
 }
@@ -114,12 +118,26 @@ function today(): string {
   return new Date().toISOString().slice(0, 10)
 }
 
+export interface OfxInspection {
+  accountId: string | null
+  currency: string | null
+  count: number
+}
+
 function buildPlan(db: Database.Database, req: PreviewRequest) {
-  const profile = validateProfile(req.profile)
-  const { rows } = parseCsv(req.text, req.delimiter)
-  const mapped = mapRows(rows, profile, { foreign: req.foreign ?? 'skip' })
+  let mapped: { candidates: Candidate[]; errors: RowIssue[]; skippedForeign: RowIssue[] }
+  let currency: string | null = null
+  if (req.format === 'ofx') {
+    const s = parseOfx(req.text)
+    currency = s.currency
+    mapped = { candidates: s.candidates, errors: s.errors, skippedForeign: [] }
+  } else {
+    if (!req.profile) throw new Error('A mapping profile is required for CSV')
+    const { rows } = parseCsv(req.text, req.delimiter)
+    mapped = mapRows(rows, validateProfile(req.profile), { foreign: req.foreign ?? 'skip' })
+  }
   const plan = planImport(req.accountId, mapped.candidates, loadExistingForMatching(db))
-  return { mapped, plan }
+  return { mapped, plan, currency }
 }
 
 /** The import API as plain functions over a database; arguments and results are structured-clone safe. */
@@ -139,8 +157,19 @@ export function createImportHandlers(db: Database.Database) {
       }
     },
 
+    /** Detects OFX/QFX; returns null for anything else (treat as CSV). */
+    inspectOfx: (text: string): OfxInspection | null => {
+      if (!looksLikeOfx(text)) return null
+      const s = parseOfx(text)
+      return {
+        accountId: s.accountId,
+        currency: s.currency,
+        count: s.candidates.length + s.errors.length,
+      }
+    },
+
     previewImport: (req: PreviewRequest): ImportPreview => {
-      const { mapped, plan } = buildPlan(db, req)
+      const { mapped, plan, currency } = buildPlan(db, req)
       const account = db.prepare('SELECT type FROM accounts WHERE id = ?').get(req.accountId) as
         { type: 'checking' | 'savings' | 'credit_card' | 'cash' | 'loan' | 'other' } | undefined
       if (!account) throw new Error(`Account ${req.accountId} not found`)
@@ -152,7 +181,12 @@ export function createImportHandlers(db: Database.Database) {
         })),
         errors: mapped.errors,
         skippedForeign: mapped.skippedForeign,
-        warnings: sanityWarnings(plan, account.type, today()),
+        warnings: [
+          ...(currency && currency !== 'CAD'
+            ? [`This file is in ${currency}, not CAD. Amounts would be imported as CAD.`]
+            : []),
+          ...sanityWarnings(plan, account.type, today()),
+        ],
         summary: summarisePlan(plan),
       }
     },

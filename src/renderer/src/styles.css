@@ -151,3 +151,29 @@ th.num {
     background: #2b2b4a;
   }
 }
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+.tabs button[aria-selected='true'] {
+  font-weight: 600;
+  background: #e5eefc;
+}
+.mapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px 16px;
+  margin-bottom: 16px;
+}
+.mapper label {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  gap: 2px;
+}
+.sample {
+  overflow-x: auto;
+  max-width: 100%;
+  font-size: 12px;
+}

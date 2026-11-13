@@ -45,9 +45,9 @@ changes, so main keeps no wizard state.
 
 ## Parsing CSV
 
-- Own small RFC 4180 parser (quotes, doubled quotes, embedded newlines),
-  roughly 80 lines with tests, instead of a dependency. Revisit if real files
-  prove it inadequate.
+- Use the `csv-parse` dependency (sync API) for RFC 4180 handling: quotes,
+  doubled quotes, embedded newlines, ragged rows. Our code wraps it and adds
+  decoding, delimiter sniffing and the limits below.
 - Strip a UTF-8 BOM. Decode as UTF-8, falling back to Windows-1252 when the
   bytes are not valid UTF-8 (older bank exports).
 - Sniff the delimiter among comma, semicolon and tab from the first lines.
@@ -89,10 +89,18 @@ step. Headerless files match on column count plus the profile the user picks
 for that account.
 
 Built-in presets ship for common banks, but every one is only a starting
-mapping the user can edit. Layouts I believe are right and must be verified
-against the user's own exports before shipping: RBC (headered, with a CAD$
-and USD$ column), TD and CIBC (headerless, separate debit and credit
-columns). Fixtures are synthetic files in that shape, never real data.
+mapping the user can edit. The generic mapping wizard covers any other bank,
+so presets are a convenience, not a requirement. First presets: RBC
+(headered, with a CAD$ and USD$ column), TD (headerless, separate debit and
+credit columns) and Tangerine. CIBC, BMO, Scotiabank and others follow once a
+real export header has been checked. Layouts written from memory must be
+verified against the user's own exports (header row and date format only)
+before shipping. Fixtures are synthetic files in that shape, never real data.
+
+**Foreign currency columns**: rows whose amount is in a foreign currency
+column (for example RBC USD$) are skipped with a warning by default. The
+preview offers a per-import override to import them at face value, labelled
+as treating the amount as account currency. No conversion in this milestone.
 
 ## Sanity checks in the preview
 
@@ -227,27 +235,7 @@ user change the choice for possible matches in bulk or one by one.
 
 Each step is usable on its own and goes through the session PR.
 
-## Testing
-
-- Parser: quotes, embedded newlines, BOM, odd delimiters, ragged rows.
-- Dates: every format, ambiguity detection, invalid dates such as 30 Feb.
-- Amounts: all three modes, flipped sign, decimal comma, blanks and
-  parentheses.
-- Match: re-importing the same file adds nothing; two identical rows in a
-  file against one in the ledger add exactly one; manual entry matches a
-  posted row three days later; merge never overwrites an edited field.
-- Commit: a failure part way leaves nothing behind; undo restores the ledger
-  exactly.
-- Property test: for random ledgers and files, importing a file twice equals
-  importing it once.
-- Fixtures are synthetic. Real bank files are never committed.
-
-## Open questions
-
-1. Which banks and card issuers do you actually use? That decides which
-   presets and fixtures come first.
-2. Should a possible match default to Merge (proposed) or to Import as new?
-3. Is a three-day window right for possible matches and transfers?
-4. Own CSV parser (proposed) or a dependency such as `csv-parse`?
-5. Rows in a foreign currency column (RBC has a USD$ column): skip with a
-   warning (proposed) or import at face value?
+Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
+the per-account mapping step, and RBC, TD and Tangerine presets (marked
+unverified in the UI until checked against a real export header). Not built:
+presets for other banks, and Mint label-to-tag import.

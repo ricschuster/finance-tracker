@@ -1,4 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { BackupSettings, CsvExportFilter } from '../core/backup'
+import type { DataStatus } from '../main/data-ipc'
 import type { LedgerApi } from '../core/ledger/handlers'
 import type { ImportApi } from '../core/import/handlers'
 import { IMPORT_METHODS } from '../core/import/methods'
@@ -49,6 +51,20 @@ const importer = {
     ipcRenderer.invoke('import:pickFile'),
 }
 
+const data = {
+  status: (): Promise<DataStatus> => ipcRenderer.invoke('data:status'),
+  setSettings: (s: BackupSettings): Promise<DataStatus> =>
+    ipcRenderer.invoke('data:setSettings', s),
+  chooseFolder: (): Promise<string | null> => ipcRenderer.invoke('data:chooseFolder'),
+  backupNow: (): Promise<DataStatus> => ipcRenderer.invoke('data:backupNow'),
+  exportDatabase: (): Promise<string | null> => ipcRenderer.invoke('data:exportDatabase'),
+  exportCsv: (filter?: CsvExportFilter): Promise<string | null> =>
+    ipcRenderer.invoke('data:exportCsv', filter),
+  restoreDatabase: (): Promise<
+    { status: 'cancelled' | 'restarting' } | { status: 'invalid'; reason: string }
+  > => ipcRenderer.invoke('data:restoreDatabase'),
+}
+
 const api = {
   getAppInfo: (): Promise<{ version: string; schemaVersion: number }> =>
     ipcRenderer.invoke('app:info'),
@@ -57,6 +73,7 @@ const api = {
   rules,
   search,
   reports,
+  data,
 }
 
 export type Api = typeof api

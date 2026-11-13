@@ -404,7 +404,7 @@ export function ImportWizard({
       {step === 'map' && format === 'csv' && info && map && (
         <div>
           <p>
-            <strong>{file?.name}</strong>, {info.totalRows} rows.
+            <strong>{file?.name}</strong>, {info.totalRows} lines.
             {info.matchedProfile && ` Matched saved profile "${info.matchedProfile.name}".`}
           </p>
           <div className="mapper">

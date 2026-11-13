@@ -264,22 +264,13 @@ export function TransactionSearch({
           </label>
           <label>
             Category
-            <span>
-              <input
-                type="checkbox"
-                aria-label="Filter by category"
-                checked={filters.categoryId !== 0}
-                onChange={(e) => set('categoryId', e.target.checked ? (categories[0]?.id ?? 0) : 0)}
-              />{' '}
-              {filters.categoryId !== 0 && (
-                <CategorySelect
-                  aria-label="Category filter"
-                  categories={categories}
-                  value={filters.categoryId}
-                  onChange={(id) => set('categoryId', id)}
-                />
-              )}
-            </span>
+            <CategorySelect
+              aria-label="Category filter"
+              anyLabel="Any category"
+              categories={categories}
+              value={filters.categoryId}
+              onChange={(id) => set('categoryId', id)}
+            />
           </label>
           <label>
             Uncategorized only

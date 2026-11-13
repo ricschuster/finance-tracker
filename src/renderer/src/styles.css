@@ -194,3 +194,12 @@ th.num {
     background: #243552;
   }
 }
+td.nowrap {
+  white-space: nowrap;
+}
+td.actions {
+  white-space: nowrap;
+}
+td select {
+  max-width: 170px;
+}

@@ -143,7 +143,6 @@ export function RulesEditor({
     onDraftUsed()
   }, [draft, onDraftUsed])
 
-  const defaultCategory = categories[0]?.id ?? 0
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setEditing((e) => (e ? { ...e, form: { ...e.form, [key]: value } } : e))
 
@@ -368,22 +367,13 @@ export function RulesEditor({
           </label>
           <label>
             Set category
-            <span>
-              <input
-                type="checkbox"
-                aria-label="Set a category"
-                checked={editing.form.categoryId !== 0}
-                onChange={(e) => set('categoryId', e.target.checked ? defaultCategory : 0)}
-              />{' '}
-              {editing.form.categoryId !== 0 && (
-                <CategorySelect
-                  aria-label="Category"
-                  categories={categories}
-                  value={editing.form.categoryId}
-                  onChange={(id) => set('categoryId', id)}
-                />
-              )}
-            </span>
+            <CategorySelect
+              aria-label="Category"
+              anyLabel="Do not set"
+              categories={categories}
+              value={editing.form.categoryId}
+              onChange={(id) => set('categoryId', id)}
+            />
           </label>
           <label>
             Add tags (comma separated)

@@ -61,7 +61,7 @@ export function TransactionList({
                     onChange={() => onToggle(t.id)}
                   />
                 </td>
-                <td>{t.date}</td>
+                <td className="nowrap">{t.date}</td>
                 {showAccount && <td>{accountName.get(t.accountId)}</td>}
                 <td>{t.payee || t.rawDescription || <span className="muted">(none)</span>}</td>
                 <td>
@@ -95,7 +95,7 @@ export function TransactionList({
                 </td>
                 <td>{t.status}</td>
                 <td className={`num ${t.amount < 0 ? 'neg' : 'pos'}`}>{formatCents(t.amount)}</td>
-                <td>
+                <td className="actions">
                   {!isTransfer && (
                     <button
                       type="button"

@@ -235,6 +235,11 @@ user change the choice for possible matches in bulk or one by one.
 
 Each step is usable on its own and goes through the session PR.
 
+Status (2026-11-13): steps 1 to 4 are built, plus RBC, TD and Tangerine
+presets (marked unverified in the UI until checked against a real export
+header). Not built: the Mint CSV profile with its per-account mapping step,
+and presets for other banks.
+
 ## Testing
 
 - Parser: quotes, embedded newlines, BOM, odd delimiters, ragged rows.

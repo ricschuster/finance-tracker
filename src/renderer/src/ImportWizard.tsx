@@ -9,6 +9,7 @@ import type {
 } from '../../core/import/handlers'
 import type { ForeignPolicy, MappingProfile } from '../../core/import/mapping'
 import type { PossibleChoice } from '../../core/import/match'
+import { PRESETS } from '../../core/import/presets'
 import { formatCents } from '../../core/money'
 import type { LedgerState } from './useLedger'
 
@@ -389,6 +390,24 @@ export function ImportWizard({
                 {accounts.map((a: AccountWithBalance) => (
                   <option key={a.id} value={a.id}>
                     {a.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Start from a preset
+              <select
+                value=""
+                onChange={(e) => {
+                  const p = PRESETS.find((x) => x.id === e.target.value)
+                  if (p) setMap(fromProfile(info, p.config))
+                }}
+              >
+                <option value="">(choose)</option>
+                {PRESETS.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.verified ? '' : ' (unverified layout)'}
                   </option>
                 ))}
               </select>

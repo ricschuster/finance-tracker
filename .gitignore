@@ -8,6 +8,7 @@ Thumbs.db
 # Build output (adjust for your stack: dist/, build/, out/, target/, __pycache__/, etc.)
 node_modules/
 dist/
+out/
 coverage/
 *.tsbuildinfo
 __pycache__/

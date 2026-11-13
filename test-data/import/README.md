@@ -8,8 +8,9 @@ two identical Safeway lines in `generic.csv`) to exercise duplicate detection.
 - `debit-credit.csv`: separate debit and credit columns, `MM/DD/YYYY` dates.
 - `statement.ofx` and `statement.qfx`: same OFX content with fitids, to test
   fitid-based duplicate detection by importing one after the other.
-- `mint.csv`: Mint export layout with two accounts and an unknown category
-  ("Obscure Category") that should land in Uncategorized.
+- `mint.csv`: Mint export layout with two accounts and categories the demo
+  database does not have (Dentist, Obscure Category, Paycheck, Television)
+  that should land in Uncategorized.
 
 ## Large files
 

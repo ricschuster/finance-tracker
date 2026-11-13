@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountForm } from './AccountForm'
+import { ImportHistory } from './ImportHistory'
+import { ImportWizard } from './ImportWizard'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionList } from './TransactionList'
@@ -17,6 +19,7 @@ declare global {
 export function App() {
   const [accountId, setAccountId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
+  const [view, setView] = useState<'ledger' | 'import' | 'history'>('ledger')
   const ledger = useLedger(accountId)
 
   useEffect(() => {
@@ -65,20 +68,45 @@ export function App() {
             </button>
           </div>
         )}
-        <TransactionForm
-          accounts={ledger.accounts}
-          categories={ledger.categories}
-          run={ledger.run}
-          accountId={accountId}
-        />
-        <TransferForm accounts={ledger.accounts} run={ledger.run} />
-        <TransactionList
-          transactions={ledger.transactions}
-          accounts={ledger.accounts}
-          categories={ledger.categories}
-          run={ledger.run}
-          showAccount={accountId === null}
-        />
+        <div className="tabs" role="tablist">
+          {(['ledger', 'import', 'history'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => setView(v)}
+            >
+              {v === 'ledger' ? 'Transactions' : v === 'import' ? 'Import' : 'Import history'}
+            </button>
+          ))}
+        </div>
+        {view === 'import' && (
+          <ImportWizard
+            accounts={ledger.accounts}
+            run={ledger.run}
+            onFinished={() => setView('ledger')}
+          />
+        )}
+        {view === 'history' && <ImportHistory run={ledger.run} />}
+        {view === 'ledger' && (
+          <>
+            <TransactionForm
+              accounts={ledger.accounts}
+              categories={ledger.categories}
+              run={ledger.run}
+              accountId={accountId}
+            />
+            <TransferForm accounts={ledger.accounts} run={ledger.run} />
+            <TransactionList
+              transactions={ledger.transactions}
+              accounts={ledger.accounts}
+              categories={ledger.categories}
+              run={ledger.run}
+              showAccount={accountId === null}
+            />
+          </>
+        )}
       </main>
     </div>
   )

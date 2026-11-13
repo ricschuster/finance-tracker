@@ -4,6 +4,7 @@ import { mkdirSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { openDatabase } from '../core/db/open'
 import { seedDemoData } from '../core/dev/seed'
+import { registerImportIpc } from './import-ipc'
 import { registerLedgerIpc } from './ledger-ipc'
 
 function createWindow(): void {
@@ -37,6 +38,7 @@ void app.whenReady().then(() => {
     schemaVersion: db.pragma('user_version', { simple: true }) as number,
   }))
   registerLedgerIpc(db)
+  registerImportIpc(db)
   createWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

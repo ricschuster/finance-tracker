@@ -57,35 +57,22 @@ export function getCategoryByName(
   return row && toCategory(row)
 }
 
-/** Create a category. A child inherits its parent's kind; only one level of nesting is allowed. */
+/** Create a category. Categories are flat: there are no subcategories. */
 export function createCategory(
   db: Database.Database,
-  input: { name: string; parentId?: number | null; kind?: CategoryKind },
+  input: { name: string; kind?: CategoryKind },
 ): number {
   const name = input.name.trim()
   if (!name) throw new Error('Category name is required')
-  let kind: CategoryKind = input.kind ?? 'expense'
-  if (input.parentId != null) {
-    const parent = db
-      .prepare('SELECT parent_id, kind FROM categories WHERE id = ?')
-      .get(input.parentId) as { parent_id: number | null; kind: CategoryKind } | undefined
-    if (!parent) throw new Error(`Parent category ${input.parentId} not found`)
-    if (parent.parent_id !== null) throw new Error('Categories nest only one level deep')
-    kind = parent.kind
-  }
   const sort = (
-    db
-      .prepare(
-        'SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM categories WHERE COALESCE(parent_id, 0) = ?',
-      )
-      .get(input.parentId ?? 0) as {
+    db.prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM categories').get() as {
       n: number
     }
   ).n
   return Number(
     db
-      .prepare('INSERT INTO categories (parent_id, name, kind, sort_order) VALUES (?, ?, ?, ?)')
-      .run(input.parentId ?? null, name, kind, sort).lastInsertRowid,
+      .prepare('INSERT INTO categories (name, kind, sort_order) VALUES (?, ?, ?)')
+      .run(name, input.kind ?? 'expense', sort).lastInsertRowid,
   )
 }
 
@@ -100,8 +87,8 @@ export function renameCategory(db: Database.Database, id: number, name: string):
 }
 
 /**
- * Delete a category. Its transaction lines move to `reassignTo` (default Uncategorized);
- * children are deleted with it only if empty of lines, otherwise they are also reassigned.
+ * Delete a category. Its transaction lines move to `reassignTo` (default Uncategorized).
+ * Rules and saved searches that point at it are repointed the same way.
  */
 export function deleteCategory(db: Database.Database, id: number, reassignTo?: number): void {
   db.transaction(() => {
@@ -116,19 +103,59 @@ export function deleteCategory(db: Database.Database, id: number, reassignTo?: n
           .prepare("SELECT id FROM categories WHERE name = 'Uncategorized' AND parent_id IS NULL")
           .get() as { id: number }
       ).id
-    const ids = [
-      id,
-      ...(
-        db.prepare('SELECT id FROM categories WHERE parent_id = ?').all(id) as { id: number }[]
-      ).map((r) => r.id),
-    ]
-    if (ids.includes(target)) throw new Error('Cannot reassign lines to the category being deleted')
-    const marks = ids.map(() => '?').join(',')
-    db.prepare(`UPDATE transaction_lines SET category_id = ? WHERE category_id IN (${marks})`).run(
-      target,
-      ...ids,
-    )
-    db.prepare('DELETE FROM categories WHERE parent_id = ?').run(id)
+    moveReferences(db, id, target)
     db.prepare('DELETE FROM categories WHERE id = ?').run(id)
   })()
+}
+
+/**
+ * Merge `fromId` into `intoId`: lines, rule actions and saved searches move over and `fromId` is
+ * deleted. Both must be non-system and of the same kind, so income never silently becomes spending.
+ */
+export function mergeCategory(db: Database.Database, fromId: number, intoId: number): void {
+  db.transaction(() => {
+    if (fromId === intoId) throw new Error('Cannot merge a category into itself')
+    const get = db.prepare('SELECT is_system, kind FROM categories WHERE id = ?')
+    const from = get.get(fromId) as { is_system: number; kind: CategoryKind } | undefined
+    const into = get.get(intoId) as { is_system: number; kind: CategoryKind } | undefined
+    if (!from) throw new Error(`Category ${fromId} not found`)
+    if (!into) throw new Error(`Category ${intoId} not found`)
+    if (from.is_system) throw new Error('System categories cannot be merged')
+    if (from.kind !== into.kind) throw new Error('Categories of different kinds cannot be merged')
+    moveReferences(db, fromId, intoId)
+    db.prepare('DELETE FROM categories WHERE id = ?').run(fromId)
+  })()
+}
+
+/** Point lines, rule actions and saved searches at `to` instead of `from`. */
+function moveReferences(db: Database.Database, from: number, to: number): void {
+  db.prepare('UPDATE transaction_lines SET category_id = ? WHERE category_id = ?').run(to, from)
+  const rules = db.prepare('SELECT id, actions FROM rules').all() as {
+    id: number
+    actions: string
+  }[]
+  for (const r of rules) {
+    const actions = JSON.parse(r.actions) as Array<{ type: string; categoryId?: number }>
+    let changed = false
+    for (const a of actions) {
+      if (a.type === 'setCategory' && a.categoryId === from) {
+        a.categoryId = to
+        changed = true
+      }
+    }
+    if (changed) {
+      db.prepare('UPDATE rules SET actions = ? WHERE id = ?').run(JSON.stringify(actions), r.id)
+    }
+  }
+  const searches = db.prepare('SELECT id, query FROM saved_searches').all() as {
+    id: number
+    query: string
+  }[]
+  for (const sv of searches) {
+    const q = JSON.parse(sv.query) as { categoryId?: number }
+    if (q.categoryId === from) {
+      q.categoryId = to
+      db.prepare('UPDATE saved_searches SET query = ? WHERE id = ?').run(JSON.stringify(q), sv.id)
+    }
+  }
 }

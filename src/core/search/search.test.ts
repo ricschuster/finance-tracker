@@ -60,7 +60,7 @@ describe('searchTransactions', () => {
       desc: 'SHELL 9',
       notes: 'road trip',
       tags: ['vacation'],
-      category: 'Gas & Fuel',
+      category: 'Auto & Transport',
     })
     expect(ids({ text: 'safeway' })).toEqual([a])
     expect(ids({ text: 'SAFE way' })).toEqual([a])
@@ -81,13 +81,13 @@ describe('searchTransactions', () => {
   })
 
   it('filters by account, category tree, tag, status, dates and amounts', () => {
-    const a = txn({ date: '2026-01-10', amount: -500, category: 'Restaurants', tags: ['x'] })
-    const b = txn({ date: '2026-02-10', amount: 20000, accountId: card, category: 'Paycheque' })
+    const a = txn({ date: '2026-01-10', amount: -500, category: 'Food & Dining', tags: ['x'] })
+    const b = txn({ date: '2026-02-10', amount: 20000, accountId: card, category: 'Income' })
     const c = txn({ date: '2026-03-10', amount: -9000, status: 'pending' })
     expect(ids({ accountIds: [card] })).toEqual([b])
     expect(ids({ accountIds: [chq, card] })).toEqual([c, b, a])
     expect(ids({ categoryId: cat('Food & Dining') })).toEqual([a])
-    expect(ids({ categoryId: cat('Restaurants') })).toEqual([a])
+    expect(ids({ categoryId: cat('Food & Dining') })).toEqual([a])
     expect(ids({ tag: 'x' })).toEqual([a])
     expect(ids({ status: 'pending' })).toEqual([c])
     expect(ids({ from: '2026-02-01', to: '2026-02-28' })).toEqual([b])
@@ -167,11 +167,11 @@ describe('bulkUpdate', () => {
     })
     const r = bulkUpdate(db, [a, split, outId, 9999], {
       type: 'setCategory',
-      categoryId: cat('Gifts'),
+      categoryId: cat('Gifts & Donations'),
     })
     expect(r).toEqual({ changed: 1, skipped: 3 })
     const t = getTransaction(db, a)!
-    expect(t.lines[0]!.categoryName).toBe('Gifts')
+    expect(t.lines[0]!.categoryName).toBe('Gifts & Donations')
     expect(t.editedFields).toContain('categories')
     expect(getTransaction(db, split)!.lines).toHaveLength(2)
     expect(() => bulkUpdate(db, [a], { type: 'setCategory', categoryId: 99999 })).toThrow(
@@ -185,9 +185,9 @@ describe('bulkUpdate', () => {
       actions: [{ type: 'setCategory', categoryId: cat('Groceries') }],
     })
     const a = txn({ desc: 'A' })
-    bulkUpdate(db, [a], { type: 'setCategory', categoryId: cat('Gifts') })
+    bulkUpdate(db, [a], { type: 'setCategory', categoryId: cat('Gifts & Donations') })
     applyRules(db)
-    expect(getTransaction(db, a)!.lines[0]!.categoryName).toBe('Gifts')
+    expect(getTransaction(db, a)!.lines[0]!.categoryName).toBe('Gifts & Donations')
   })
 
   it('adds and removes tags case insensitively and sets status', () => {

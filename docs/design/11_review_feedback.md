@@ -6,6 +6,13 @@ change scope need a decision before work starts (see Decisions).
 
 ## 1. Fixed category set, no subcategories
 
+Status: built (migration 8 flattens, `mergeCategory`, flat Categories tab). The
+existing 15 top-level starter categories are kept as the editable defaults
+instead of being replaced by `Category N` placeholders, so nothing a user has
+already renamed is lost. Colours and icons (item 2) are not built yet. Mint
+category names that were children (for example `Restaurants`) now import as
+Uncategorized and are listed as unknown in the preview.
+
 Comment: no subcategories, 10 to 15 categories in total, our own.
 
 Today: categories can have a parent (Categories tab, milestone after MVP).

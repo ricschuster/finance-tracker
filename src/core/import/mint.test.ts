@@ -9,7 +9,7 @@ import { looksLikeMint, mapMint } from './mint'
 
 const csv = `Date,Description,Original Description,Amount,Transaction Type,Category,Account Name,Labels,Notes
 01/08/2026,Safeway,SAFEWAY #4412,45.00,debit,Groceries,Chequing,,weekly shop
-01/09/2026,Payroll,PAYROLL ACME,2000.00,credit,Paycheque,Chequing,,
+01/09/2026,Payroll,PAYROLL ACME,2000.00,credit,Income,Chequing,,
 01/10/2026,Shop,SHOP 1,10.00,debit,Mystery Category,Visa,,
 bad,x,x,1,debit,,Visa,,
 `
@@ -70,7 +70,7 @@ describe('Mint', () => {
     ])
     expect(getTransaction(db, manual)!.rawDescription).toBe('SAFEWAY #4412')
     const [payroll] = getBatchRows(db, done[0]!.batchId)
-    expect(getTransaction(db, payroll!.id)!.lines[0]!.categoryName).toBe('Paycheque')
+    expect(getTransaction(db, payroll!.id)!.lines[0]!.categoryName).toBe('Income')
     const [shop] = getBatchRows(db, done[1]!.batchId)
     expect(getTransaction(db, shop!.id)!.lines[0]!.categoryName).toBe('Uncategorized')
     expect(api.commitMint({ ...req, sourceName: 'mint.csv' }).every((d) => d.added === 0)).toBe(

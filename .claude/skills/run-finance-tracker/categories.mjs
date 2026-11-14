@@ -1,4 +1,4 @@
-// Click through the Categories tab: add, add subcategory, rename, delete with reassign.
+// Click through the Categories tab: add, merge, rename, delete with reassign.
 import { launch } from './lib.mjs'
 
 const { app, page, errors, shot } = await launch()
@@ -14,12 +14,19 @@ await page.getByLabel('New category name').fill('Pets')
 await page.locator('.category-add').getByRole('button', { name: 'Add', exact: true }).click()
 await page.waitForTimeout(400)
 
+console.log('NO SUBCATEGORY BUTTON:', (await page.getByRole('button', { name: 'Add subcategory' }).count()) === 0)
 const pets = page.locator('li.category-parent', { hasText: 'Pets' })
-await pets.getByRole('button', { name: 'Add subcategory' }).click()
-await page.getByLabel('New subcategory of Pets').fill('Vet')
+await page.getByRole('button', { name: 'Add category' }).click()
+await page.getByLabel('New category name').fill('Vet')
 await page.locator('.category-add').getByRole('button', { name: 'Add', exact: true }).click()
 await page.waitForTimeout(400)
-console.log('ADDED:', (await pets.innerText()).replace(/\n+/g, ' | '))
+const vet = page.locator('li.category-parent', { hasText: 'Vet' })
+await vet.getByRole('button', { name: 'Merge into...' }).click()
+await page.getByLabel('Merge into').selectOption({ label: 'Pets' })
+await shot('categories-merge')
+await page.getByRole('button', { name: 'Merge', exact: true }).click()
+await page.waitForTimeout(400)
+console.log('MERGED:', !/Vet/.test(await tree()) && /Pets/.test(await tree()))
 
 await pets.getByRole('button', { name: 'Rename' }).first().click()
 await page.getByLabel('New name for Pets').fill('Animals')

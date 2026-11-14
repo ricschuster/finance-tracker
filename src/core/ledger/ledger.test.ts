@@ -11,6 +11,7 @@ import {
   createTransaction,
   createTransfer,
   deleteCategory,
+  mergeCategory,
   deleteTransaction,
   getCategoryByName,
   getTransaction,
@@ -81,15 +82,13 @@ describe('account deletion', () => {
 })
 
 describe('categories', () => {
-  it('creates children that inherit kind and limits nesting to one level', () => {
-    const income = getCategoryByName(db, 'Income')!.id
-    const child = createCategory(db, { name: 'Salary', parentId: income })
-    expect(listCategories(db).find((c) => c.id === child)).toMatchObject({
+  it('creates flat categories with unique names and takes no parent', () => {
+    const id = createCategory(db, { name: 'Salary', kind: 'income' })
+    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({
       kind: 'income',
-      parentId: income,
+      parentId: null,
     })
-    expect(() => createCategory(db, { name: 'Deep', parentId: child })).toThrow(/one level/)
-    expect(() => createCategory(db, { name: 'salary', parentId: income })).toThrow(/UNIQUE/)
+    expect(() => createCategory(db, { name: 'salary' })).toThrow(/UNIQUE/)
   })
 
   it('counts transaction lines per category', () => {
@@ -109,17 +108,48 @@ describe('categories', () => {
     expect(() => deleteCategory(db, unc)).toThrow(/System/)
   })
 
-  it('reassigns lines to Uncategorized on delete, including children', () => {
-    const child = createCategory(db, { name: 'Coffee', parentId: dining })
+  it('reassigns lines to Uncategorized on delete', () => {
+    const child = createCategory(db, { name: 'Coffee' })
     const id = createTransaction(db, {
       accountId: chq,
       date: '2026-11-03',
       amount: -400,
       lines: [{ categoryId: child, amount: -400 }],
     })
-    deleteCategory(db, dining)
+    deleteCategory(db, child)
     expect(getTransaction(db, id)!.lines[0]!.categoryName).toBe('Uncategorized')
-    expect(getCategoryByName(db, 'Food & Dining')).toBeUndefined()
+    expect(getCategoryByName(db, 'Coffee')).toBeUndefined()
+  })
+
+  it('merges a category into another, moving lines, rules and saved searches', () => {
+    const coffee = createCategory(db, { name: 'Coffee' })
+    const id = createTransaction(db, {
+      accountId: chq,
+      date: '2026-11-03',
+      amount: -400,
+      lines: [{ categoryId: coffee, amount: -400 }],
+    })
+    db.prepare("INSERT INTO rules (position, conditions, actions) VALUES (1, '[]', ?)").run(
+      JSON.stringify([{ type: 'setCategory', categoryId: coffee }]),
+    )
+    db.prepare("INSERT INTO saved_searches (name, query) VALUES ('c', ?)").run(
+      JSON.stringify({ categoryId: coffee, text: 'x' }),
+    )
+    mergeCategory(db, coffee, dining)
+    expect(getTransaction(db, id)!.lines[0]!.categoryName).toBe('Food & Dining')
+    expect(getCategoryByName(db, 'Coffee')).toBeUndefined()
+    const rule = db.prepare('SELECT actions FROM rules').get() as { actions: string }
+    expect(JSON.parse(rule.actions)).toEqual([{ type: 'setCategory', categoryId: dining }])
+    const saved = db.prepare('SELECT query FROM saved_searches').get() as { query: string }
+    expect(JSON.parse(saved.query)).toEqual({ categoryId: dining, text: 'x' })
+  })
+
+  it('refuses to merge system, mismatched or identical categories', () => {
+    const unc = getCategoryByName(db, 'Uncategorized')!.id
+    const income = getCategoryByName(db, 'Income')!.id
+    expect(() => mergeCategory(db, unc, dining)).toThrow(/System/)
+    expect(() => mergeCategory(db, dining, income)).toThrow(/different kinds/)
+    expect(() => mergeCategory(db, dining, dining)).toThrow(/itself/)
   })
 })
 
@@ -294,7 +324,7 @@ describe('transfers', () => {
 
 describe('listTransactions', () => {
   beforeEach(() => {
-    const coffee = createCategory(db, { name: 'Coffee', parentId: dining })
+    const coffee = createCategory(db, { name: 'Coffee' })
     createTransaction(db, {
       accountId: chq,
       date: '2026-10-30',
@@ -323,8 +353,9 @@ describe('listTransactions', () => {
     expect(listTransactions(db, { tag: 'work' }).map((t) => t.amount)).toEqual([-200])
   })
 
-  it('category filter includes children', () => {
-    expect(listTransactions(db, { categoryId: dining }).map((t) => t.amount)).toEqual([-200])
+  it('filters by category', () => {
+    const coffee = getCategoryByName(db, 'Coffee')!.id
+    expect(listTransactions(db, { categoryId: coffee }).map((t) => t.amount)).toEqual([-200])
     expect(listTransactions(db, { categoryId: groceries }).map((t) => t.amount)).toEqual([-100])
   })
 

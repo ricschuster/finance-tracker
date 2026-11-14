@@ -37,7 +37,7 @@ reports cover spending by category, income vs expenses, trends and top payees.
 2. Transactions: add, edit, delete, split across categories, notes, tags,
    pending/reconciled status. Transfers between accounts, with match
    suggestions on import.
-3. Categories: two levels with a Mint-like starter set, editable, plus tags.
+3. Categories: a short flat list (10 to 15, no subcategories), editable, with merge, plus tags.
 4. Import: CSV with saved per-bank column mapping, OFX/QFX, Mint export CSV.
    Exact duplicates skipped, near matches flagged.
 5. Rules: text match on payee/description (contains, starts with, regex),

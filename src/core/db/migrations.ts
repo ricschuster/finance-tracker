@@ -214,6 +214,35 @@ CREATE INDEX import_batches_hash ON import_batches (account_id, file_hash);
 `
 
 /**
+ * Migration 8: flat categories. Every child is merged into its parent: its lines, rule actions and
+ * saved searches are pointed at the parent, then the child is deleted. See docs/design/11_review_feedback.md.
+ */
+const FLAT_CATEGORIES = `
+UPDATE transaction_lines
+   SET category_id = (SELECT parent_id FROM categories WHERE id = category_id)
+ WHERE category_id IN (SELECT id FROM categories WHERE parent_id IS NOT NULL);
+
+UPDATE rules SET actions = (
+  SELECT json_group_array(
+    CASE
+      WHEN json_extract(a.value, '$.type') = 'setCategory'
+       AND json_extract(a.value, '$.categoryId') IN (SELECT id FROM categories WHERE parent_id IS NOT NULL)
+      THEN json_set(a.value, '$.categoryId',
+             (SELECT parent_id FROM categories WHERE id = json_extract(a.value, '$.categoryId')))
+      ELSE json(a.value)
+    END)
+  FROM json_each(rules.actions) a
+);
+
+UPDATE saved_searches
+   SET query = json_set(query, '$.categoryId',
+         (SELECT parent_id FROM categories WHERE id = json_extract(query, '$.categoryId')))
+ WHERE json_extract(query, '$.categoryId') IN (SELECT id FROM categories WHERE parent_id IS NOT NULL);
+
+DELETE FROM categories WHERE parent_id IS NOT NULL;
+`
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -229,6 +258,7 @@ export const migrations: readonly string[] = [
   RULES_SCHEMA,
   SEARCH_SCHEMA,
   FILE_HASH_SCHEMA,
+  FLAT_CATEGORIES,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

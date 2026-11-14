@@ -10,6 +10,7 @@ import {
   categoryUsage,
   createCategory,
   deleteCategory,
+  mergeCategory,
   listCategories,
   renameCategory,
 } from './categories'
@@ -42,6 +43,7 @@ export function createLedgerHandlers(db: Database.Database) {
     createCategory: (input: Parameters<typeof createCategory>[1]) => createCategory(db, input),
     renameCategory: (id: number, name: string) => renameCategory(db, id, name),
     deleteCategory: (id: number, reassignTo?: number) => deleteCategory(db, id, reassignTo),
+    mergeCategory: (fromId: number, intoId: number) => mergeCategory(db, fromId, intoId),
     categoryUsage: () => categoryUsage(db),
     listTags: () => listTags(db),
     getTransaction: (id: number) => getTransaction(db, id) ?? null,

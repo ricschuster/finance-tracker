@@ -109,7 +109,7 @@ export const MANUAL: ManualSection[] = [
       'Rules clean up the payee, set the category and add tags automatically. Each rule has conditions (all must be true) and actions.',
       {
         list: [
-          'Conditions: the bank description or payee contains, starts with, equals or matches a pattern; the amount is within a range or is an expense or income; the transaction is in a particular account.',
+          'Conditions: the bank description or payee contains, starts with, equals, matches a pattern or is similar to some text (every word must appear, in any order, ignoring numbers and allowing a typo in longer words, so SAFWAY STORE 9 still matches safeway); the amount is within a range or is an expense or income; the transaction is in a particular account.',
           'Actions: set the payee, set the category, add tags.',
           'Rules run in order and the first one that matches wins, so put specific rules above general ones. Disable a rule to pause it without deleting it.',
         ],

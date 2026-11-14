@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Rule operator "is similar to": fuzzy text matching that ignores store numbers and tolerates typos, so one rule covers SAFEWAY #4412 and SAFWAY STORE 9.
 - Changing a category in the import preview offers a toast to create a rule for that description, so the next import needs no pick. It saves straight away without leaving the wizard.
 - Import preview shows the category each new row will get and lets you change it. Rows are
   guessed from how earlier transactions with the same description were filed (at least 60%

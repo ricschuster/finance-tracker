@@ -1,5 +1,5 @@
 export type TextField = 'description' | 'payee'
-export type TextOp = 'contains' | 'starts_with' | 'equals' | 'regex'
+export type TextOp = 'contains' | 'starts_with' | 'equals' | 'regex' | 'similar'
 
 export type Condition =
   | { type: 'text'; field: TextField; op: TextOp; value: string }

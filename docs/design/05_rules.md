@@ -13,7 +13,8 @@ Conditions:
 
 - `text`: `field` is `description` (the raw bank text) or `payee` (the current
   payee); `op` is `contains`, `starts_with`, `equals` or `regex`. All are case
-  insensitive. Regex is validated when the rule is saved.
+  insensitive. Regex is validated when the rule is saved. `similar` is fuzzy: see
+  "Fuzzy matching" below.
 - `amount`: optional `direction` (`expense` or `income`), optional `min` and
   `max` in positive integer cents, compared against the absolute amount.
 - `account`: `accountId`.
@@ -27,6 +28,16 @@ Actions:
 "Mark transfer" from the brief is not an action: a transfer needs a peer, so
 transfers stay with import matching and the transfer form. Rules skip any
 transaction that is part of a transfer.
+
+## Fuzzy matching
+
+The `similar` operator (`core/rules/fuzzy.ts`) is for descriptions that vary: "SAFEWAY #4412",
+"SAFWAY STORE 9". Both sides are reduced to lowercase letter-only words, so digits, store
+numbers and punctuation vanish. Every word of the rule's text must match some word of the
+description, in any order. A word may differ by typos (an adjacent swap counts as one): none
+for words up to 4 letters, one for 5 to 8, two for 9 or more. It is a rule operator like the
+others, so it is visible in the editor and the preview shows what it would change. It never
+runs silently over history; the history guess for imports is unchanged.
 
 ## Locking
 

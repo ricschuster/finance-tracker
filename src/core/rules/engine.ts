@@ -8,6 +8,7 @@ import type {
   RuleTarget,
   TextOp,
 } from './types'
+import { fuzzyMatches } from './fuzzy'
 
 const regexCache = new Map<string, RegExp | null>()
 
@@ -27,6 +28,7 @@ export function compileRegex(pattern: string): RegExp | null {
 
 function textMatches(op: TextOp, haystack: string, needle: string): boolean {
   if (op === 'regex') return compileRegex(needle)?.test(haystack) ?? false
+  if (op === 'similar') return fuzzyMatches(haystack, needle)
   const h = haystack.toLowerCase()
   const n = needle.toLowerCase()
   if (n === '') return false

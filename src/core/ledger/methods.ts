@@ -23,6 +23,7 @@ export const LEDGER_METHODS = [
   'createTransfer',
   'findDuplicateGroups',
   'dismissDuplicateGroup',
+  'keepOneOfEach',
   'findTransferPairs',
   'linkTransferPair',
 ] as const

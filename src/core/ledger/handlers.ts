@@ -1,4 +1,4 @@
-import { dismissDuplicateGroup, findDuplicateGroups } from './duplicates'
+import { dismissDuplicateGroup, findDuplicateGroups, keepOneOfEach } from './duplicates'
 import { findTransferPairs, linkTransferPair } from './transferPairs'
 import type Database from 'better-sqlite3'
 import {
@@ -67,6 +67,7 @@ export function createLedgerHandlers(db: Database.Database) {
     findDuplicateGroups: (opts?: Parameters<typeof findDuplicateGroups>[1]) =>
       findDuplicateGroups(db, opts),
     dismissDuplicateGroup: (ids: number[]) => dismissDuplicateGroup(db, ids),
+    keepOneOfEach: (groups: number[][]) => keepOneOfEach(db, groups),
     findTransferPairs: () => findTransferPairs(db),
     linkTransferPair: (aId: number, bId: number) => linkTransferPair(db, aId, bId),
   } satisfies Record<LedgerMethod, (...args: never[]) => unknown>

@@ -166,9 +166,6 @@ function Shell() {
       : (ledger.accounts.find((a) => a.id === accountId) ??
         archived.find((a) => a.id === accountId))
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
-  const owing = ledger.accounts
-    .filter((a) => isLiability(a.type) && a.balance < 0)
-    .reduce((sum, a) => sum - a.balance, 0)
 
   const navView: View = view === 'history' ? 'import' : view
   const title =
@@ -196,9 +193,6 @@ function Shell() {
         >
           <Icon size={16} aria-hidden="true" />
           <span className="grow">{a.name}</span>
-          <span className={a.balance < 0 && !isLiability(a.type) ? 'amount neg' : 'amount'}>
-            {balanceText(a.type, a.balance)}
-          </span>
         </button>
       </li>
     )
@@ -233,7 +227,7 @@ function Shell() {
                             role="tab"
                             className="nav-item"
                             aria-selected={navView === v}
-                            onClick={() => go(v)}
+                            onClick={() => (v === 'ledger' ? pickAccount(null) : go(v))}
                           >
                             <Icon size={17} aria-hidden="true" />
                             <span className="grow">{label}</span>
@@ -259,11 +253,6 @@ function Shell() {
                     <span>Net worth</span>
                     <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
                   </div>
-                  {owing > 0 && (
-                    <div className="subtle" style={{ padding: '0 12px 6px', fontSize: 12 }}>
-                      Owing on cards and loans {formatCents(owing)}, already included in net worth
-                    </div>
-                  )}
                   <ul>
                     <li>
                       <button
@@ -492,7 +481,7 @@ function Shell() {
             open={dialog === 'duplicates'}
             onOpenChange={(o) => setDialog(o ? 'duplicates' : null)}
             title="Find duplicates"
-            description="Transactions in the same account with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
+            description="Transactions with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
             wide
           >
             {dialog === 'duplicates' && <DuplicatesForm run={ledger.run} />}

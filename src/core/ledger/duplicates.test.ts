@@ -8,6 +8,7 @@ import {
   deleteTransaction,
   dismissDuplicateGroup,
   findDuplicateGroups,
+  keepOneOfEach,
   textSimilarity,
 } from './index'
 
@@ -47,13 +48,13 @@ describe('findDuplicateGroups', () => {
     expect(findDuplicateGroups(db, { windowDays: 7 })).toHaveLength(0)
   })
 
-  it('needs the same account, same amount and similar text', () => {
+  it('with cross-account off, needs the same account, same amount and similar text', () => {
     const other = createAccount(db, { name: 'Savings', type: 'savings' })
     add('2026-03-01', -450, 'Corner Cafe')
     add('2026-03-01', -450, 'Corner Cafe', other)
     add('2026-03-01', -451, 'Corner Cafe')
     add('2026-03-01', -450, 'Gas Station')
-    expect(findDuplicateGroups(db)).toHaveLength(0)
+    expect(findDuplicateGroups(db, { crossAccount: false })).toHaveLength(0)
   })
 
   it('strict needs identical normalised text', () => {
@@ -135,5 +136,24 @@ describe('textSimilarity', () => {
   it('is 1 for equal, 0 for disjoint', () => {
     expect(textSimilarity('a b', 'a b')).toBe(1)
     expect(textSimilarity('a b', 'c d')).toBe(0)
+  })
+})
+
+describe('cross-account and keepOneOfEach', () => {
+  it('matches across accounts unless turned off', () => {
+    const other = createAccount(db, { name: 'Savings', type: 'savings' })
+    add('2026-03-01', -450, 'Corner Cafe')
+    add('2026-03-01', -450, 'Corner Cafe', other)
+    expect(findDuplicateGroups(db)).toHaveLength(1)
+    expect(findDuplicateGroups(db, { crossAccount: false })).toHaveLength(0)
+  })
+
+  it('always leaves the first row of each group', () => {
+    const a = add('2026-03-01', -450, 'Corner Cafe')
+    const b = add('2026-03-01', -450, 'Corner Cafe')
+    const c = add('2026-03-01', -450, 'Corner Cafe')
+    expect(keepOneOfEach(db, [[a, b, c], [a]])).toEqual([b, c])
+    expect(findDuplicateGroups(db)).toHaveLength(0)
+    expect(db.prepare('SELECT COUNT(*) AS n FROM transactions').get()).toEqual({ n: 1 })
   })
 })

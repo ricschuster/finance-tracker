@@ -109,12 +109,13 @@ export const MANUAL: ManualSection[] = [
       'Rules clean up the payee, set the category and add tags automatically. Each rule has conditions (all must be true) and actions.',
       {
         list: [
-          'Conditions: the bank description or payee contains, starts with, equals or matches a pattern; the amount is within a range or is an expense or income; the transaction is in a particular account.',
+          'Conditions: the bank description or payee contains, starts with, equals, matches a pattern or is similar to some text (every word must appear, in any order, ignoring numbers and allowing a typo in longer words, so SAFWAY STORE 9 still matches safeway); the amount is within a range or is an expense or income; the transaction is in a particular account.',
           'Actions: set the payee, set the category, add tags.',
           'Rules run in order and the first one that matches wins, so put specific rules above general ones. Disable a rule to pause it without deleting it.',
         ],
       },
-      'Each new row in the import preview shows the category it will get. A rule sets it first; otherwise, if the same kind of description was filed the same way (and direction) in your earlier transactions, the most common category is guessed and marked with how many agree, for example "guess 8/8". Pick another category on the row to override it. A rule with "Skip on import" leaves matching rows out; the preview marks them "Skipped by rule" and Import anyway brings one back.',
+      'The dashboard banner for uncategorized transactions opens the Review queue: one transaction at a time, with the category guessed from how the same description was filed before. Press Enter to apply it (or pick another category first), R to apply and also save a rule, S to skip; Open as list shows them all in Transactions instead.',
+      'Each new row in the import preview shows the category it will get. A rule sets it first; otherwise, if the same kind of description was filed the same way (and direction) in your earlier transactions, the most common category is guessed and marked with how many agree, for example "guess 8/8". Pick another category on the row to override it; a toast then offers to create a rule so the same description is filed that way next time. A rule with "Skip on import" leaves matching rows out; the preview marks them "Skipped by rule" and Import anyway brings one back.',
       'Rules run on every import. To fix your existing history, use the preview to see what would change, then apply. Applying twice changes nothing the second time.',
       'A rule never overwrites something you set by hand. If you correct a payee or category yourself, rules leave that field alone for that transaction.',
       'Changing a category in the transaction list shows a small notice at the bottom of the window offering to create a rule from that change. Ignore it and it goes away after about eight seconds; hover over it or tab into it to keep it open. It never blocks you, and the next category change replaces it.',
@@ -143,6 +144,7 @@ export const MANUAL: ManualSection[] = [
     blocks: [
       "The Dashboard is the home screen: this month's income, spending and net, your biggest categories, budget progress, the last six months and your largest transactions. Customize chooses which sections to show. If transactions need review, a reminder links straight to them. The Income, Spending and Net tiles, each category and each month in the six-month chart open the transactions behind that figure (transfers left out, as in the figures).",
       'Reports has a period picker (month, quarter, year or custom range) and an account filter. The reports are spending by category, income vs expenses with your savings rate, a monthly trend, top payees and biggest transactions.',
+      'The uncategorized banner on the Dashboard has a Review button that opens the Review queue (see Rules). Income, Spending and Net, and each month in the six-month chart, open the matching transactions.',
       'Click any category to jump to the matching transactions for that period.',
       'Transfers are never counted. Within the period, the lines of each category are added up: a category that nets negative counts as spending and one that nets positive counts as income. So a refund in Groceries reduces Groceries spending rather than counting as income, unless the refunds exceed the purchases in that period.',
     ],

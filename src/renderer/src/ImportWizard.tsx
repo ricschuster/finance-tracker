@@ -18,7 +18,8 @@ import { matchPresetByHeader, PRESETS } from '../../core/import/presets'
 import { formatCents } from '../../core/money'
 import { MintImport } from './MintImport'
 import { CategorySelect } from './CategorySelect'
-import { Empty, useConfirm } from './ui'
+import { suggestPattern } from '../../core/rules/pattern'
+import { Empty, useConfirm, useToast } from './ui'
 import type { LedgerState } from './useLedger'
 
 const DATE_FORMATS: DateFormat[] = [
@@ -229,6 +230,7 @@ export function ImportWizard({
   const [undone, setUndone] = useState(false)
   const [dragging, setDragging] = useState(false)
   const confirm = useConfirm()
+  const toast = useToast()
 
   const account = accounts.find((a) => a.id === (accountId ?? accounts[0]?.id))
   const profile = useMemo(() => (info && map ? toProfile(info, map) : null), [info, map])
@@ -358,8 +360,30 @@ export function ImportWizard({
     }))
   }
 
+  /** After a pick that differs from the guess, offer to save a rule so next time needs no pick. */
+  function offerRule(it: PreviewItem, categoryId: number) {
+    const current = overrides[it.candidate.line]?.categoryId ?? it.category?.id ?? 0
+    const pattern = suggestPattern(it.candidate.rawDescription)
+    if (!pattern || categoryId === 0 || categoryId === current) return
+    if (it.category?.source === 'rule') return
+    toast({
+      message: `Always file "${pattern}" under this category?`,
+      actionLabel: 'Create rule',
+      onAction: () =>
+        void run(async () => {
+          await window.api.rules.createRule({
+            name: pattern,
+            conditions: [{ type: 'text', field: 'description', op: 'contains', value: pattern }],
+            actions: [{ type: 'setCategory', categoryId }],
+          })
+          toast({ message: `Rule "${pattern}" saved. It applies to future imports.` })
+        }),
+    })
+  }
+
   /** A category picked in the preview; keeps whatever choice the row already has. */
   function setCategory(it: PreviewItem, categoryId: number) {
+    offerRule(it, categoryId)
     setOverrides((o) => ({
       ...o,
       [it.candidate.line]: {

@@ -117,7 +117,13 @@ function toInput(f: FormState): RuleInput {
 
 function describeCondition(c: Condition, accounts: LedgerState['accounts']): string {
   if (c.type === 'text') {
-    const op = { contains: 'contains', starts_with: 'starts with', equals: 'is', regex: 'matches' }
+    const op = {
+      contains: 'contains',
+      starts_with: 'starts with',
+      equals: 'is',
+      regex: 'matches',
+      similar: 'is similar to',
+    }
     return `${c.field === 'description' ? 'Description' : 'Payee'} ${op[c.op]} "${c.value}"`
   }
   if (c.type === 'account') {
@@ -518,6 +524,7 @@ export function RulesEditor({
                   >
                     <option value="contains">contains</option>
                     <option value="starts_with">starts with</option>
+                    <option value="similar">is similar to</option>
                     <option value="equals">equals</option>
                     <option value="regex">regular expression</option>
                   </select>

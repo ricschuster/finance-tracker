@@ -11,7 +11,7 @@ interface RuleRow {
   actions: string
 }
 
-const TEXT_OPS = ['contains', 'starts_with', 'equals', 'regex']
+const TEXT_OPS = ['contains', 'starts_with', 'equals', 'regex', 'similar']
 
 function isCents(n: unknown): n is number {
   return typeof n === 'number' && Number.isSafeInteger(n) && n >= 0

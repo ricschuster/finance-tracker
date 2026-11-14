@@ -44,6 +44,7 @@ import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionSearch } from './TransactionSearch'
 import { useTheme, type ThemePref } from './theme'
+import { ReviewQueue } from './ReviewQueue'
 import { ConfirmProvider, Dialog, ToastProvider, useAlert } from './ui'
 import { useLedger } from './useLedger'
 import './styles.css'
@@ -56,6 +57,7 @@ type View =
   | 'reports'
   | 'import'
   | 'history'
+  | 'review'
   | 'rules'
   | 'categories'
   | 'data'
@@ -85,6 +87,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
 
 const SUBTITLES: Partial<Record<View, string>> = {
   accounts: 'Balances across every account',
+  review: 'Step through uncategorized transactions',
   reports: 'Where your money comes from and goes',
   budgets: 'Monthly spending targets by category',
   import: 'Bring in transactions from your bank',
@@ -176,11 +179,13 @@ function Shell() {
       ? undefined
       : (ledger.accounts.find((a) => a.id === editId) ?? archived.find((a) => a.id === editId))
 
-  const navView: View = view === 'history' ? 'import' : view
+  const navView: View = view === 'history' ? 'import' : view === 'review' ? 'dashboard' : view
   const title =
     view === 'ledger'
       ? (selected?.name ?? 'Transactions')
-      : NAV.flatMap((g) => g.items).find((i) => i.view === navView)!.label
+      : view === 'review'
+        ? 'Review'
+        : NAV.flatMap((g) => g.items).find((i) => i.view === navView)!.label
   const subtitle =
     view === 'dashboard'
       ? new Date().toLocaleString('en-CA', { month: 'long', year: 'numeric' })
@@ -321,7 +326,7 @@ function Shell() {
                     accounts={ledger.accounts}
                     onOpenCategory={openCategory}
                     onOpenRange={openRange}
-                    onReviewUncategorized={reviewUncategorized}
+                    onReviewUncategorized={() => go('review')}
                     onOpenBudgets={() => go('budgets')}
                   />
                 )}
@@ -366,6 +371,13 @@ function Shell() {
                 {view === 'data' && <DataPanel run={ledger.run} />}
                 {view === 'help' && <Manual />}
                 {view === 'history' && <ImportHistory run={ledger.run} />}
+                {view === 'review' && (
+                  <ReviewQueue
+                    ledger={ledger}
+                    onOpenList={reviewUncategorized}
+                    onDone={() => go('dashboard')}
+                  />
+                )}
                 {view === 'ledger' && (
                   <TransactionSearch
                     accounts={[...ledger.accounts, ...archived]}

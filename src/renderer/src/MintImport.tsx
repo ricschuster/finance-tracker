@@ -2,6 +2,7 @@ import { CheckCircle2, FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Category } from '../../core/ledger/categories'
 import type { MintInspection, MintPreview } from '../../core/import/handlers'
+import { guessAccountType } from '../../core/import/accountType'
 import { formatCents } from '../../core/money'
 import type { LedgerState } from './useLedger'
 
@@ -58,7 +59,7 @@ export function MintImport({
             ? id
             : await window.api.ledger.createAccount({
                 name: name || `${inspection.source} account`,
-                type: 'checking',
+                type: guessAccountType(name),
               })
       }
       setMap(accountMap)
@@ -164,10 +165,10 @@ export function MintImport({
               </tbody>
             </table>
             <p className="subtle mint-note">
-              New accounts are created as chequing; change the type later.
-              {inspection.source === 'Wealthsimple'
-                ? ' Rows in a currency other than CAD are skipped.'
-                : ' Categories are matched by name.'}
+              Accounts you do not already have are created with a guessed type; change it later.
+              Categories are matched by name, and the ones you do not have are created.
+              {inspection.source === 'Wealthsimple' &&
+                ' Rows in a currency other than CAD are skipped.'}
             </p>
             <div className="wizard-footer">
               <button type="button" onClick={onBack}>
@@ -184,8 +185,8 @@ export function MintImport({
             {preview.unknownCategories.length > 0 && (
               <div className="notice mint-unknown" role="alert">
                 <p>
-                  Categories we do not have. Rows with these go to Uncategorized unless you map them
-                  to one of yours (remembered for later imports):
+                  Categories we do not have. They are created on import unless you map them to one
+                  of yours (remembered for later imports):
                 </p>
                 <div className="map-grid">
                   {preview.unknownCategories.map((name) => (
@@ -196,7 +197,7 @@ export function MintImport({
                         value={0}
                         onChange={(e) => void mapCategory(name, Number(e.target.value))}
                       >
-                        <option value={0}>Uncategorized</option>
+                        <option value={0}>Create as a new category</option>
                         {categories
                           .filter((c) => !c.isSystem)
                           .map((c) => (

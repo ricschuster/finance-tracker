@@ -1,10 +1,12 @@
 import type Database from 'better-sqlite3'
 import {
+  categoryIdByName,
   commitImport,
   loadExistingForMatching,
   type ImportDecision,
   type ImportFormat,
 } from './commit'
+import { createCategory } from '../ledger/categories'
 import { looksLikeMint, mapMint } from './mint'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
@@ -268,6 +270,24 @@ function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResul
   return null
 }
 
+/**
+ * Create the categories a file uses that we do not have (by name or alias), so rows keep the
+ * category they had in the old tool. A name only ever seen on money in becomes an income category.
+ */
+function createMissingCategories(db: Database.Database, candidates: Candidate[]): void {
+  const seen = new Map<string, { name: string; income: boolean }>()
+  for (const c of candidates) {
+    const name = c.categoryName?.trim()
+    if (!name || categoryIdByName(db, name) !== null) continue
+    const key = name.toLowerCase()
+    const entry = seen.get(key) ?? { name, income: true }
+    if (c.amount <= 0) entry.income = false
+    seen.set(key, entry)
+  }
+  for (const { name, income } of seen.values())
+    createCategory(db, { name, kind: income ? 'income' : 'expense' })
+}
+
 /** Split a multi-account file by account and plan each part against its mapped ledger account. */
 function mintGroups(db: Database.Database, req: MintRequest) {
   const { rows } = parseCsv(req.text)
@@ -398,8 +418,13 @@ export function createImportHandlers(db: Database.Database) {
     },
 
     commitMint: (req: MintRequest & { sourceName: string }) =>
-      db.transaction(() =>
-        mintGroups(db, req).map((g) => ({
+      db.transaction(() => {
+        const groups = mintGroups(db, req)
+        createMissingCategories(
+          db,
+          groups.flatMap((g) => g.candidates),
+        )
+        return groups.map((g) => ({
           mintName: g.mintName,
           ...commitImport(db, {
             accountId: g.accountId,
@@ -412,8 +437,8 @@ export function createImportHandlers(db: Database.Database) {
             rowsTotal:
               g.mapped.candidates.length + g.mapped.errors.length + g.mapped.skippedForeign.length,
           }),
-        })),
-      )(),
+        }))
+      })(),
 
     listImportBatches: () => listBatches(db),
     getImportBatchRows: (batchId: number) => getBatchRows(db, batchId),

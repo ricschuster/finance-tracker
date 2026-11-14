@@ -268,3 +268,10 @@ export has none, so set them on the account), budgets, and Owner/Reviewed
 fields. Transfers are not marked in the file, so Monarch's Transfer rows land
 as ordinary transactions unless matched at import. The layout is taken from
 the user's header only and is not yet checked against real rows.
+
+Accounts and categories are created from the file: an account with no
+same-named ledger account defaults to "Create a new account" with a type
+guessed from its name (`guessAccountType`), and categories we do not have are
+created at commit (income when every row with that name is money in, otherwise
+expense) unless the user maps them to an existing category in the preview.
+This applies to all multi-account imports (Mint, Monarch, Wealthsimple).

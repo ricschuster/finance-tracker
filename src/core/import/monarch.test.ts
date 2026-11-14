@@ -74,6 +74,15 @@ describe('Monarch', () => {
     expect(t.lines[0]!.categoryName).toBe('Groceries')
     const [card] = getBatchRows(db, done[1]!.batchId)
     expect(getTransaction(db, card!.id)!.status).toBe('pending')
+    const cats = db
+      .prepare("SELECT name, kind FROM categories WHERE name IN ('Mystery','Paychecks')")
+      .all()
+    expect(cats).toEqual(
+      expect.arrayContaining([
+        { name: 'Mystery', kind: 'expense' },
+        { name: 'Paychecks', kind: 'income' },
+      ]),
+    )
     expect(api.commitMint({ ...req, sourceName: 'monarch.csv' }).every((d) => d.added === 0)).toBe(
       true,
     )

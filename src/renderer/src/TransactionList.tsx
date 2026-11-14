@@ -16,7 +16,7 @@ import type { SortKey } from '../../core/search/query'
 import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import { SplitEditor } from './SplitEditor'
-import { ActionMenu, Empty, useConfirm } from './ui'
+import { ActionMenu, Empty, useConfirm, useToast } from './ui'
 import type { LedgerState } from './useLedger'
 
 const thisYear = String(new Date().getFullYear())
@@ -110,6 +110,7 @@ export function TransactionList({
   const [splitting, setSplitting] = useState<number | null>(null)
   const [noting, setNoting] = useState<number | null>(null)
   const confirm = useConfirm()
+  const toast = useToast()
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
   if (transactions.length === 0)
     return (
@@ -201,20 +202,14 @@ export function TransactionList({
                               window.api.ledger.updateTransaction(t.id, {
                                 lines: [{ categoryId, amount: t.amount, memo: single.memo }],
                               }),
-                            ).then(async (ok) => {
-                              if (
-                                ok &&
-                                (await confirm(
-                                  'Apply the same category to similar transactions automatically, now and on future imports.',
-                                  {
-                                    title: 'Make this a rule?',
-                                    confirmLabel: 'Create rule',
-                                    cancelLabel: 'Not now',
-                                  },
-                                ))
-                              ) {
-                                onSuggestRule(t.id)
-                              }
+                            ).then((ok) => {
+                              if (ok)
+                                toast({
+                                  message:
+                                    'Apply this category to similar transactions automatically?',
+                                  actionLabel: 'Create rule',
+                                  onAction: () => onSuggestRule(t.id),
+                                })
                             })
                           }
                         />

@@ -2604,3 +2604,31 @@ th.num .sort-head {
   padding: 8px;
   color: var(--text-3);
 }
+
+/* Toast: bottom-anchored, never blocks the page behind it */
+.toast-region {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 20px;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 80;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: min(640px, calc(100vw - 40px));
+  padding: 10px 12px 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: var(--shadow-lg);
+  animation: pop-in 0.14s ease-out;
+}
+.toast-message {
+  flex: 1;
+}

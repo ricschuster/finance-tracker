@@ -48,12 +48,13 @@ await page.waitForTimeout(200)
 await shot('split')
 await page.getByRole('button', { name: 'Cancel' }).click()
 
-// Category change prompts for a rule (in-app dialog)
+// Category change offers a rule in a non-blocking toast
 await pickCategory(page, /^Category for transaction/, 'Shopping', { nth: 2 })
-await confirmDialog.waitFor()
+const toast = page.getByTestId('toast')
+await toast.waitFor()
 await shot('rule-prompt')
-console.log('PROMPT:', (await confirmDialog.innerText()).replace(/\n+/g, ' | '))
-await confirmDialog.getByRole('button', { name: 'Not now' }).click()
+console.log('PROMPT:', (await toast.innerText()).replace(/\n+/g, ' | '))
+await toast.getByRole('button', { name: 'Dismiss' }).click()
 
 // Delete via menu + confirm
 await page.getByRole('row', { name: /Test Cafe/ }).getByRole('button', { name: /^Actions for transaction/ }).click()

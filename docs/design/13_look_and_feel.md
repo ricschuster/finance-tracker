@@ -89,7 +89,7 @@ avoid a flash. System is the default.
 - Data: cards for export and restore, CSV export and automatic backups (on or
   off pill, last backup, count, settings form).
 
-## Category picker, and notes (session feedback)
+## Category picker, notes and toast (session feedback)
 
 - Category picker: `CategorySelect` is a searchable combobox (button plus a filter box and
   listbox) used for every category choice. Filtering is `filterCategoryOptions` in
@@ -100,3 +100,6 @@ avoid a flash. System is the default.
 - Notes: `transactions.notes` is edited from the row menu (Add or Edit note) in an inline
   row, shown as a note icon next to the payee with the text as tooltip, searched by the
   main search box and written to the CSV export. Rules do not match on notes.
+- Toast: changing a category in the list no longer opens a dialog. A bottom toast offers
+  Create rule, dismisses itself after 8 seconds, pauses while hovered or focused, and is
+  replaced by the next one. `ToastProvider` and `useToast` live in `ui.tsx`.

@@ -47,7 +47,7 @@ import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionSearch } from './TransactionSearch'
 import { useTheme, type ThemePref } from './theme'
-import { ConfirmProvider, Dialog, useAlert } from './ui'
+import { ConfirmProvider, Dialog, ToastProvider, useAlert } from './ui'
 import { useLedger } from './useLedger'
 import './styles.css'
 
@@ -104,7 +104,9 @@ declare global {
 export function App() {
   return (
     <ConfirmProvider>
-      <Shell />
+      <ToastProvider>
+        <Shell />
+      </ToastProvider>
     </ConfirmProvider>
   )
 }

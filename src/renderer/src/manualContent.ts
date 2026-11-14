@@ -115,6 +115,7 @@ export const MANUAL: ManualSection[] = [
       },
       'Rules run on every import. To fix your existing history, use the preview to see what would change, then apply. Applying twice changes nothing the second time.',
       'A rule never overwrites something you set by hand. If you correct a payee or category yourself, rules leave that field alone for that transaction.',
+      'Changing a category in the transaction list shows a small notice at the bottom of the window offering to create a rule from that change. Ignore it and it goes away after about eight seconds; hover over it or tab into it to keep it open. It never blocks you, and the next category change replaces it.',
       'The Suggest rule button on a transaction builds a draft from your own edit, with reference numbers stripped from the description. Review it and save it; nothing is created silently.',
     ],
   },

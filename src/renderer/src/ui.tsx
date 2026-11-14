@@ -2,7 +2,15 @@ import * as AlertDialog from '@radix-ui/react-alert-dialog'
 import * as RDialog from '@radix-ui/react-dialog'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { MoreHorizontal, X } from 'lucide-react'
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 
 /** A modal dialog with a title, optional description and a close button. */
 export function Dialog({
@@ -186,6 +194,83 @@ export function useAlert(): (message: string, title?: string) => Promise<void> {
     },
     [confirm],
   )
+}
+
+export interface ToastOptions {
+  message: string
+  actionLabel?: string
+  onAction?: () => void
+  /** Milliseconds before it dismisses itself unless hovered or focused. Default 8000. */
+  durationMs?: number
+}
+type ToastFn = (toast: ToastOptions) => void
+const ToastContext = createContext<ToastFn | null>(null)
+
+/** Bottom-anchored, non-blocking notice. One at a time: a new toast replaces the old one. */
+export function ToastProvider({ children }: { children: ReactNode }) {
+  const [toast, setToast] = useState<(ToastOptions & { key: number }) | null>(null)
+  const counter = useRef(0)
+  const show = useCallback<ToastFn>((t) => setToast({ ...t, key: ++counter.current }), [])
+  return (
+    <ToastContext.Provider value={show}>
+      {children}
+      {toast && <ToastView key={toast.key} toast={toast} onClose={() => setToast(null)} />}
+    </ToastContext.Provider>
+  )
+}
+
+function ToastView({ toast, onClose }: { toast: ToastOptions; onClose: () => void }) {
+  const total = toast.durationMs ?? 8000
+  const [paused, setPaused] = useState(false)
+  const remaining = useRef(total)
+  useEffect(() => {
+    if (paused) return
+    const startedAt = Date.now()
+    const id = setTimeout(onClose, remaining.current)
+    return () => {
+      clearTimeout(id)
+      remaining.current = Math.max(remaining.current - (Date.now() - startedAt), 0)
+    }
+  }, [paused, onClose])
+  return (
+    <div className="toast-region">
+      <div
+        className="toast"
+        role="status"
+        data-testid="toast"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false)
+        }}
+      >
+        <span className="toast-message">{toast.message}</span>
+        {toast.actionLabel && (
+          <button
+            type="button"
+            className="primary small"
+            onClick={() => {
+              onClose()
+              toast.onAction?.()
+            }}
+          >
+            {toast.actionLabel}
+          </button>
+        )}
+        <button type="button" className="ghost icon" aria-label="Dismiss" onClick={onClose}>
+          <X size={15} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+/** Returns `toast({ message, actionLabel, onAction })`. */
+export function useToast(): ToastFn {
+  const fn = useContext(ToastContext)
+  if (!fn) throw new Error('useToast needs a ToastProvider')
+  return fn
 }
 
 /** Centered empty state for lists with nothing in them yet. */

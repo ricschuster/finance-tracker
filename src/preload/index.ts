@@ -8,6 +8,8 @@ import { IMPORT_METHODS } from '../core/import/methods'
 import { LEDGER_METHODS } from '../core/ledger/methods'
 import type { RulesApi } from '../core/rules/handlers'
 import { RULES_METHODS } from '../core/rules/methods'
+import type { BudgetsApi } from '../core/budgets/handlers'
+import { BUDGETS_METHODS } from '../core/budgets/methods'
 import type { ReportsApi } from '../core/reports/handlers'
 import { REPORTS_METHODS } from '../core/reports/methods'
 import type { SearchApi } from '../core/search/handlers'
@@ -40,6 +42,13 @@ const reports = Object.fromEntries(
     (...args: unknown[]) => ipcRenderer.invoke(`reports:${name}`, ...args),
   ]),
 ) as unknown as ReportsApi
+
+const budgets = Object.fromEntries(
+  BUDGETS_METHODS.map((name) => [
+    name,
+    (...args: unknown[]) => ipcRenderer.invoke(`budgets:${name}`, ...args),
+  ]),
+) as unknown as BudgetsApi
 
 const importer = {
   ...(Object.fromEntries(
@@ -80,6 +89,7 @@ const api = {
   rules,
   search,
   reports,
+  budgets,
   data,
 }
 

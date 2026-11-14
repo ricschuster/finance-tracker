@@ -9,6 +9,7 @@ import { registerDataIpc } from './data-ipc'
 import { registerImportIpc } from './import-ipc'
 import { registerLedgerIpc } from './ledger-ipc'
 import { registerRulesIpc } from './rules-ipc'
+import { registerBudgetsIpc } from './budgets-ipc'
 import { registerReportsIpc } from './reports-ipc'
 import { registerSearchIpc } from './search-ipc'
 
@@ -53,6 +54,7 @@ void app.whenReady().then(() => {
   registerRulesIpc(db)
   registerSearchIpc(db)
   registerReportsIpc(db)
+  registerBudgetsIpc(db)
   registerDataIpc(db, dbPath, keptRestoreCopy)
   createWindow()
   app.on('activate', () => {

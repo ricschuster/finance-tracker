@@ -277,6 +277,13 @@ const EXCLUDE_FROM_BUDGETS = `
 ALTER TABLE transactions ADD COLUMN exclude_from_budgets INTEGER NOT NULL DEFAULT 0;
 `
 
+const BUDGETS = `
+CREATE TABLE budgets (
+  category_id INTEGER PRIMARY KEY REFERENCES categories(id) ON DELETE CASCADE,
+  amount      INTEGER NOT NULL CHECK (amount > 0)
+);
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -297,6 +304,7 @@ export const migrations: readonly string[] = [
   CATEGORY_STYLE,
   CATEGORY_ALIASES,
   EXCLUDE_FROM_BUDGETS,
+  BUDGETS,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

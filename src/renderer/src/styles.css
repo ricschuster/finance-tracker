@@ -2493,3 +2493,19 @@ details.card ul {
   width: 2rem;
   padding-right: 0;
 }
+.sort-head {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  text-transform: inherit;
+  letter-spacing: inherit;
+}
+.sort-head:hover,
+.sort-head:focus-visible {
+  color: var(--text);
+}
+th.num .sort-head {
+  flex-direction: row-reverse;
+}

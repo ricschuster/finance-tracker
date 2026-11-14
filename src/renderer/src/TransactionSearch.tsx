@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatCents, parseAmountToCents } from '../../core/money'
 import type { TransactionStatus } from '../../core/ledger/transactions'
 import type { SavedSearch } from '../../core/search/saved'
-import type { SearchQuery, SearchResult } from '../../core/search/query'
+import type { SearchQuery, SearchResult, SortKey } from '../../core/search/query'
 import { CategorySelect } from './CategorySelect'
 import { TransactionList } from './TransactionList'
 import { ActionMenu, useAlert, useConfirm } from './ui'
@@ -102,6 +102,10 @@ export function TransactionSearch({
   const [saved, setSaved] = useState<SavedSearch[]>([])
   // window.prompt() is unsupported in Electron, so naming a search uses an inline field.
   const [saveName, setSaveName] = useState<string | null>(null)
+  const [sort, setSort] = useState<{ key: SortKey; dir: 'asc' | 'desc' }>({
+    key: 'date',
+    dir: 'desc',
+  })
   const [bulkCategory, setBulkCategory] = useState(0)
   const [bulkTag, setBulkTag] = useState('')
   const [bulkStatus, setBulkStatus] = useState<TransactionStatus>('reconciled')
@@ -143,7 +147,7 @@ export function TransactionSearch({
     setBadInput(null)
     let stale = false
     void window.api.search
-      .searchTransactions({ ...fullQuery, limit: PAGE })
+      .searchTransactions({ ...fullQuery, limit: PAGE, sort: sort.key, dir: sort.dir })
       .then((r) => {
         if (stale) return
         setResult(r)
@@ -160,7 +164,7 @@ export function TransactionSearch({
     return () => {
       stale = true
     }
-  }, [query, fullQuery, version])
+  }, [query, fullQuery, version, sort])
 
   const loadSaved = useCallback(() => {
     void window.api.search.listSavedSearches().then(setSaved)
@@ -595,6 +599,15 @@ export function TransactionSearch({
         selected={selected}
         onToggle={toggle}
         onToggleAll={toggleAll}
+        sort={sort.key}
+        dir={sort.dir}
+        onSort={(key) =>
+          setSort((s) =>
+            s.key === key
+              ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' }
+              : { key, dir: key === 'payee' || key === 'category' ? 'asc' : 'desc' },
+          )
+        }
       />
     </section>
   )

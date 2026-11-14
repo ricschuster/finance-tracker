@@ -1,6 +1,7 @@
-import { EyeOff, Eye, Split, Trash2, Wand2, Receipt } from 'lucide-react'
+import { ArrowDown, ArrowUp, EyeOff, Eye, Split, Trash2, Wand2, Receipt } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { formatCents } from '../../core/money'
+import type { SortKey } from '../../core/search/query'
 import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import { SplitEditor } from './SplitEditor'
@@ -33,13 +34,30 @@ export function TransactionList({
   selected,
   onToggle,
   onToggleAll,
+  sort,
+  dir,
+  onSort,
 }: Pick<LedgerState, 'transactions' | 'accounts' | 'categories' | 'run'> & {
   showAccount: boolean
   onSuggestRule: (transactionId: number) => void
   selected: ReadonlySet<number>
   onToggle: (id: number) => void
   onToggleAll: () => void
+  sort: SortKey
+  dir: 'asc' | 'desc'
+  onSort: (key: SortKey) => void
 }) {
+  const head = (key: SortKey, label: string, className?: string) => (
+    <th
+      className={className}
+      aria-sort={sort === key ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
+      <button type="button" className="sort-head" onClick={() => onSort(key)}>
+        {label}
+        {sort === key && (dir === 'asc' ? <ArrowUp size={12} /> : <ArrowDown size={12} />)}
+      </button>
+    </th>
+  )
   const [splitting, setSplitting] = useState<number | null>(null)
   const confirm = useConfirm()
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
@@ -64,11 +82,11 @@ export function TransactionList({
                 onChange={onToggleAll}
               />
             </th>
-            <th>Date</th>
-            <th>Payee</th>
-            <th>Category</th>
-            <th>Status</th>
-            <th className="num">Amount</th>
+            {head('date', 'Date')}
+            {head('payee', 'Payee')}
+            {head('category', 'Category')}
+            {head('status', 'Status')}
+            {head('amount', 'Amount', 'num')}
             <th />
           </tr>
         </thead>

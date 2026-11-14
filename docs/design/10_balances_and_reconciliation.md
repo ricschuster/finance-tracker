@@ -132,3 +132,23 @@ or prefill the statement balance.
 2. Net worth series, dashboard tile and report.
 3. Reconciliation core and flow.
 4. OFX ledger balance prefill, if wanted.
+
+## Card payments and liability display (built)
+
+Feedback: card balances looked negative and payments did not seem to reduce
+them. Causes: a payment imported on only one side leaves the card owing (by
+design, balances are opening plus transactions); auto-linking at import
+required the word "payment", so bank text such as "MB-CREDIT CARD/LOC PAY."
+was never linked; unlinked pairs had no way to be linked later; and a negative
+card balance was shown like a negative cash balance.
+
+- `PAYMENT_WORDS` is broader and shared (`core/ledger/transferPairs.ts`).
+- `findTransferPairs` and `linkTransferPair` suggest and link existing unlinked
+  pairs (opposite amount, within 3 days, card or loan against a non-liability
+  account, payment wording, single-line rows). UI: "Link card payments" in the
+  ledger header.
+- Credit cards and loans display "Owing $X"; the sidebar notes the owed total
+  is already inside net worth. The account forms say to enter an opening
+  balance owed as a negative number.
+- Not done: a separate "cash" subtotal, and flipping the sign convention of
+  the opening balance field for liabilities.

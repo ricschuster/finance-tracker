@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { ACCOUNT_TYPES, type AccountImpact, type AccountType } from '../../core/ledger/accounts'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents, parseAmountToCents } from '../../core/money'
-import { accountTypeLabel } from './accountTypes'
+import { accountTypeLabel, isLiability } from './accountTypes'
 import type { LedgerState } from './useLedger'
 
 /** Edit, archive or delete an account. Shown in the Edit account dialog. */
@@ -69,6 +69,12 @@ export function AccountEditor({
           <label className="field">
             Opening balance
             <input value={opening} onChange={(e) => setOpening(e.target.value)} />
+            {isLiability(type) && (
+              <span className="subtle">
+                Enter what you owe as a negative number, for example -500.00. A positive number
+                counts as money you hold.
+              </span>
+            )}{' '}
           </label>
         </div>
         <div className="dialog-actions split">

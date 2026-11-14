@@ -21,6 +21,8 @@ export const LEDGER_METHODS = [
   'updateTransaction',
   'deleteTransaction',
   'createTransfer',
+  'findTransferPairs',
+  'linkTransferPair',
 ] as const
 
 export type LedgerMethod = (typeof LEDGER_METHODS)[number]

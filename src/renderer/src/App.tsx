@@ -23,7 +23,13 @@ import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import { ACCOUNT_GROUPS, ACCOUNT_ICONS, accountTypeLabel } from './accountTypes'
+import {
+  ACCOUNT_GROUPS,
+  ACCOUNT_ICONS,
+  accountTypeLabel,
+  balanceText,
+  isLiability,
+} from './accountTypes'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { Budgets } from './Budgets'
@@ -35,6 +41,7 @@ import { ImportWizard } from './ImportWizard'
 import { PageActionsContext } from './PageActions'
 import { Reports } from './Reports'
 import { RulesEditor } from './RulesEditor'
+import { LinkPaymentsForm } from './LinkPaymentsForm'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionSearch } from './TransactionSearch'
@@ -113,7 +120,7 @@ function Shell() {
   } | null>(null)
   const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
   const [dialog, setDialog] = useState<
-    'account' | 'editAccount' | 'transaction' | 'transfer' | null
+    'account' | 'editAccount' | 'transaction' | 'transfer' | 'linkPayments' | null
   >(null)
   const [theme, setTheme] = useTheme()
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
@@ -154,6 +161,9 @@ function Shell() {
       : (ledger.accounts.find((a) => a.id === accountId) ??
         archived.find((a) => a.id === accountId))
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
+  const owing = ledger.accounts
+    .filter((a) => isLiability(a.type) && a.balance < 0)
+    .reduce((sum, a) => sum - a.balance, 0)
 
   const navView: View = view === 'history' ? 'import' : view
   const title =
@@ -165,7 +175,7 @@ function Shell() {
       ? new Date().toLocaleString('en-CA', { month: 'long', year: 'numeric' })
       : view === 'ledger'
         ? selected
-          ? `${accountTypeLabel(selected.type)}${selected.archived ? ' (archived)' : ''} · Balance ${formatCents(selected.balance)}`
+          ? `${accountTypeLabel(selected.type)}${selected.archived ? ' (archived)' : ''} · ${isLiability(selected.type) ? '' : 'Balance '}${balanceText(selected.type, selected.balance)}`
           : `All accounts · ${ledger.accounts.length} account${ledger.accounts.length === 1 ? '' : 's'}`
         : SUBTITLES[view]
 
@@ -181,7 +191,9 @@ function Shell() {
         >
           <Icon size={16} aria-hidden="true" />
           <span className="grow">{a.name}</span>
-          <span className={a.balance < 0 ? 'amount neg' : 'amount'}>{formatCents(a.balance)}</span>
+          <span className={a.balance < 0 && !isLiability(a.type) ? 'amount neg' : 'amount'}>
+            {balanceText(a.type, a.balance)}
+          </span>
         </button>
       </li>
     )
@@ -241,6 +253,11 @@ function Shell() {
                   <span>Net worth</span>
                   <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
                 </div>
+                {owing > 0 && (
+                  <div className="subtle" style={{ padding: '0 12px 6px', fontSize: 12 }}>
+                    Owing on cards and loans {formatCents(owing)}, already included in net worth
+                  </div>
+                )}
                 <ul>
                   <li>
                     <button
@@ -297,6 +314,12 @@ function Shell() {
                       <button type="button" onClick={() => setDialog('transfer')}>
                         <ArrowLeftRight size={15} />
                         Transfer
+                      </button>
+                    )}
+                    {ledger.accounts.some((a) => isLiability(a.type)) && (
+                      <button type="button" onClick={() => setDialog('linkPayments')}>
+                        <ArrowLeftRight size={15} />
+                        Link card payments
                       </button>
                     )}
                     <button
@@ -454,6 +477,16 @@ function Shell() {
             run={ledger.run}
             onDone={() => setDialog(null)}
           />
+        </Dialog>
+        <Dialog
+          open={dialog === 'linkPayments'}
+          onOpenChange={(o) => setDialog(o ? 'linkPayments' : null)}
+          title="Link card payments"
+          description="Payments that reduce a card or loan but were never linked to the paying account."
+        >
+          {dialog === 'linkPayments' && (
+            <LinkPaymentsForm run={ledger.run} onDone={() => setDialog(null)} />
+          )}
         </Dialog>
       </PageActionsContext.Provider>
     </CategoryStyleProvider>

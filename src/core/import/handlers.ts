@@ -7,6 +7,7 @@ import {
   type ImportFormat,
 } from './commit'
 import { createCategory, deleteCategory } from '../ledger/categories'
+import { PAYMENT_WORDS } from '../ledger/transferPairs'
 import { looksLikeMint, mapMint } from './mint'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
@@ -219,8 +220,6 @@ function makePreview(
     summary: summarisePlan(plan),
   }
 }
-
-const PAYMENT_WORDS = /\b(payment|pmt|paiement|pymt|autopay|bill pay)\b/i
 
 /**
  * A new row with a transfer candidate is a likely card or loan payment when either account is a

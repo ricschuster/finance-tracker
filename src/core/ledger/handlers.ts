@@ -1,3 +1,4 @@
+import { findTransferPairs, linkTransferPair } from './transferPairs'
 import type Database from 'better-sqlite3'
 import {
   accountImpact,
@@ -63,6 +64,8 @@ export function createLedgerHandlers(db: Database.Database) {
       updateTransaction(db, id, patch),
     deleteTransaction: (id: number) => deleteTransaction(db, id),
     createTransfer: (input: Parameters<typeof createTransfer>[1]) => createTransfer(db, input),
+    findTransferPairs: () => findTransferPairs(db),
+    linkTransferPair: (aId: number, bId: number) => linkTransferPair(db, aId, bId),
   } satisfies Record<LedgerMethod, (...args: never[]) => unknown>
 }
 

@@ -54,6 +54,8 @@ export const MANUAL: ManualSection[] = [
           'The balance shown is the opening balance plus every transaction. If it does not match your bank, you have a missing or duplicated transaction, or the opening balance is off.',
         ],
       },
+      'Credit cards and loans show what you owe, for example Owing $300.00. Their balance is stored as a negative number, so enter an opening balance of what you owe as a negative amount (-500.00). Net worth is the plain sum of all accounts, so money owed on a card already reduces it.',
+      'A card payment should be a transfer, so the card balance goes down without the payment counting as spending. Imports link them automatically when the amounts match within three days and the text reads like a payment. If some were missed, open the card account and use Link card payments to link them in one click.',
       'Imports from Monarch, Mint and Wealthsimple do not carry opening balances. Set them by hand on each new account so the balance matches your bank.',
     ],
   },

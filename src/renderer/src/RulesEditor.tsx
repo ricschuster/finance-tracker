@@ -2,8 +2,24 @@ import { useCallback, useEffect, useState } from 'react'
 import type { RuleChange } from '../../core/rules/apply'
 import type { Action, Condition, Rule, RuleInput, TextField, TextOp } from '../../core/rules/types'
 import { formatCents, parseAmountToCents } from '../../core/money'
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  Pencil,
+  Plus,
+  Power,
+  PowerOff,
+  Trash2,
+  Wand2,
+} from 'lucide-react'
+import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
+import { PageActions } from './PageActions'
 import type { LedgerState } from './useLedger'
+import { ActionMenu, Dialog, Empty, useAlert, useConfirm } from './ui'
 
 /** The editor shows one slot per kind of condition and action. */
 interface FormState {
@@ -98,21 +114,23 @@ function toInput(f: FormState): RuleInput {
 function describeCondition(c: Condition, accounts: LedgerState['accounts']): string {
   if (c.type === 'text') {
     const op = { contains: 'contains', starts_with: 'starts with', equals: 'is', regex: 'matches' }
-    return `${c.field === 'description' ? 'description' : 'payee'} ${op[c.op]} "${c.value}"`
+    return `${c.field === 'description' ? 'Description' : 'Payee'} ${op[c.op]} "${c.value}"`
   }
   if (c.type === 'account') {
-    return `account is ${accounts.find((a) => a.id === c.accountId)?.name ?? '?'}`
+    return `Account is ${accounts.find((a) => a.id === c.accountId)?.name ?? '?'}`
   }
-  const parts = [c.direction ?? 'amount']
+  const parts = [
+    c.direction === 'expense' ? 'Expense' : c.direction === 'income' ? 'Income' : 'Amount',
+  ]
   if (c.min !== undefined) parts.push(`at least ${formatCents(c.min)}`)
   if (c.max !== undefined) parts.push(`at most ${formatCents(c.max)}`)
   return parts.join(' ')
 }
 
 function describeAction(a: Action, categories: LedgerState['categories']): string {
-  if (a.type === 'setPayee') return `payee "${a.payee}"`
-  if (a.type === 'addTags') return `tags ${a.tags.join(', ')}`
-  return `category ${categories.find((c) => c.id === a.categoryId)?.name ?? '(deleted)'}`
+  if (a.type === 'setPayee') return `Payee "${a.payee}"`
+  if (a.type === 'addTags') return `Tags ${a.tags.join(', ')}`
+  return `Category ${categories.find((c) => c.id === a.categoryId)?.name ?? '(deleted)'}`
 }
 
 export function RulesEditor({
@@ -127,9 +145,15 @@ export function RulesEditor({
   onDraftUsed: () => void
 }) {
   const [rules, setRules] = useState<Rule[]>([])
-  const [editing, setEditing] = useState<{ id: number | null; form: FormState } | null>(null)
+  const [editing, setEditing] = useState<{
+    id: number | null
+    form: FormState
+    suggested?: boolean
+  } | null>(null)
   const [preview, setPreview] = useState<RuleChange[] | null>(null)
   const [formError, setFormError] = useState<string | null>(null)
+  const confirm = useConfirm()
+  const alert = useAlert()
 
   const load = useCallback(() => {
     void window.api.rules.listRules().then(setRules)
@@ -139,7 +163,10 @@ export function RulesEditor({
   useEffect(() => {
     if (!draft) return
     const form = toForm(draft)
-    if (form) setEditing({ id: null, form })
+    if (form) {
+      setFormError(null)
+      setEditing({ id: null, form, suggested: true })
+    }
     onDraftUsed()
   }, [draft, onDraftUsed])
 
@@ -160,7 +187,7 @@ export function RulesEditor({
       if (editing.id === null) await api.createRule(input)
       else await api.updateRule(editing.id, input)
     } catch (e) {
-      return setFormError(e instanceof Error ? e.message : String(e))
+      return setFormError(messageOf(e))
     }
     setEditing(null)
     setPreview(null)
@@ -178,227 +205,95 @@ export function RulesEditor({
     }
   }
 
+  async function edit(r: Rule) {
+    const form = toForm(r)
+    if (!form) {
+      await alert(
+        'This rule has several conditions of one kind and cannot be edited here.',
+        'Cannot edit this rule',
+      )
+      return
+    }
+    setFormError(null)
+    setEditing({ id: r.id, form })
+  }
+
+  async function remove(r: Rule, n: number) {
+    const ok = await confirm(
+      `Delete ${r.name ? `"${r.name}"` : `rule ${n}`}? Transactions it already changed stay as they are.`,
+      { title: 'Delete rule', confirmLabel: 'Delete', danger: true },
+    )
+    if (!ok) return
+    setPreview(null)
+    await run(() => window.api.rules.deleteRule(r.id))
+    load()
+  }
+
   async function applyAll() {
     if (!preview) return
-    if (!window.confirm(`Apply rules to ${preview.length} transaction(s)?`)) return
+    const n = preview.length
+    const ok = await confirm(
+      `Apply your rules to ${n} transaction${n === 1 ? '' : 's'}? Fields you edited by hand are kept.`,
+      { title: 'Apply rules', confirmLabel: 'Apply' },
+    )
+    if (!ok) return
     if (await run(() => window.api.rules.applyRules())) setPreview(null)
   }
+
+  const category = (id: number) => categories.find((c) => c.id === id)
 
   return (
     <section aria-label="Rules">
       <h2>Rules</h2>
-      <p className="muted">
+      <PageActions>
+        <button
+          type="button"
+          disabled={rules.length === 0}
+          onClick={() => void run(async () => setPreview(await window.api.rules.previewRules()))}
+        >
+          <Eye size={15} />
+          Preview on existing transactions
+        </button>
+        <button
+          type="button"
+          className="primary"
+          onClick={() => {
+            setFormError(null)
+            setEditing({ id: null, form: blank() })
+          }}
+        >
+          <Plus size={16} />
+          New rule
+        </button>
+      </PageActions>
+      <p className="section-intro">
         The first matching rule wins. Rules never change a payee, category or tag you edited by
         hand, and they skip transfers.
       </p>
-      {rules.length === 0 && <p className="muted">No rules yet.</p>}
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Rule</th>
-            <th>When</th>
-            <th>Then set</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {rules.map((r, i) => (
-            <tr key={r.id} className={r.enabled ? '' : 'muted'}>
-              <td>{i + 1}</td>
-              <td>{r.name || <span className="muted">(unnamed)</span>}</td>
-              <td>{r.conditions.map((c) => describeCondition(c, accounts)).join(' and ')}</td>
-              <td>{r.actions.map((a) => describeAction(a, categories)).join(', ')}</td>
-              <td>
-                <button
-                  type="button"
-                  aria-label={`Move rule ${i + 1} up`}
-                  onClick={() => void move(i, -1)}
-                >
-                  Up
-                </button>{' '}
-                <button
-                  type="button"
-                  aria-label={`Move rule ${i + 1} down`}
-                  onClick={() => void move(i, 1)}
-                >
-                  Down
-                </button>{' '}
-                <button
-                  type="button"
-                  onClick={() =>
-                    void run(() => window.api.rules.setRuleEnabled(r.id, !r.enabled)).then(load)
-                  }
-                >
-                  {r.enabled ? 'Disable' : 'Enable'}
-                </button>{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    const form = toForm(r)
-                    if (!form) {
-                      window.alert(
-                        'This rule has several conditions of one kind and cannot be edited here.',
-                      )
-                      return
-                    }
-                    setFormError(null)
-                    setEditing({ id: r.id, form })
-                  }}
-                >
-                  Edit
-                </button>{' '}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('Delete this rule?')) {
-                      void run(() => window.api.rules.deleteRule(r.id)).then(load)
-                      setPreview(null)
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {!editing && (
-        <p>
-          <button
-            type="button"
-            onClick={() => {
-              setFormError(null)
-              setEditing({ id: null, form: { ...blank(), categoryId: 0 } })
-            }}
-          >
-            New rule
-          </button>{' '}
-          <button
-            type="button"
-            disabled={rules.length === 0}
-            onClick={() => void run(async () => setPreview(await window.api.rules.previewRules()))}
-          >
-            Preview on existing transactions
-          </button>
-        </p>
-      )}
-
-      {editing && (
-        <form
-          className="mapper"
-          aria-label="Rule editor"
-          onSubmit={(e) => {
-            e.preventDefault()
-            void save()
-          }}
-        >
-          <label>
-            Name
-            <input value={editing.form.name} onChange={(e) => set('name', e.target.value)} />
-          </label>
-          <label>
-            Match on
-            <select
-              value={editing.form.textField}
-              onChange={(e) => set('textField', e.target.value as TextField)}
-            >
-              <option value="description">Bank description</option>
-              <option value="payee">Payee</option>
-            </select>
-          </label>
-          <label>
-            Text operator
-            <select
-              value={editing.form.textOp}
-              onChange={(e) => set('textOp', e.target.value as TextOp)}
-            >
-              <option value="contains">contains</option>
-              <option value="starts_with">starts with</option>
-              <option value="equals">equals</option>
-              <option value="regex">regular expression</option>
-            </select>
-          </label>
-          <label>
-            Text
-            <input
-              value={editing.form.textValue}
-              onChange={(e) => set('textValue', e.target.value)}
-            />
-          </label>
-          <label>
-            Direction
-            <select
-              value={editing.form.direction}
-              onChange={(e) => set('direction', e.target.value as FormState['direction'])}
-            >
-              <option value="">Any</option>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
-          </label>
-          <label>
-            Amount at least
-            <input value={editing.form.min} onChange={(e) => set('min', e.target.value)} />
-          </label>
-          <label>
-            Amount at most
-            <input value={editing.form.max} onChange={(e) => set('max', e.target.value)} />
-          </label>
-          <label>
-            Account
-            <select
-              value={editing.form.accountId}
-              onChange={(e) => set('accountId', Number(e.target.value))}
-            >
-              <option value={0}>Any</option>
-              {accounts.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Set payee
-            <input value={editing.form.payee} onChange={(e) => set('payee', e.target.value)} />
-          </label>
-          <label>
-            Set category
-            <CategorySelect
-              aria-label="Category"
-              anyLabel="Do not set"
-              categories={categories}
-              value={editing.form.categoryId}
-              onChange={(id) => set('categoryId', id)}
-            />
-          </label>
-          <label>
-            Add tags (comma separated)
-            <input value={editing.form.tags} onChange={(e) => set('tags', e.target.value)} />
-          </label>
-          <div>
-            <button type="submit">Save rule</button>{' '}
-            <button type="button" onClick={() => setEditing(null)}>
-              Cancel
-            </button>
-            {formError && (
-              <p className="error" role="alert">
-                {formError}
-              </p>
-            )}
-          </div>
-        </form>
-      )}
 
       {preview && (
-        <div aria-label="Rule preview">
-          <h3>{preview.length} transaction(s) would change</h3>
-          {preview.length > 0 && (
-            <>
-              <table>
+        <div className="card" aria-label="Rule preview">
+          <div className="card-header">
+            <h3>
+              {preview.length} transaction{preview.length === 1 ? '' : 's'} would change
+            </h3>
+            <div className="page-actions">
+              <button type="button" onClick={() => setPreview(null)}>
+                Close preview
+              </button>
+              {preview.length > 0 && (
+                <button type="button" className="primary" onClick={() => void applyAll()}>
+                  <Check size={15} />
+                  Apply to {preview.length}
+                </button>
+              )}
+            </div>
+          </div>
+          {preview.length === 0 ? (
+            <Empty title="Nothing to change">Your transactions already match your rules.</Empty>
+          ) : (
+            <div className="table-wrap">
+              <table className="preview-table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -410,35 +305,325 @@ export function RulesEditor({
                 <tbody>
                   {preview.slice(0, 200).map((c) => (
                     <tr key={c.transactionId}>
-                      <td>{c.date}</td>
+                      <td className="nowrap">{c.date}</td>
                       <td>{c.rawDescription}</td>
                       <td>{c.ruleName || `#${c.ruleId}`}</td>
                       <td>
-                        {[
-                          c.changes.payee !== undefined &&
-                            `payee "${c.before.payee}" to "${c.changes.payee}"`,
-                          c.newCategoryName !== undefined &&
-                            `category ${c.before.categoryName} to ${c.newCategoryName}`,
-                          c.changes.addTags?.length && `add ${c.changes.addTags.join(', ')}`,
-                        ]
-                          .filter(Boolean)
-                          .join('; ')}
+                        <div className="chips">
+                          {c.changes.payee !== undefined && (
+                            <span className="chip">
+                              <span className="muted">{c.before.payee || 'No payee'}</span>
+                              <ArrowRight size={12} />
+                              {c.changes.payee}
+                            </span>
+                          )}
+                          {c.newCategoryName !== undefined && (
+                            <span className="chip">
+                              <span className="muted">{c.before.categoryName}</span>
+                              <ArrowRight size={12} />
+                              <CategoryBadge name={c.newCategoryName} size="sm" showName />
+                            </span>
+                          )}
+                          {c.changes.addTags?.map((t) => (
+                            <span key={t} className="tag">
+                              +{t}
+                            </span>
+                          ))}
+                        </div>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {preview.length > 200 && <p className="muted">Showing the first 200.</p>}
-              <button type="button" onClick={() => void applyAll()}>
-                Apply to {preview.length} transaction(s)
-              </button>{' '}
-            </>
+            </div>
           )}
-          <button type="button" onClick={() => setPreview(null)}>
-            Close preview
-          </button>
+          {preview.length > 200 && <p className="subtle">Showing the first 200.</p>}
         </div>
       )}
+
+      <div className="card flush">
+        <div className="card-header">
+          <h3>Your rules</h3>
+          <span className="subtle">
+            {rules.length} rule{rules.length === 1 ? '' : 's'}, checked top to bottom
+          </span>
+        </div>
+        {rules.length === 0 ? (
+          <Empty icon={<Wand2 size={28} />} title="No rules yet">
+            Rules set the payee, category and tags of new transactions for you.
+          </Empty>
+        ) : (
+          <ol className="rule-list">
+            {rules.map((r, i) => (
+              <li
+                key={r.id}
+                className={r.enabled ? 'rule-item' : 'rule-item off'}
+                aria-label={r.name || `Rule ${i + 1}`}
+              >
+                <span className="rule-order">{i + 1}</span>
+                <div className="rule-body">
+                  <div className="rule-title">
+                    <strong>{r.name || <span className="muted">Unnamed rule</span>}</strong>
+                    {!r.enabled && <span className="pill">Off</span>}
+                  </div>
+                  <div className="chips">
+                    <span className="chip-label">When</span>
+                    {r.conditions.length === 0 && <span className="chip">any transaction</span>}
+                    {r.conditions.map((c, k) => (
+                      <span key={k} className="chip">
+                        {describeCondition(c, accounts)}
+                      </span>
+                    ))}
+                    <span className="chip-label">then</span>
+                    {r.actions.map((a, k) =>
+                      a.type === 'setCategory' ? (
+                        <span key={k} className="chip">
+                          {category(a.categoryId) ? (
+                            <CategoryBadge id={a.categoryId} size="sm" showName />
+                          ) : (
+                            'category (deleted)'
+                          )}
+                        </span>
+                      ) : (
+                        <span key={k} className="chip">
+                          {describeAction(a, categories)}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                </div>
+                <div className="rule-actions">
+                  <button
+                    type="button"
+                    className="ghost icon small"
+                    aria-label={`Move rule ${i + 1} up`}
+                    title="Move up"
+                    disabled={i === 0}
+                    onClick={() => void move(i, -1)}
+                  >
+                    <ChevronUp size={16} />
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost icon small"
+                    aria-label={`Move rule ${i + 1} down`}
+                    title="Move down"
+                    disabled={i === rules.length - 1}
+                    onClick={() => void move(i, 1)}
+                  >
+                    <ChevronDown size={16} />
+                  </button>
+                  <ActionMenu
+                    label={`Actions for rule ${i + 1}`}
+                    actions={[
+                      {
+                        label: 'Edit',
+                        icon: <Pencil size={14} />,
+                        onSelect: () => void edit(r),
+                      },
+                      {
+                        label: r.enabled ? 'Turn off' : 'Turn on',
+                        icon: r.enabled ? <PowerOff size={14} /> : <Power size={14} />,
+                        onSelect: () =>
+                          void run(() => window.api.rules.setRuleEnabled(r.id, !r.enabled)).then(
+                            load,
+                          ),
+                      },
+                      {
+                        label: 'Delete',
+                        icon: <Trash2 size={14} />,
+                        danger: true,
+                        separatorBefore: true,
+                        onSelect: () => void remove(r, i + 1),
+                      },
+                    ]}
+                  />
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(o) => !o && setEditing(null)}
+        wide
+        title={
+          editing?.id != null
+            ? 'Edit rule'
+            : editing?.suggested
+              ? 'New rule from your edit'
+              : 'New rule'
+        }
+        description={
+          editing?.suggested
+            ? 'Check the suggestion, then save it to apply it to future transactions.'
+            : 'Leave a field empty to ignore it.'
+        }
+      >
+        {editing && (
+          <form
+            className="rule-form"
+            aria-label="Rule editor"
+            onSubmit={(e) => {
+              e.preventDefault()
+              void save()
+            }}
+          >
+            <div className="form-grid">
+              <label className="field">
+                Name
+                <input
+                  value={editing.form.name}
+                  placeholder="For example Spotify"
+                  autoFocus
+                  onChange={(e) => set('name', e.target.value)}
+                />
+              </label>
+              <label className="check rule-enabled">
+                <input
+                  type="checkbox"
+                  checked={editing.form.enabled}
+                  onChange={(e) => set('enabled', e.target.checked)}
+                />
+                Rule is on
+              </label>
+            </div>
+
+            <fieldset className="rule-section">
+              <legend>When a transaction</legend>
+              <div className="rule-text-row">
+                <label className="field">
+                  Match on
+                  <select
+                    value={editing.form.textField}
+                    onChange={(e) => set('textField', e.target.value as TextField)}
+                  >
+                    <option value="description">Bank description</option>
+                    <option value="payee">Payee</option>
+                  </select>
+                </label>
+                <label className="field">
+                  Text operator
+                  <select
+                    value={editing.form.textOp}
+                    onChange={(e) => set('textOp', e.target.value as TextOp)}
+                  >
+                    <option value="contains">contains</option>
+                    <option value="starts_with">starts with</option>
+                    <option value="equals">equals</option>
+                    <option value="regex">regular expression</option>
+                  </select>
+                </label>
+                <label className="field">
+                  Text
+                  <input
+                    value={editing.form.textValue}
+                    placeholder="spotify"
+                    onChange={(e) => set('textValue', e.target.value)}
+                  />
+                </label>
+              </div>
+              <div className="rule-amount-row">
+                <label className="field">
+                  Direction
+                  <select
+                    value={editing.form.direction}
+                    onChange={(e) => set('direction', e.target.value as FormState['direction'])}
+                  >
+                    <option value="">Any</option>
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </label>
+                <label className="field">
+                  Amount at least
+                  <input
+                    value={editing.form.min}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    onChange={(e) => set('min', e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  Amount at most
+                  <input
+                    value={editing.form.max}
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    onChange={(e) => set('max', e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  Account
+                  <select
+                    value={editing.form.accountId}
+                    onChange={(e) => set('accountId', Number(e.target.value))}
+                  >
+                    <option value={0}>Any</option>
+                    {accounts.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </fieldset>
+
+            <fieldset className="rule-section">
+              <legend>Then</legend>
+              <div className="rule-text-row">
+                <label className="field">
+                  Set payee
+                  <input
+                    value={editing.form.payee}
+                    placeholder="Keep as is"
+                    onChange={(e) => set('payee', e.target.value)}
+                  />
+                </label>
+                <label className="field">
+                  Set category
+                  <CategorySelect
+                    aria-label="Category"
+                    anyLabel="Do not set"
+                    categories={categories}
+                    value={editing.form.categoryId}
+                    onChange={(id) => set('categoryId', id)}
+                  />
+                </label>
+                <label className="field">
+                  Add tags (comma separated)
+                  <input
+                    value={editing.form.tags}
+                    placeholder="subscription, music"
+                    onChange={(e) => set('tags', e.target.value)}
+                  />
+                </label>
+              </div>
+            </fieldset>
+
+            {formError && (
+              <div className="error" role="alert">
+                {formError}
+              </div>
+            )}
+            <div className="dialog-actions">
+              <button type="button" onClick={() => setEditing(null)}>
+                Cancel
+              </button>
+              <button type="submit">Save rule</button>
+            </div>
+          </form>
+        )}
+      </Dialog>
     </section>
   )
+}
+
+/** Electron wraps IPC errors as "Error invoking remote method '...': Error: <message>". */
+function messageOf(e: unknown): string {
+  const msg = e instanceof Error ? e.message : String(e)
+  return msg.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')
 }

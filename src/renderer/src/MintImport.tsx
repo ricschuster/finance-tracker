@@ -1,3 +1,4 @@
+import { CheckCircle2, FileText } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { Category } from '../../core/ledger/categories'
 import type { MintInspection, MintPreview } from '../../core/import/handlers'
@@ -97,9 +98,13 @@ export function MintImport({
 
   if (done !== null) {
     return (
-      <div>
-        <p>Imported. {done}. Use Import history to undo a batch per account.</p>
-        <button type="button" onClick={onFinished}>
+      <div className="card import-done">
+        <span className="done-icon" aria-hidden="true">
+          <CheckCircle2 size={24} />
+        </span>
+        <h3>Import complete</h3>
+        <p className="muted">Imported. {done}. Use Import history to undo a batch per account.</p>
+        <button type="button" className="primary" onClick={onFinished}>
           Done
         </button>
       </div>
@@ -108,132 +113,147 @@ export function MintImport({
 
   return (
     <div>
-      <p>
-        <strong>{file.name}</strong> is a Mint export with {inspection.count} rows across{' '}
-        {inspection.accountNames.length} accounts.
-      </p>
-      {error && (
-        <div className="error" role="alert">
-          {error}
+      <div className="card">
+        <div className="file-chip">
+          <FileText size={18} />
+          <div className="grow">
+            <strong>{file.name}</strong>
+            <span className="subtle">
+              Mint export with {inspection.count} rows across {inspection.accountNames.length}{' '}
+              accounts
+            </span>
+          </div>
+          <button type="button" className="ghost small" onClick={onBack}>
+            Choose another
+          </button>
         </div>
-      )}
-      {!preview && (
-        <>
-          <table>
-            <thead>
-              <tr>
-                <th>Mint account</th>
-                <th>Import into</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inspection.accountNames.map((n) => (
-                <tr key={n}>
-                  <td>{n || '(no name)'}</td>
-                  <td>
-                    <select
-                      aria-label={`Account for ${n}`}
-                      value={choice[n]}
-                      onChange={(e) => setChoice((c) => ({ ...c, [n]: Number(e.target.value) }))}
-                    >
-                      <option value={CREATE}>Create a new account</option>
-                      {accounts.map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.name}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
+        {error && (
+          <div className="error" role="alert">
+            {error}
+          </div>
+        )}
+        {!preview && (
+          <>
+            <table>
+              <thead>
+                <tr>
+                  <th>Mint account</th>
+                  <th>Import into</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="muted">
-            New accounts are created as chequing; change the type later. Categories are matched by
-            name.
-          </p>
-          <p>
-            <button type="button" onClick={onBack}>
-              Back
-            </button>{' '}
-            <button type="button" onClick={() => void doPreview()}>
-              Preview
-            </button>
-          </p>
-        </>
-      )}
-      {preview && (
-        <>
-          {preview.unknownCategories.length > 0 && (
-            <div className="error" role="alert">
-              <p>
-                Categories we do not have. Rows with these go to Uncategorized unless you map them
-                to one of yours (remembered for later imports):
-              </p>
-              {preview.unknownCategories.map((name) => (
-                <p key={name}>
-                  {name} {'->'}{' '}
-                  <select
-                    aria-label={`Map ${name} to`}
-                    value={0}
-                    onChange={(e) => void mapCategory(name, Number(e.target.value))}
-                  >
-                    <option value={0}>Uncategorized</option>
-                    {categories
-                      .filter((c) => !c.isSystem)
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name}
-                        </option>
-                      ))}
-                  </select>
-                </p>
-              ))}
+              </thead>
+              <tbody>
+                {inspection.accountNames.map((n) => (
+                  <tr key={n}>
+                    <td>{n || '(no name)'}</td>
+                    <td>
+                      <select
+                        aria-label={`Account for ${n}`}
+                        value={choice[n]}
+                        onChange={(e) => setChoice((c) => ({ ...c, [n]: Number(e.target.value) }))}
+                      >
+                        <option value={CREATE}>Create a new account</option>
+                        {accounts.map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="subtle mint-note">
+              New accounts are created as chequing; change the type later. Categories are matched by
+              name.
+            </p>
+            <div className="wizard-footer">
+              <button type="button" onClick={onBack}>
+                Back
+              </button>
+              <button type="button" className="primary" onClick={() => void doPreview()}>
+                Preview
+              </button>
             </div>
-          )}
-          <table>
-            <thead>
-              <tr>
-                <th>Account</th>
-                <th className="num">New</th>
-                <th className="num">Already imported</th>
-                <th className="num">Possible matches (merged)</th>
-                <th className="num">Errors</th>
-                <th className="num">Money in</th>
-                <th className="num">Money out</th>
-              </tr>
-            </thead>
-            <tbody>
-              {preview.accounts.map((a) => (
-                <tr key={a.mintName}>
-                  <td>{a.mintName || '(no name)'}</td>
-                  <td className="num">{a.preview.summary.counts.new}</td>
-                  <td className="num">{a.preview.summary.counts.duplicate}</td>
-                  <td className="num">{a.preview.summary.counts.possible}</td>
-                  <td className="num">{a.preview.errors.length}</td>
-                  <td className="num">{formatCents(a.preview.summary.inflow)}</td>
-                  <td className="num">{formatCents(a.preview.summary.outflow)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {preview.accounts
-            .flatMap((a) => a.preview.warnings)
-            .map((w) => (
-              <div className="error" role="alert" key={w}>
-                {w}
+          </>
+        )}
+        {preview && (
+          <>
+            {preview.unknownCategories.length > 0 && (
+              <div className="notice mint-unknown" role="alert">
+                <p>
+                  Categories we do not have. Rows with these go to Uncategorized unless you map them
+                  to one of yours (remembered for later imports):
+                </p>
+                <div className="map-grid">
+                  {preview.unknownCategories.map((name) => (
+                    <label key={name} className="field">
+                      {name}
+                      <select
+                        aria-label={`Map ${name} to`}
+                        value={0}
+                        onChange={(e) => void mapCategory(name, Number(e.target.value))}
+                      >
+                        <option value={0}>Uncategorized</option>
+                        {categories
+                          .filter((c) => !c.isSystem)
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.name}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  ))}
+                </div>
               </div>
-            ))}
-          <p>
-            <button type="button" onClick={() => setPreview(null)}>
-              Back
-            </button>{' '}
-            <button type="button" onClick={() => void doImport()}>
-              Import
-            </button>
-          </p>
-        </>
-      )}
+            )}
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Account</th>
+                    <th className="num">New</th>
+                    <th className="num">Already imported</th>
+                    <th className="num">Possible matches (merged)</th>
+                    <th className="num">Errors</th>
+                    <th className="num">Money in</th>
+                    <th className="num">Money out</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {preview.accounts.map((a) => (
+                    <tr key={a.mintName}>
+                      <td>{a.mintName || '(no name)'}</td>
+                      <td className="num">{a.preview.summary.counts.new}</td>
+                      <td className="num">{a.preview.summary.counts.duplicate}</td>
+                      <td className="num">{a.preview.summary.counts.possible}</td>
+                      <td className="num">{a.preview.errors.length}</td>
+                      <td className="num pos">{formatCents(a.preview.summary.inflow)}</td>
+                      <td className="num">{formatCents(a.preview.summary.outflow)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {preview.accounts
+              .flatMap((a) => a.preview.warnings)
+              .map((w) => (
+                <div className="error" role="alert" key={w}>
+                  {w}
+                </div>
+              ))}
+            <div className="wizard-footer">
+              <button type="button" onClick={() => setPreview(null)}>
+                Back
+              </button>
+              <button type="button" className="primary" onClick={() => void doImport()}>
+                Import
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   )
 }

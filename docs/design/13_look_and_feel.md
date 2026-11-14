@@ -1,7 +1,7 @@
 # 13 Look and feel
 
-Status: in progress. Shell, dashboard, transactions and reports are done;
-budgets, categories, rules, import and data still use the base styles only.
+Status: built. Every screen has had its layout pass, and no screen uses
+`window.confirm` or `window.alert`.
 
 ## Direction
 
@@ -52,14 +52,35 @@ avoid a flash. System is the default.
 - Cards (`.card`) group a section; tables inside cards lose their own border.
 - Row actions go in a "..." menu (`ActionMenu`), not a row of buttons.
 - Destructive or notable confirmations use `useConfirm()` and `useAlert()`
-  from `ui.tsx`. `window.confirm` and `window.alert` are being removed screen
-  by screen; Transactions and the suggest-rule notice are done.
+  from `ui.tsx`. Native `window.confirm` and `window.alert` are not used. The
+  database restore confirmation stays a native message box, because it comes
+  from the main process just before the app relaunches.
+- Forms for one item (add or edit a budget, a category, a rule) open in a
+  `Dialog` from a header button or the row menu, not inline in the list.
 - Empty lists use `Empty` with a short title and hint.
 - Charts: `TrendChart` for income against spending by month (legend, gridlines,
   per-month tooltip); meter lists in the category colour for shares. No donuts.
 
-## Remaining
+## Screens
 
-Budgets (progress bars, over-budget state), Categories (list with menus and an
-icon picker using the Lucide icons), Rules, Import wizard, Data, and removing
-the last `window.confirm` / `window.alert` calls.
+- Budgets: month stepper and Add budget in the page header; stat tiles for
+  budgeted, spent and remaining (or over, with a per-day figure for the
+  current month); one row per budget with a progress bar that turns amber
+  from 85% and red when over, plus an over-budget pill; a card listing
+  spending in categories without a budget, each with a quick Budget button.
+- Categories: one card per kind (spending, income, transfers), a row menu
+  (rename, colour and icon, merge, delete), each opening a dialog. The colour
+  and icon dialog shows the Lucide icons with a live preview. Add category
+  picks the kind, colour and icon up front.
+- Rules: numbered list with When and Then chips, move up and down buttons, a
+  row menu (edit, turn on or off, delete); the editor is a wide dialog with
+  When and Then sections. The preview is a card above the list with an Apply
+  button and an in-app confirm.
+- Import: a stepper (choose file, map columns or choose account, review,
+  done), a drop area that also accepts a dragged file, the watched folder as
+  a card with status pills; mapping in cards with the used columns
+  highlighted in the sample; review with count tiles and result pills; a
+  done card with undo. Import history is a table with expandable rows and a
+  row menu (show rows, undo import).
+- Data: cards for export and restore, CSV export and automatic backups (on or
+  off pill, last backup, count, settings form).

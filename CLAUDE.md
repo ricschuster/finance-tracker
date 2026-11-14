@@ -57,5 +57,5 @@ Electron, TypeScript, React, SQLite (better-sqlite3). See ADR 0002. Keep busines
 - No em dashes in code, comments, docs, commit messages, or user-facing text.
 - Significant technical or design decisions get an ADR in `docs/decisions/`.
 - Design notes live in `docs/design/`; session handoffs in `docs/handoffs/`.
-- Keep changes small and focused; update docs when behaviour or design changes.
+- Keep changes small and focused; update docs when behaviour or design changes. The repo is public: regenerate README screenshots (`readme-shots.mjs`, see CONTRIBUTING) after visible UI changes, and never commit real data.
 - One pull request per working session: keep adding commits to the session's open PR rather than opening several.

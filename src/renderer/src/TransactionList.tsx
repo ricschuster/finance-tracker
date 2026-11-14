@@ -80,7 +80,16 @@ export function TransactionList({
                             window.api.ledger.updateTransaction(t.id, {
                               lines: [{ categoryId, amount: t.amount, memo: single.memo }],
                             }),
-                          )
+                          ).then((ok) => {
+                            if (
+                              ok &&
+                              window.confirm(
+                                'Category changed. Make this a rule for similar transactions?',
+                              )
+                            ) {
+                              onSuggestRule(t.id)
+                            }
+                          })
                         }
                       />
                     </>

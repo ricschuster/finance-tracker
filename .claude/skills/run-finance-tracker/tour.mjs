@@ -19,7 +19,7 @@ await page.getByRole('button', { name: 'New rule' }).click()
 await page.getByLabel('Name').last().fill('Spotify')
 await page.getByLabel('Text', { exact: true }).fill('spotify')
 await page.getByLabel('Set payee').fill('Spotify')
-await page.getByLabel('Category', { exact: true }).selectOption({ label: 'Subscriptions' })
+await page.getByLabel('Category', { exact: true }).selectOption({ label: 'Entertainment' })
 await page.getByRole('button', { name: 'Save rule' }).click()
 await shot('rule-saved')
 

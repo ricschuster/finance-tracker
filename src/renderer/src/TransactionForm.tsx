@@ -5,11 +5,15 @@ import type { LedgerState } from './useLedger'
 
 const today = () => new Date().toLocaleDateString('en-CA')
 
+/** New transaction form, shown in the Add transaction dialog. */
 export function TransactionForm(
-  props: Pick<LedgerState, 'accounts' | 'categories' | 'run'> & { accountId: number | null },
+  props: Pick<LedgerState, 'accounts' | 'categories' | 'run'> & {
+    accountId: number | null
+    onDone?: () => void
+  },
 ) {
   const { accounts, categories, run } = props
-  const [accountPick, setAccountPick] = useState<number | null>(null)
+  const [accountPick, setAccountPick] = useState<number | null>(props.accountId)
   const [date, setDate] = useState(today())
   const [payee, setPayee] = useState('')
   const [direction, setDirection] = useState<'expense' | 'income'>('expense')
@@ -18,7 +22,7 @@ export function TransactionForm(
   const [tags, setTags] = useState('')
   const [notes, setNotes] = useState('')
 
-  const accountId = props.accountId ?? accountPick ?? accounts[0]?.id
+  const accountId = accountPick ?? accounts[0]?.id
   const uncategorized = categories.find((c) => c.name === 'Uncategorized' && c.parentId === null)
   const categoryId = categoryPick ?? uncategorized?.id
 
@@ -27,7 +31,7 @@ export function TransactionForm(
 
   return (
     <form
-      className="inline"
+      className="stack"
       onSubmit={(e) => {
         e.preventDefault()
         if (accountId === undefined || categoryId === undefined) return
@@ -51,11 +55,26 @@ export function TransactionForm(
           setAmount('')
           setTags('')
           setNotes('')
+        }).then((ok) => {
+          if (ok) props.onDone?.()
         })
       }}
     >
-      {props.accountId === null && (
-        <label>
+      <div className="segmented" role="radiogroup" aria-label="Type">
+        {(['expense', 'income'] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            role="radio"
+            aria-checked={direction === d}
+            onClick={() => setDirection(d)}
+          >
+            {d === 'expense' ? 'Expense' : 'Income'}
+          </button>
+        ))}
+      </div>
+      <div className="form-grid">
+        <label className="field">
           Account
           <select value={accountId} onChange={(e) => setAccountPick(Number(e.target.value))}>
             {accounts.map((a) => (
@@ -65,53 +84,46 @@ export function TransactionForm(
             ))}
           </select>
         </label>
-      )}
-      <label>
-        Date
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-      </label>
-      <label>
-        Payee
-        <input value={payee} onChange={(e) => setPayee(e.target.value)} />
-      </label>
-      <label>
-        Type
-        <select
-          value={direction}
-          onChange={(e) => setDirection(e.target.value as 'expense' | 'income')}
-        >
-          <option value="expense">Expense</option>
-          <option value="income">Income</option>
-        </select>
-      </label>
-      <label>
-        Amount
-        <input
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          placeholder="0.00"
-          required
-        />
-      </label>
-      <label>
-        Category
-        {categoryId !== undefined && (
-          <CategorySelect categories={categories} value={categoryId} onChange={setCategoryPick} />
-        )}
-      </label>
-      <label>
-        Tags
-        <input
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          placeholder="comma, separated"
-        />
-      </label>
-      <label>
-        Notes
-        <input value={notes} onChange={(e) => setNotes(e.target.value)} />
-      </label>
-      <button type="submit">Add transaction</button>
+        <label className="field">
+          Date
+          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
+        </label>
+        <label className="field">
+          Payee
+          <input value={payee} onChange={(e) => setPayee(e.target.value)} autoFocus />
+        </label>
+        <label className="field">
+          Amount
+          <input
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            placeholder="0.00"
+            inputMode="decimal"
+            required
+          />
+        </label>
+        <label className="field span-2">
+          Category
+          {categoryId !== undefined && (
+            <CategorySelect categories={categories} value={categoryId} onChange={setCategoryPick} />
+          )}
+        </label>
+        <label className="field">
+          Tags
+          <input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="comma, separated"
+          />
+        </label>
+        <label className="field">
+          Notes
+          <input value={notes} onChange={(e) => setNotes(e.target.value)} />
+        </label>
+      </div>
+      <div className="dialog-actions">
+        <button type="submit">Add transaction</button>
+      </div>
     </form>
   )
 }

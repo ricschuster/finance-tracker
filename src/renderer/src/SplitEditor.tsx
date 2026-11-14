@@ -1,3 +1,4 @@
+import { Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import type { Transaction } from '../../core/ledger/transactions'
 import { formatCents, parseAmountToCents } from '../../core/money'
@@ -42,9 +43,10 @@ export function SplitEditor(props: {
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...change } : r)))
 
   return (
-    <div role="group" aria-label={`Split transaction ${t.id}`}>
+    <div className="split-editor" role="group" aria-label={`Split transaction ${t.id}`}>
+      <h4>Split {formatCents(Math.abs(t.amount))} across categories</h4>
       {rows.map((r, i) => (
-        <div className="inline" key={i}>
+        <div className="split-line" key={i}>
           <CategorySelect
             aria-label={`Split ${i + 1} category`}
             categories={categories}
@@ -64,16 +66,19 @@ export function SplitEditor(props: {
           />
           <button
             type="button"
+            className="ghost icon"
+            aria-label={`Remove split ${i + 1}`}
             disabled={rows.length === 1}
             onClick={() => setRows((rs) => rs.filter((_, j) => j !== i))}
           >
-            Remove
+            <X size={15} />
           </button>
         </div>
       ))}
-      <div className="inline">
+      <div className="split-footer">
         <button
           type="button"
+          className="small"
           onClick={() =>
             setRows((rs) => [
               ...rs,
@@ -85,17 +90,23 @@ export function SplitEditor(props: {
             ])
           }
         >
+          <Plus size={14} />
           Add split
         </button>
-        <span className={remaining === 0 && valid ? 'pos' : 'neg'}>
+        <span className={remaining === 0 && valid ? 'pill pos' : 'pill neg'}>
           {valid
             ? remaining === 0
               ? 'Balanced'
               : `${formatCents(Math.abs(remaining))} ${remaining > 0 ? 'left to assign' : 'over'}`
             : 'Invalid amount'}
         </span>
+        <span className="spacer" />
+        <button type="button" className="ghost small" onClick={onClose}>
+          Cancel
+        </button>
         <button
           type="button"
+          className="primary small"
           disabled={!valid || remaining !== 0}
           onClick={() =>
             void run(async () => {
@@ -111,9 +122,6 @@ export function SplitEditor(props: {
           }
         >
           Save splits
-        </button>
-        <button type="button" onClick={onClose}>
-          Cancel
         </button>
       </div>
     </div>

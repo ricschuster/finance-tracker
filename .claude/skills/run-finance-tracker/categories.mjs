@@ -49,7 +49,7 @@ await home.getByRole('button', { name: 'Icon pet' }).click()
 await page.waitForTimeout(300)
 await home.getByRole('button', { name: 'Colour #e15759' }).click()
 await page.waitForTimeout(300)
-console.log('STYLED:', (await home.locator('.category-dot').first().getAttribute('style')), (await home.locator('.category-badge').first().innerText()))
+console.log('STYLED:', await home.locator('.category-icon').first().getAttribute('style'), await home.locator('.category-icon svg').first().getAttribute('class'))
 await shot('categories-style')
 
 // A category in use: delete one and check the line count text first.

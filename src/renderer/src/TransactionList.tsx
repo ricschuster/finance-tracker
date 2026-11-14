@@ -1,9 +1,27 @@
+import { EyeOff, Eye, Split, Trash2, Wand2, Receipt } from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { formatCents } from '../../core/money'
 import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import { SplitEditor } from './SplitEditor'
+import { ActionMenu, Empty, useConfirm } from './ui'
 import type { LedgerState } from './useLedger'
+
+const thisYear = String(new Date().getFullYear())
+
+/** "Nov 14" this year, "Nov 14, 2025" otherwise. */
+export const displayDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleDateString('en-CA', {
+    month: 'short',
+    day: 'numeric',
+    ...(iso.startsWith(thisYear) ? {} : { year: 'numeric' }),
+  })
+
+const STATUS_PILL: Record<string, string> = {
+  pending: 'pill warn',
+  cleared: 'pill',
+  reconciled: 'pill pos',
+}
 
 export function TransactionList({
   transactions,
@@ -23,167 +41,208 @@ export function TransactionList({
   onToggleAll: () => void
 }) {
   const [splitting, setSplitting] = useState<number | null>(null)
+  const confirm = useConfirm()
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
-  if (transactions.length === 0) return <p className="muted">No matching transactions.</p>
+  if (transactions.length === 0)
+    return (
+      <div className="card">
+        <Empty icon={<Receipt size={28} />} title="No matching transactions">
+          Try clearing the search or filters.
+        </Empty>
+      </div>
+    )
   return (
-    <table>
-      <thead>
-        <tr>
-          <th>
-            <input
-              type="checkbox"
-              aria-label="Select all shown"
-              checked={transactions.every((t) => selected.has(t.id))}
-              onChange={onToggleAll}
-            />
-          </th>
-          <th>Date</th>
-          {showAccount && <th>Account</th>}
-          <th>Payee</th>
-          <th>Category</th>
-          <th>Tags</th>
-          <th>Status</th>
-          <th className="num">Amount</th>
-          <th />
-        </tr>
-      </thead>
-      <tbody>
-        {transactions.map((t) => {
-          const isTransfer = t.transferPeerId !== null
-          const single = t.lines.length === 1 ? t.lines[0] : undefined
-          return (
-            <Fragment key={t.id}>
-              <tr>
-                <td>
-                  <input
-                    type="checkbox"
-                    aria-label={`Select transaction ${t.id}`}
-                    checked={selected.has(t.id)}
-                    onChange={() => onToggle(t.id)}
-                  />
-                </td>
-                <td className="nowrap">{t.date}</td>
-                {showAccount && <td>{accountName.get(t.accountId)}</td>}
-                <td>{t.payee || t.rawDescription || <span className="muted">(none)</span>}</td>
-                <td>
-                  {isTransfer ? (
-                    <span className="muted">Transfer</span>
-                  ) : single ? (
-                    <>
-                      <CategoryBadge id={single.categoryId} />
-                      <CategorySelect
-                        aria-label={`Category for transaction ${t.id}`}
-                        categories={categories}
-                        value={single.categoryId}
-                        onChange={(categoryId) =>
-                          void run(() =>
-                            window.api.ledger.updateTransaction(t.id, {
-                              lines: [{ categoryId, amount: t.amount, memo: single.memo }],
+    <div className="card flush">
+      <table className="txn-table">
+        <thead>
+          <tr>
+            <th className="check">
+              <input
+                type="checkbox"
+                aria-label="Select all shown"
+                checked={transactions.every((t) => selected.has(t.id))}
+                onChange={onToggleAll}
+              />
+            </th>
+            <th>Date</th>
+            <th>Payee</th>
+            <th>Category</th>
+            <th>Status</th>
+            <th className="num">Amount</th>
+            <th />
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((t) => {
+            const isTransfer = t.transferPeerId !== null
+            const single = t.lines.length === 1 ? t.lines[0] : undefined
+            const sub = [showAccount ? accountName.get(t.accountId) : null, t.notes || null].filter(
+              Boolean,
+            )
+            return (
+              <Fragment key={t.id}>
+                <tr className={selected.has(t.id) ? 'selected' : undefined}>
+                  <td className="check">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select transaction ${t.id}`}
+                      checked={selected.has(t.id)}
+                      onChange={() => onToggle(t.id)}
+                    />
+                  </td>
+                  <td className="nowrap muted">{displayDate(t.date)}</td>
+                  <td className="payee">
+                    <div className="payee-name">
+                      {t.payee || t.rawDescription || <span className="muted">(none)</span>}
+                    </div>
+                    {(sub.length > 0 || t.tags.length > 0) && (
+                      <div className="payee-sub">
+                        {sub.join(' · ')}
+                        {t.tags.map((tag) => (
+                          <span className="tag" key={tag}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td>
+                    {isTransfer ? (
+                      <span className="category-badge muted">
+                        <CategoryBadge name="Transfer" size="sm" />
+                        Transfer
+                      </span>
+                    ) : single ? (
+                      <span className="cat-select">
+                        <CategoryBadge id={single.categoryId} size="sm" />
+                        <CategorySelect
+                          aria-label={`Category for transaction ${t.id}`}
+                          categories={categories}
+                          value={single.categoryId}
+                          onChange={(categoryId) =>
+                            void run(() =>
+                              window.api.ledger.updateTransaction(t.id, {
+                                lines: [{ categoryId, amount: t.amount, memo: single.memo }],
+                              }),
+                            ).then(async (ok) => {
+                              if (
+                                ok &&
+                                (await confirm(
+                                  'Apply the same category to similar transactions automatically, now and on future imports.',
+                                  {
+                                    title: 'Make this a rule?',
+                                    confirmLabel: 'Create rule',
+                                    cancelLabel: 'Not now',
+                                  },
+                                ))
+                              ) {
+                                onSuggestRule(t.id)
+                              }
+                            })
+                          }
+                        />
+                      </span>
+                    ) : (
+                      <span className="category-badge">
+                        <span className="split-icon" aria-hidden="true">
+                          <Split size={12} />
+                        </span>
+                        <span className="muted">
+                          Split: {t.lines.map((l) => l.categoryName).join(', ')}
+                        </span>
+                      </span>
+                    )}
+                  </td>
+                  <td className="nowrap">
+                    <span className={STATUS_PILL[t.status] ?? 'pill'}>{t.status}</span>
+                    {t.excludeFromBudgets && (
+                      <span
+                        className="pill"
+                        title="Counted in reports, skipped by budgets"
+                        style={{ marginLeft: 4 }}
+                      >
+                        <EyeOff size={11} /> not in budgets
+                      </span>
+                    )}
+                  </td>
+                  <td className={`num amount ${t.amount < 0 ? '' : 'pos'}`}>
+                    {t.amount > 0 ? '+' : ''}
+                    {formatCents(t.amount)}
+                  </td>
+                  <td className="actions">
+                    <ActionMenu
+                      label={`Actions for transaction ${t.id}`}
+                      actions={[
+                        ...(isTransfer
+                          ? []
+                          : [
+                              {
+                                label: 'Split',
+                                icon: <Split size={15} />,
+                                onSelect: () => setSplitting(t.id),
+                              },
+                              {
+                                label: 'Make a rule',
+                                icon: <Wand2 size={15} />,
+                                onSelect: () => onSuggestRule(t.id),
+                              },
+                              {
+                                label: t.excludeFromBudgets
+                                  ? 'Include in budgets'
+                                  : 'Hide from budgets',
+                                icon: t.excludeFromBudgets ? (
+                                  <Eye size={15} />
+                                ) : (
+                                  <EyeOff size={15} />
+                                ),
+                                onSelect: () =>
+                                  void run(() =>
+                                    window.api.ledger.updateTransaction(t.id, {
+                                      excludeFromBudgets: !t.excludeFromBudgets,
+                                    }),
+                                  ),
+                              },
+                            ]),
+                        {
+                          label: 'Delete',
+                          icon: <Trash2 size={15} />,
+                          danger: true,
+                          separatorBefore: !isTransfer,
+                          onSelect: () =>
+                            void confirm(
+                              isTransfer
+                                ? 'Both sides of this transfer will be deleted.'
+                                : 'This transaction will be deleted.',
+                              {
+                                title: isTransfer ? 'Delete transfer?' : 'Delete transaction?',
+                                confirmLabel: 'Delete',
+                                danger: true,
+                              },
+                            ).then((ok) => {
+                              if (ok) void run(() => window.api.ledger.deleteTransaction(t.id))
                             }),
-                          ).then((ok) => {
-                            if (
-                              ok &&
-                              window.confirm(
-                                'Category changed. Make this a rule for similar transactions?',
-                              )
-                            ) {
-                              onSuggestRule(t.id)
-                            }
-                          })
-                        }
-                      />
-                    </>
-                  ) : (
-                    <span className="muted">
-                      Split ({t.lines.map((l) => l.categoryName).join(', ')})
-                    </span>
-                  )}
-                </td>
-                <td>
-                  {t.tags.map((tag) => (
-                    <span className="tag" key={tag}>
-                      {tag}
-                    </span>
-                  ))}
-                </td>
-                <td>
-                  {t.status}
-                  {t.excludeFromBudgets && (
-                    <span className="tag" title="Counted in reports, skipped by budgets">
-                      not in budgets
-                    </span>
-                  )}
-                </td>
-                <td className={`num ${t.amount < 0 ? 'neg' : 'pos'}`}>{formatCents(t.amount)}</td>
-                <td className="actions">
-                  {!isTransfer && (
-                    <button
-                      type="button"
-                      aria-label={`Split transaction ${t.id}`}
-                      onClick={() => setSplitting(t.id)}
-                    >
-                      Split
-                    </button>
-                  )}{' '}
-                  {!isTransfer && (
-                    <button
-                      type="button"
-                      aria-label={`Suggest a rule from transaction ${t.id}`}
-                      onClick={() => onSuggestRule(t.id)}
-                    >
-                      Rule
-                    </button>
-                  )}{' '}
-                  {!isTransfer && (
-                    <button
-                      type="button"
-                      aria-label={`${t.excludeFromBudgets ? 'Include in' : 'Hide from'} budgets for transaction ${t.id}`}
-                      onClick={() =>
-                        void run(() =>
-                          window.api.ledger.updateTransaction(t.id, {
-                            excludeFromBudgets: !t.excludeFromBudgets,
-                          }),
-                        )
-                      }
-                    >
-                      {t.excludeFromBudgets ? 'Include in budgets' : 'Hide from budgets'}
-                    </button>
-                  )}{' '}
-                  <button
-                    type="button"
-                    aria-label={`Delete transaction ${t.id}`}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          isTransfer
-                            ? 'Delete both sides of this transfer?'
-                            : 'Delete this transaction?',
-                        )
-                      ) {
-                        void run(() => window.api.ledger.deleteTransaction(t.id))
-                      }
-                    }}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-              {splitting === t.id && (
-                <tr>
-                  <td colSpan={showAccount ? 9 : 8}>
-                    <SplitEditor
-                      transaction={t}
-                      categories={categories}
-                      run={run}
-                      onClose={() => setSplitting(null)}
+                        },
+                      ]}
                     />
                   </td>
                 </tr>
-              )}
-            </Fragment>
-          )
-        })}
-      </tbody>
-    </table>
+                {splitting === t.id && (
+                  <tr className="split-row">
+                    <td colSpan={7}>
+                      <SplitEditor
+                        transaction={t}
+                        categories={categories}
+                        run={run}
+                        onClose={() => setSplitting(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }

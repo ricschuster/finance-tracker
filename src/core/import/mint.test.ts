@@ -2,6 +2,8 @@ import Database from 'better-sqlite3'
 import { describe, expect, it } from 'vitest'
 import { migrate } from '../db/migrations'
 import { createAccount } from '../ledger/accounts'
+import { createCategory, mergeCategory } from '../ledger/categories'
+import { categoryIdByName } from './commit'
 import { createTransaction, getTransaction } from '../ledger/transactions'
 import { createImportHandlers } from './handlers'
 import { getBatchRows } from './history'
@@ -76,5 +78,28 @@ describe('Mint', () => {
     expect(api.commitMint({ ...req, sourceName: 'mint.csv' }).every((d) => d.added === 0)).toBe(
       true,
     )
+  })
+  it('maps an outside category name through an alias, and merge keeps the old name working', () => {
+    const db = new Database(':memory:')
+    db.pragma('foreign_keys = ON')
+    migrate(db)
+    const chq = createAccount(db, { name: 'Chequing', type: 'checking' })
+    const visa = createAccount(db, { name: 'Visa', type: 'credit_card' })
+    const api = createImportHandlers(db)
+    const food = db.prepare("SELECT id FROM categories WHERE name = 'Groceries'").get() as {
+      id: number
+    }
+    api.setCategoryAlias('mystery category', food.id)
+    expect(() => api.setCategoryAlias('x', 99999)).toThrow(/not found/)
+    const req = { text: csv, accountMap: { Chequing: chq, Visa: visa } }
+    expect(api.previewMint(req).unknownCategories).toEqual([])
+    const done = api.commitMint({ ...req, sourceName: 'mint.csv' })
+    const [shop] = getBatchRows(db, done[1]!.batchId)
+    expect(getTransaction(db, shop!.id)!.lines[0]!.categoryName).toBe('Groceries')
+
+    // Merging a category leaves its name as an alias of the survivor.
+    const dining = createCategory(db, { name: 'Dining Out', kind: 'expense' })
+    mergeCategory(db, dining, food.id)
+    expect(categoryIdByName(db, 'dining out')).toBe(food.id)
   })
 })

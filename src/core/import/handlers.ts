@@ -333,12 +333,26 @@ export function createImportHandlers(db: Database.Database) {
       return { accountNames, count: m.candidates.length + m.errors.length }
     },
 
+    /** Make an outside category name (for example from Mint) land in one of our categories. */
+    setCategoryAlias: (alias: string, categoryId: number): void => {
+      const name = alias.trim()
+      if (!name) throw new Error('Alias is required')
+      if (!db.prepare('SELECT 1 FROM categories WHERE id = ?').get(categoryId))
+        throw new Error(`Category ${categoryId} not found`)
+      db.prepare(
+        `INSERT INTO category_aliases (alias, category_id) VALUES (?, ?)
+         ON CONFLICT(alias) DO UPDATE SET category_id = excluded.category_id`,
+      ).run(name, categoryId)
+    },
+
     previewMint: (req: MintRequest): MintPreview => {
       const groups = mintGroups(db, req)
       const known = new Set(
-        (db.prepare('SELECT name FROM categories').all() as Array<{ name: string }>).map((r) =>
-          r.name.toLowerCase(),
-        ),
+        (
+          db
+            .prepare('SELECT name FROM categories UNION SELECT alias FROM category_aliases')
+            .all() as Array<{ name: string }>
+        ).map((r) => r.name.toLowerCase()),
       )
       const unknown = new Set<string>()
       for (const g of groups)

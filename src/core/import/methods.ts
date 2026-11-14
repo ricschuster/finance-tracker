@@ -14,6 +14,7 @@ export const IMPORT_METHODS = [
   'listImportProfiles',
   'saveImportProfile',
   'deleteImportProfile',
+  'setCategoryAlias',
 ] as const
 
 export type ImportMethod = (typeof IMPORT_METHODS)[number]

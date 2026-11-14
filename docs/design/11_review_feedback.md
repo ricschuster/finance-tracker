@@ -139,3 +139,13 @@ Change:
 2. Flat categories, merge, colours and icons (items 1 and 2).
 3. Watched folder (item 8).
 4. Exclude-from-budgets flag with budgets (items 3 and 4), then report and search checks (items 5 and 6).
+
+## Category aliases (follow-up to item 3 of the open list)
+
+Status: built. Migration 10 adds `category_aliases` (alias, category id, case
+insensitive). Imports match a category name first, then an alias. In the Mint
+preview each unknown category has a selector that saves an alias and refreshes
+the preview. Merging a category keeps its old name as an alias of the survivor,
+so later imports that still use that name land in the right place. Deleting a
+category removes its aliases.
+

@@ -1,3 +1,4 @@
+import { Bookmark, Eye, EyeOff, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatCents, parseAmountToCents } from '../../core/money'
 import type { TransactionStatus } from '../../core/ledger/transactions'
@@ -5,6 +6,7 @@ import type { SavedSearch } from '../../core/search/saved'
 import type { SearchQuery, SearchResult } from '../../core/search/query'
 import { CategorySelect } from './CategorySelect'
 import { TransactionList } from './TransactionList'
+import { ActionMenu, useAlert, useConfirm } from './ui'
 import type { LedgerState } from './useLedger'
 
 const PAGE = 500
@@ -103,6 +105,8 @@ export function TransactionSearch({
   const [bulkCategory, setBulkCategory] = useState(0)
   const [bulkTag, setBulkTag] = useState('')
   const [bulkStatus, setBulkStatus] = useState<TransactionStatus>('reconciled')
+  const confirm = useConfirm()
+  const alert = useAlert()
 
   const presetKey = preset?.key
   useEffect(() => {
@@ -187,8 +191,9 @@ export function TransactionSearch({
     if (ok && outcome) {
       setSelected(new Set())
       if (outcome.skipped > 0) {
-        window.alert(
+        void alert(
           `${outcome.changed} changed, ${outcome.skipped} skipped (no change needed or not applicable).`,
+          'Bulk update done',
         )
       }
     }
@@ -217,48 +222,69 @@ export function TransactionSearch({
   const hasSelection = selected.size > 0
   const total = result?.total ?? 0
 
+  const activeFilters = (Object.keys(empty) as (keyof Filters)[]).filter(
+    (k) => k !== 'text' && filters[k] !== empty[k],
+  ).length
+
   return (
     <section aria-label="Search">
-      <div className="searchbar">
-        <input
-          type="search"
-          aria-label="Search transactions"
-          placeholder="Search payee, description, notes, tags, categories"
-          value={filters.text}
-          onChange={(e) => set('text', e.target.value)}
-        />{' '}
-        <button type="button" aria-expanded={showMore} onClick={() => setShowMore((v) => !v)}>
-          Filters
-        </button>{' '}
-        <button type="button" onClick={() => setFilters(empty)}>
-          Clear
-        </button>{' '}
-        <select
-          aria-label="Saved searches"
-          value=""
-          onChange={(e) => {
-            const s = saved.find((x) => x.id === Number(e.target.value))
-            if (s) {
-              setFilters(fromQuery(s.query))
-              setApplied(fromQuery(s.query))
-              setShowMore(true)
-            }
-          }}
+      <div className="toolbar searchbar">
+        <div className="search-input">
+          <Search size={16} aria-hidden="true" />
+          <input
+            type="search"
+            aria-label="Search transactions"
+            placeholder="Search payee, description, notes, tags, categories"
+            value={filters.text}
+            onChange={(e) => set('text', e.target.value)}
+          />
+        </div>
+        <button
+          type="button"
+          aria-expanded={showMore}
+          className={showMore || activeFilters > 0 ? 'active' : undefined}
+          onClick={() => setShowMore((v) => !v)}
         >
-          <option value="">Saved searches</option>
-          {saved.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>{' '}
+          <SlidersHorizontal size={15} />
+          Filters
+          {activeFilters > 0 && <span className="count">{activeFilters}</span>}
+        </button>
+        {(activeFilters > 0 || filters.text) && (
+          <button type="button" className="ghost" onClick={() => setFilters(empty)}>
+            <X size={15} />
+            Clear
+          </button>
+        )}
+        <span className="spacer" />
+        {saved.length > 0 && (
+          <select
+            aria-label="Saved searches"
+            value=""
+            onChange={(e) => {
+              const s = saved.find((x) => x.id === Number(e.target.value))
+              if (s) {
+                setFilters(fromQuery(s.query))
+                setApplied(fromQuery(s.query))
+                setShowMore(true)
+              }
+            }}
+          >
+            <option value="">Saved searches</option>
+            {saved.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+        )}
         {saveName === null ? (
           <button type="button" onClick={() => setSaveName('')}>
+            <Bookmark size={15} />
             Save search
           </button>
         ) : (
           <form
-            style={{ display: 'inline' }}
+            className="toolbar-form"
             onSubmit={(e) => {
               e.preventDefault()
               void saveCurrent(saveName)
@@ -270,120 +296,134 @@ export function TransactionSearch({
               placeholder="Name this search"
               value={saveName}
               onChange={(e) => setSaveName(e.target.value)}
-            />{' '}
+            />
             <button type="submit" disabled={!saveName.trim()}>
               Save
-            </button>{' '}
-            <button type="button" onClick={() => setSaveName(null)}>
+            </button>
+            <button type="button" className="ghost" onClick={() => setSaveName(null)}>
               Cancel
             </button>
           </form>
         )}
         {saved.length > 0 && (
-          <>
-            {' '}
-            <select
-              aria-label="Delete a saved search"
-              value=""
-              onChange={(e) => {
-                const s = saved.find((x) => x.id === Number(e.target.value))
-                if (s && window.confirm(`Delete saved search "${s.name}"?`)) {
-                  void run(() => window.api.search.deleteSavedSearch(s.id)).then(loadSaved)
-                }
-              }}
-            >
-              <option value="">Delete saved...</option>
-              {saved.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </>
+          <ActionMenu
+            label="Delete a saved search"
+            trigger={
+              <button type="button" className="icon" aria-label="Delete a saved search">
+                <Trash2 size={15} />
+              </button>
+            }
+            actions={saved.map((s) => ({
+              label: `Delete "${s.name}"`,
+              danger: true,
+              onSelect: () =>
+                void confirm(`The saved search "${s.name}" will be removed.`, {
+                  title: 'Delete saved search?',
+                  confirmLabel: 'Delete',
+                  danger: true,
+                }).then((ok) => {
+                  if (ok) void run(() => window.api.search.deleteSavedSearch(s.id)).then(loadSaved)
+                }),
+            }))}
+          />
         )}
       </div>
 
       {showMore && (
-        <div className="mapper" aria-label="Filters">
-          <label>
-            Year
-            <input
-              type="number"
-              min="1900"
-              max="2999"
-              placeholder="2026"
-              aria-label="Year"
-              value={year}
-              onChange={(e) => {
-                const y = e.target.value
-                setYear(y)
-                if (/^\d{4}$/.test(y)) {
-                  setFilters((f) => ({ ...f, from: `${y}-01-01`, to: `${y}-12-31` }))
-                }
-              }}
-            />
-          </label>
-          <label>
-            From
-            <input type="date" value={filters.from} onChange={(e) => set('from', e.target.value)} />
-          </label>
-          <label>
-            To
-            <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
-          </label>
-          <label>
-            Category
-            <CategorySelect
-              aria-label="Category filter"
-              anyLabel="Any category"
-              categories={categories}
-              value={filters.categoryId}
-              onChange={(id) => set('categoryId', id)}
-            />
-          </label>
-          <label>
-            Uncategorized only
-            <input
-              type="checkbox"
-              checked={filters.uncategorized}
-              onChange={(e) => set('uncategorized', e.target.checked)}
-            />
-          </label>
-          <label>
-            Tag
-            <input value={filters.tag} onChange={(e) => set('tag', e.target.value)} />
-          </label>
-          <label>
-            Status
-            <select
-              value={filters.status}
-              onChange={(e) => set('status', e.target.value as Filters['status'])}
-            >
-              <option value="">Any</option>
-              <option value="pending">Pending</option>
-              <option value="cleared">Cleared</option>
-              <option value="reconciled">Reconciled</option>
-            </select>
-          </label>
-          <label>
-            Direction
-            <select
-              value={filters.direction}
-              onChange={(e) => set('direction', e.target.value as Filters['direction'])}
-            >
-              <option value="">Any</option>
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-            </select>
-          </label>
-          <label>
-            Amount at least
-            <input value={filters.min} onChange={(e) => set('min', e.target.value)} />
-          </label>
-          <label>
-            Amount at most
-            <input value={filters.max} onChange={(e) => set('max', e.target.value)} />
-          </label>
+        <div className="card filters" aria-label="Filters">
+          <div className="mapper">
+            <label>
+              Year
+              <input
+                type="number"
+                min="1900"
+                max="2999"
+                placeholder="2026"
+                aria-label="Year"
+                value={year}
+                onChange={(e) => {
+                  const y = e.target.value
+                  setYear(y)
+                  if (/^\d{4}$/.test(y)) {
+                    setFilters((f) => ({ ...f, from: `${y}-01-01`, to: `${y}-12-31` }))
+                  }
+                }}
+              />
+            </label>
+            <label>
+              From
+              <input
+                type="date"
+                value={filters.from}
+                onChange={(e) => set('from', e.target.value)}
+              />
+            </label>
+            <label>
+              To
+              <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
+            </label>
+            <label>
+              Category
+              <CategorySelect
+                aria-label="Category filter"
+                anyLabel="Any category"
+                categories={categories}
+                value={filters.categoryId}
+                onChange={(id) => set('categoryId', id)}
+              />
+            </label>
+            <label>
+              Tag
+              <input value={filters.tag} onChange={(e) => set('tag', e.target.value)} />
+            </label>
+            <label>
+              Status
+              <select
+                value={filters.status}
+                onChange={(e) => set('status', e.target.value as Filters['status'])}
+              >
+                <option value="">Any</option>
+                <option value="pending">Pending</option>
+                <option value="cleared">Cleared</option>
+                <option value="reconciled">Reconciled</option>
+              </select>
+            </label>
+            <label>
+              Direction
+              <select
+                value={filters.direction}
+                onChange={(e) => set('direction', e.target.value as Filters['direction'])}
+              >
+                <option value="">Any</option>
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+            </label>
+            <label>
+              Amount at least
+              <input
+                value={filters.min}
+                placeholder="0.00"
+                onChange={(e) => set('min', e.target.value)}
+              />
+            </label>
+            <label>
+              Amount at most
+              <input
+                value={filters.max}
+                placeholder="0.00"
+                onChange={(e) => set('max', e.target.value)}
+              />
+            </label>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={filters.uncategorized}
+                onChange={(e) => set('uncategorized', e.target.checked)}
+              />
+              Uncategorized only
+            </label>
+          </div>
         </div>
       )}
 
@@ -393,36 +433,42 @@ export function TransactionSearch({
         </p>
       )}
       {result && (
-        <p className="muted" aria-live="polite">
-          {total} match{total === 1 ? '' : 'es'}, {formatCents(result.sum)}
-          {total > shown.length && ` (showing the newest ${shown.length})`}
-        </p>
+        <div className="result-summary" aria-live="polite">
+          <span>
+            <strong>{total.toLocaleString('en-CA')}</strong> transaction{total === 1 ? '' : 's'}
+            {total > shown.length && (
+              <span className="muted"> (showing the newest {shown.length})</span>
+            )}
+          </span>
+          <span>
+            <span className="muted">Total </span>
+            <strong className={result.sum < 0 ? '' : 'pos'}>{formatCents(result.sum)}</strong>
+          </span>
+        </div>
       )}
 
       {hasSelection && (
         <div className="bulkbar" role="toolbar" aria-label="Bulk actions">
           <strong>{selected.size} selected</strong>
           {total > shown.length && (
-            <>
-              {' '}
-              <button
-                type="button"
-                onClick={() =>
-                  void allMatchingIds().then((ids) => ids && setSelected(new Set(ids)))
-                }
-              >
-                Select all {total} matches
-              </button>
-            </>
-          )}{' '}
+            <button
+              type="button"
+              className="small"
+              onClick={() => void allMatchingIds().then((ids) => ids && setSelected(new Set(ids)))}
+            >
+              Select all {total} matches
+            </button>
+          )}
+          <span className="bulk-sep" />
           <CategorySelect
             aria-label="Bulk category"
             categories={categories}
             value={bulkCategory || (categories[0]?.id ?? 0)}
             onChange={setBulkCategory}
-          />{' '}
+          />
           <button
             type="button"
+            className="small"
             onClick={() =>
               void bulk(
                 { type: 'setCategory', categoryId: bulkCategory || (categories[0]?.id ?? 0) },
@@ -431,27 +477,31 @@ export function TransactionSearch({
             }
           >
             Set category
-          </button>{' '}
+          </button>
+          <span className="bulk-sep" />
           <input
             aria-label="Bulk tag"
-            placeholder="tag"
+            placeholder="Tag"
             value={bulkTag}
             onChange={(e) => setBulkTag(e.target.value)}
-          />{' '}
+          />
           <button
             type="button"
+            className="small"
             disabled={!bulkTag.trim()}
             onClick={() => void bulk({ type: 'addTag', tag: bulkTag }, [...selected])}
           >
             Add tag
-          </button>{' '}
+          </button>
           <button
             type="button"
+            className="small"
             disabled={!bulkTag.trim()}
             onClick={() => void bulk({ type: 'removeTag', tag: bulkTag }, [...selected])}
           >
             Remove tag
-          </button>{' '}
+          </button>
+          <span className="bulk-sep" />
           <select
             aria-label="Bulk status"
             value={bulkStatus}
@@ -460,43 +510,52 @@ export function TransactionSearch({
             <option value="pending">Pending</option>
             <option value="cleared">Cleared</option>
             <option value="reconciled">Reconciled</option>
-          </select>{' '}
+          </select>
           <button
             type="button"
+            className="small"
             onClick={() => void bulk({ type: 'setStatus', status: bulkStatus }, [...selected])}
           >
             Set status
-          </button>{' '}
+          </button>
+          <span className="spacer" />
+          <ActionMenu
+            label="More bulk actions"
+            actions={[
+              {
+                label: 'Hide from budgets',
+                icon: <EyeOff size={15} />,
+                onSelect: () =>
+                  void bulk({ type: 'setExcludeFromBudgets', exclude: true }, [...selected]),
+              },
+              {
+                label: 'Include in budgets',
+                icon: <Eye size={15} />,
+                onSelect: () =>
+                  void bulk({ type: 'setExcludeFromBudgets', exclude: false }, [...selected]),
+              },
+              {
+                label: 'Delete',
+                icon: <Trash2 size={15} />,
+                danger: true,
+                separatorBefore: true,
+                onSelect: () =>
+                  void confirm(
+                    `${selected.size} transaction${selected.size === 1 ? '' : 's'} will be deleted. Transfers lose both sides.`,
+                    { title: 'Delete transactions?', confirmLabel: 'Delete', danger: true },
+                  ).then((ok) => {
+                    if (ok) void bulk({ type: 'delete' }, [...selected])
+                  }),
+              },
+            ]}
+          />
           <button
             type="button"
-            onClick={() =>
-              void bulk({ type: 'setExcludeFromBudgets', exclude: true }, [...selected])
-            }
+            className="ghost small"
+            aria-label="Clear selection"
+            onClick={() => setSelected(new Set())}
           >
-            Hide from budgets
-          </button>{' '}
-          <button
-            type="button"
-            onClick={() =>
-              void bulk({ type: 'setExcludeFromBudgets', exclude: false }, [...selected])
-            }
-          >
-            Include in budgets
-          </button>{' '}
-          <button
-            type="button"
-            onClick={() => {
-              if (
-                window.confirm(`Delete ${selected.size} transaction(s)? Transfers lose both sides.`)
-              ) {
-                void bulk({ type: 'delete' }, [...selected])
-              }
-            }}
-          >
-            Delete
-          </button>{' '}
-          <button type="button" onClick={() => setSelected(new Set())}>
-            Clear selection
+            <X size={15} />
           </button>
         </div>
       )}

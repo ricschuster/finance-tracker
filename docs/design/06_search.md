@@ -40,3 +40,10 @@ Transfers and split transactions are skipped for set category and reported in
 the result, not treated as errors. Deleting one side of a transfer deletes
 both, and ids already removed that way are ignored. A bulk action is one
 database transaction.
+
+## Delete all matches
+
+`deleteMatching(query)` deletes every transaction a query matches in one database transaction, with
+no cap (the 10,000 limit and the 500 rows on screen only apply to selections). A transfer loses both
+sides. The result row shows a Delete all N button after confirming, which also covers the whole ledger
+when no filter is set. It is not undoable; the confirm points at backups.

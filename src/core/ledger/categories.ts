@@ -128,6 +128,25 @@ export function deleteCategory(db: Database.Database, id: number, reassignTo?: n
 }
 
 /**
+ * Delete several categories in one database transaction. Their lines, rules and saved searches
+ * move to `reassignTo` (default Uncategorized), which must not be one of the deleted categories.
+ * Nothing is deleted if any id is unknown or a system category.
+ */
+export function deleteCategories(
+  db: Database.Database,
+  ids: number[],
+  reassignTo?: number,
+): { deleted: number } {
+  const unique = [...new Set(ids)]
+  if (reassignTo !== undefined && unique.includes(reassignTo))
+    throw new Error('Cannot move transactions into a category that is being deleted')
+  db.transaction(() => {
+    for (const id of unique) deleteCategory(db, id, reassignTo)
+  })()
+  return { deleted: unique.length }
+}
+
+/**
  * Merge `fromId` into `intoId`: lines, rule actions and saved searches move over and `fromId` is
  * deleted. Both must be non-system and of the same kind, so income never silently becomes spending.
  */

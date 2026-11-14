@@ -6,7 +6,7 @@ import {
   type ImportDecision,
   type ImportFormat,
 } from './commit'
-import { createCategory } from '../ledger/categories'
+import { createCategory, deleteCategory } from '../ledger/categories'
 import { looksLikeMint, mapMint } from './mint'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
@@ -168,6 +168,12 @@ export interface MintRequest {
   /** Mint account name to ledger account id. Every account in the file must be mapped. */
   accountMap: Record<string, number>
   overrides?: ChoiceOverride[]
+  /**
+   * Setup import: drop the categories we have that the file does not use, so the file's set
+   * replaces ours. Only categories nothing refers to (no lines, rules, budgets or saved searches)
+   * are dropped, so no history is lost.
+   */
+  replaceCategories?: boolean
 }
 
 export interface MintPreview {
@@ -175,6 +181,8 @@ export interface MintPreview {
   accounts: Array<{ mintName: string; accountId: number; preview: ImportPreview }>
   /** Category names in the file that we do not have; those rows go to Uncategorized. */
   unknownCategories: string[]
+  /** With `replaceCategories`: names of our categories that would be removed. */
+  removedCategories: string[]
 }
 
 type Mapped = { candidates: Candidate[]; errors: RowIssue[]; skippedForeign: RowIssue[] }
@@ -286,6 +294,38 @@ function createMissingCategories(db: Database.Database, candidates: Candidate[])
   }
   for (const { name, income } of seen.values())
     createCategory(db, { name, kind: income ? 'income' : 'expense' })
+}
+
+/**
+ * Our non-system categories that a setup import would remove: not named in the file (by name or
+ * alias) and not referenced by any line, rule action, budget or saved search.
+ */
+function replaceableCategories(
+  db: Database.Database,
+  candidates: Candidate[],
+): Array<{ id: number; name: string }> {
+  const keep = new Set<number>()
+  for (const c of candidates) {
+    const id = c.categoryName ? categoryIdByName(db, c.categoryName) : null
+    if (id !== null) keep.add(id)
+  }
+  const used = new Set<number>()
+  const add = (rows: Array<{ id: number }>) => rows.forEach((r) => used.add(r.id))
+  add(db.prepare('SELECT DISTINCT category_id AS id FROM transaction_lines').all() as never)
+  add(db.prepare('SELECT category_id AS id FROM budgets').all() as never)
+  const refs = [
+    ...(db.prepare('SELECT actions AS j FROM rules').all() as Array<{ j: string }>),
+    ...(db.prepare('SELECT query AS j FROM saved_searches').all() as Array<{ j: string }>),
+  ]
+  const all = db
+    .prepare('SELECT id, name FROM categories WHERE is_system = 0 AND parent_id IS NULL')
+    .all() as Array<{ id: number; name: string }>
+  return all.filter(
+    (c) =>
+      !keep.has(c.id) &&
+      !used.has(c.id) &&
+      !refs.some((r) => new RegExp(`"categoryId":\\s*${c.id}\\b`).test(r.j)),
+  )
 }
 
 /** Split a multi-account file by account and plan each part against its mapped ledger account. */
@@ -414,16 +454,24 @@ export function createImportHandlers(db: Database.Database) {
           preview: makePreview(db, g.accountId, g.mapped, g.plan, null, req.text),
         })),
         unknownCategories: [...unknown].sort(),
+        removedCategories: req.replaceCategories
+          ? replaceableCategories(
+              db,
+              groups.flatMap((g) => g.candidates),
+            )
+              .map((c) => c.name)
+              .sort()
+          : [],
       }
     },
 
     commitMint: (req: MintRequest & { sourceName: string }) =>
       db.transaction(() => {
         const groups = mintGroups(db, req)
-        createMissingCategories(
-          db,
-          groups.flatMap((g) => g.candidates),
-        )
+        const candidates = groups.flatMap((g) => g.candidates)
+        if (req.replaceCategories)
+          for (const c of replaceableCategories(db, candidates)) deleteCategory(db, c.id)
+        createMissingCategories(db, candidates)
         return groups.map((g) => ({
           mintName: g.mintName,
           ...commitImport(db, {

@@ -9,7 +9,7 @@ import { looksLikeMint } from './mint'
 import { looksLikeOfx } from './ofx'
 
 const KEY = 'import_folder'
-const EXTENSIONS = new Set(['.csv', '.txt', '.ofx', '.qfx'])
+const EXTENSIONS = new Set(['.csv', '.txt', '.ofx', '.qfx', '.xlsx'])
 
 export type FolderFileStatus =
   /** Ready to review: OFX/QFX, or a CSV whose header matches a saved profile. */
@@ -86,6 +86,11 @@ export function scanImportFolder(db: Database.Database, folder: string): FolderS
       })
       continue
     }
+    if (extensionOf(name) === '.xlsx') {
+      // Converted when opened (async), so it is not inspected here.
+      files.push({ ...base, status: 'ready' })
+      continue
+    }
     try {
       const text = decodeBytes(readFileSync(path))
       if (hasHash.get(hashFileText(text))) {
@@ -121,8 +126,8 @@ export function scanImportFolder(db: Database.Database, folder: string): FolderS
   }
 }
 
-/** Read one file from the import folder by bare file name. Rejects anything that is not directly inside it. */
-export function readFolderFile(folder: string, name: string): { name: string; text: string } {
+/** Validate a bare file name inside the import folder and return its full path. */
+export function folderFilePath(folder: string, name: string): string {
   if (!folder) throw new Error('No import folder is set')
   if (name !== name.replace(/[\\/]/g, '') || name === '.' || name === '..' || name.includes('\0')) {
     throw new Error('Invalid file name')
@@ -132,5 +137,10 @@ export function readFolderFile(folder: string, name: string): { name: string; te
   if (statSync(path).size > MAX_FILE_BYTES) {
     throw new Error(`File is larger than ${MAX_FILE_BYTES / 1024 / 1024} MB`)
   }
-  return { name, text: decodeBytes(readFileSync(path)) }
+  return path
+}
+
+/** Read one text file from the import folder by bare file name. Rejects anything not directly inside it. */
+export function readFolderFile(folder: string, name: string): { name: string; text: string } {
+  return { name, text: decodeBytes(readFileSync(folderFilePath(folder, name))) }
 }

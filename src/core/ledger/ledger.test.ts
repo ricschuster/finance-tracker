@@ -11,6 +11,7 @@ import {
   createTransaction,
   createTransfer,
   deleteCategory,
+  deleteCategories,
   mergeCategory,
   setCategoryStyle,
   isCategoryColor,
@@ -164,6 +165,34 @@ describe('categories', () => {
     expect(() => mergeCategory(db, unc, dining)).toThrow(/System/)
     expect(() => mergeCategory(db, dining, income)).toThrow(/different kinds/)
     expect(() => mergeCategory(db, dining, dining)).toThrow(/itself/)
+  })
+})
+
+describe('deleteCategories', () => {
+  const id = (name: string) =>
+    (db.prepare('SELECT id FROM categories WHERE name = ?').get(name) as { id: number }).id
+
+  it('deletes several at once and moves their lines to Uncategorized', () => {
+    const a = createCategory(db, { name: 'A' })
+    const b = createCategory(db, { name: 'B' })
+    const acct = createAccount(db, { name: 'Chq', type: 'checking' })
+    const t = createTransaction(db, {
+      accountId: acct,
+      date: '2026-01-01',
+      amount: -100,
+      rawDescription: 'x',
+      lines: [{ categoryId: a, amount: -100 }],
+    })
+    expect(deleteCategories(db, [a, b])).toEqual({ deleted: 2 })
+    expect(getTransaction(db, t)!.lines[0]!.categoryId).toBe(id('Uncategorized'))
+    expect(db.prepare('SELECT 1 FROM categories WHERE id IN (?, ?)').all(a, b)).toHaveLength(0)
+  })
+
+  it('is all or nothing, and cannot move lines into a deleted category', () => {
+    const a = createCategory(db, { name: 'A' })
+    expect(() => deleteCategories(db, [a, id('Uncategorized')])).toThrow('System')
+    expect(db.prepare('SELECT 1 FROM categories WHERE id = ?').get(a)).toBeTruthy()
+    expect(() => deleteCategories(db, [a], a)).toThrow('being deleted')
   })
 })
 

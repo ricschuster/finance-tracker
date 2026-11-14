@@ -14,6 +14,7 @@ type Pending =
   | { type: 'style'; category: Category }
   | { type: 'merge'; category: Category }
   | { type: 'delete'; category: Category }
+  | { type: 'deleteMany' }
 
 const GROUPS: { kind: CategoryKind; title: string }[] = [
   { kind: 'expense', title: 'Spending' },
@@ -27,12 +28,28 @@ const lines = (n: number) => `${n} transaction ${n === 1 ? 'line' : 'lines'}`
 export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
   const [usage, setUsage] = useState<Record<number, number>>({})
   const [pending, setPending] = useState<Pending | null>(null)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
 
   useEffect(() => {
     window.api.ledger.categoryUsage().then(setUsage, () => setUsage({}))
   }, [ledger.version])
 
   const { categories } = ledger
+  const editable = categories.filter((c) => !c.isSystem)
+  const toggle = (id: number) =>
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+  // Selections follow what exists: a deleted or merged category drops out.
+  useEffect(() => {
+    setSelected((prev) => {
+      const live = new Set(categories.map((c) => c.id))
+      const next = new Set([...prev].filter((id) => live.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [categories])
   const close = () => setPending(null)
   const runAndClose = (action: () => Promise<unknown>) =>
     void ledger.run(action).then((ok) => ok && close())
@@ -46,6 +63,7 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
     style: 'Colour and icon',
     merge: 'Merge category',
     delete: 'Delete category',
+    deleteMany: 'Delete categories',
   }
 
   return (
@@ -61,6 +79,48 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
         A short, flat list. Merging or deleting moves transactions to another category,
         Uncategorized by default.
       </p>
+
+      {selected.size > 0 && (
+        <div className="bulkbar" role="toolbar" aria-label="Bulk actions">
+          <strong>{selected.size} selected</strong>
+          <span className="bulk-sep" />
+          <button
+            type="button"
+            className="small danger"
+            onClick={() => setPending({ type: 'deleteMany' })}
+          >
+            <Trash2 size={14} />
+            Delete selected
+          </button>
+          <span className="spacer" />
+          <button type="button" className="ghost small" onClick={() => setSelected(new Set())}>
+            Clear selection
+          </button>
+        </div>
+      )}
+      {selected.size === 0 && editable.length > 1 && (
+        <div className="toolbar">
+          <button
+            type="button"
+            className="small"
+            onClick={() => setSelected(new Set(editable.map((c) => c.id)))}
+          >
+            Select all
+          </button>
+          <button
+            type="button"
+            className="small"
+            disabled={editable.every((c) => (usage[c.id] ?? 0) > 0)}
+            onClick={() =>
+              setSelected(
+                new Set(editable.filter((c) => (usage[c.id] ?? 0) === 0).map((c) => c.id)),
+              )
+            }
+          >
+            Select unused
+          </button>
+        </div>
+      )}
 
       {GROUPS.map(({ kind, title }) => {
         const list = categories.filter((c) => c.kind === kind)
@@ -79,6 +139,16 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
                   const n = usage[c.id] ?? 0
                   return (
                     <tr key={c.id} className="category-item" aria-label={c.name}>
+                      <td className="select-cell">
+                        {!c.isSystem && (
+                          <input
+                            type="checkbox"
+                            aria-label={`Select ${c.name}`}
+                            checked={selected.has(c.id)}
+                            onChange={() => toggle(c.id)}
+                          />
+                        )}
+                      </td>
                       <td>
                         <span className="category-badge">
                           <CategoryIcon color={c.color} icon={c.icon} />
@@ -141,7 +211,7 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
         description={
           pending?.type === 'add'
             ? 'Give it a name, then pick a colour and icon if you like.'
-            : pending && pending.type !== 'rename'
+            : pending && pending.type !== 'rename' && pending.type !== 'deleteMany'
               ? pending.category.name
               : undefined
         }
@@ -200,6 +270,23 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
               runAndClose(() =>
                 window.api.ledger.deleteCategory(pending.category.id, to || undefined),
               )
+            }
+          />
+        )}
+        {pending?.type === 'deleteMany' && (
+          <DeleteManyForm
+            names={categories.filter((c) => selected.has(c.id)).map((c) => c.name)}
+            count={categories
+              .filter((c) => selected.has(c.id))
+              .reduce((n, c) => n + (usage[c.id] ?? 0), 0)}
+            targets={categories.filter((x) => !selected.has(x.id))}
+            initial={categories.find((c) => c.name === 'Uncategorized')?.id ?? 0}
+            onCancel={close}
+            onSave={(to) =>
+              runAndClose(async () => {
+                await window.api.ledger.deleteCategories([...selected], to || undefined)
+                setSelected(new Set())
+              })
             }
           />
         )}
@@ -457,6 +544,55 @@ function MoveForm({
         danger={!merge}
         disabled={merge && target === 0}
       />
+    </form>
+  )
+}
+
+/** Delete several categories at once; their lines, rules and saved searches move to one category. */
+function DeleteManyForm({
+  names,
+  count,
+  targets,
+  initial,
+  onSave,
+  onCancel,
+}: {
+  names: string[]
+  count: number
+  targets: Category[]
+  initial: number
+  onSave: (targetId: number) => void
+  onCancel: () => void
+}) {
+  const [target, setTarget] = useState(initial)
+  return (
+    <form
+      className="stack"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSave(target)
+      }}
+    >
+      <p className="move-text" role="alert">
+        {names.length} categor{names.length === 1 ? 'y' : 'ies'} will be deleted:{' '}
+        {names.slice(0, 8).join(', ')}
+        {names.length > 8 ? ` and ${names.length - 8} more` : ''}.{' '}
+        {count > 0
+          ? `Their ${lines(count)} move to the category you pick. Rules and saved searches that use them move the same way.`
+          : 'Nothing uses them. Rules and saved searches that use them move to Uncategorized.'}
+      </p>
+      {count > 0 && (
+        <label className="field">
+          Move lines to
+          <CategorySelect
+            aria-label="Move lines to"
+            categories={targets}
+            value={target}
+            onChange={setTarget}
+          />
+        </label>
+      )}
+      <DialogButtons onCancel={onCancel} label={`Delete ${names.length}`} danger />
     </form>
   )
 }

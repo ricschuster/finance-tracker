@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3'
-import { bulkUpdate, type BulkAction } from './bulk'
+import { bulkUpdate, deleteMatching, type BulkAction } from './bulk'
 import type { SearchMethod } from './methods'
 import { searchTransactionIds, searchTransactions, type SearchQuery } from './query'
 import { deleteSavedSearch, listSavedSearches, saveSearch } from './saved'
@@ -12,6 +12,7 @@ export function createSearchHandlers(db: Database.Database) {
     listSavedSearches: () => listSavedSearches(db),
     saveSearch: (name: string, query: SearchQuery) => saveSearch(db, name, query),
     deleteSavedSearch: (id: number) => deleteSavedSearch(db, id),
+    deleteMatching: (q: SearchQuery) => deleteMatching(db, q),
     bulkUpdate: (ids: number[], action: BulkAction) => bulkUpdate(db, ids, action),
   } satisfies Record<SearchMethod, (...args: never[]) => unknown>
 }

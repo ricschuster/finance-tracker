@@ -87,4 +87,59 @@ describe('Monarch', () => {
       true,
     )
   })
+
+  it('replaces unused categories on a setup import, keeping used ones', () => {
+    const db = new Database(':memory:')
+    migrate(db)
+    const api = createImportHandlers(db)
+    const cats = () =>
+      (db.prepare('SELECT name FROM categories').all() as Array<{ name: string }>).map(
+        (c) => c.name,
+      )
+    // Stock categories exist before any import; Groceries is named in the file, Auto & Transport is not.
+    expect(cats()).toContain('Auto & Transport')
+    const acc = Object.fromEntries(
+      api
+        .inspectMint(csv)!
+        .accountNames.map((n) => [n, createAccount(db, { name: n, type: 'checking' })]),
+    )
+    const req = { text: csv, accountMap: acc, replaceCategories: true }
+    const removed = api.previewMint(req).removedCategories
+    expect(removed).toContain('Auto & Transport')
+    expect(removed).not.toContain('Groceries')
+    api.commitMint({ ...req, sourceName: 'm.csv' })
+    const after = cats()
+    expect(after).not.toContain('Auto & Transport')
+    expect(after).toEqual(
+      expect.arrayContaining(['Groceries', 'Paychecks', 'Mystery', 'Uncategorized']),
+    )
+  })
+})
+
+describe('Monarch xlsx', () => {
+  it('converts a spreadsheet to CSV that the Monarch import recognises', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { xlsxToCsv } = await import('./xlsx')
+    const text = await xlsxToCsv(readFileSync('test-data/import/monarch.xlsx'))
+    expect(text).toContain(
+      '2026-01-08,Safeway,Groceries,Chequing,SAFEWAY #4412,weekly,-45,"Food, Weekly"',
+    )
+    expect(text).toContain('2026-01-09,Acme,Paychecks')
+    const api = createImportHandlers(
+      (() => {
+        const db = new Database(':memory:')
+        migrate(db)
+        return db
+      })(),
+    )
+    const found = api.inspectMint(text)
+    expect(found?.source).toBe('Monarch')
+    expect(found?.accountNames).toEqual(['Chequing'])
+    expect(found?.count).toBe(2)
+  })
+
+  it('rejects a file that is not a spreadsheet', async () => {
+    const { xlsxToCsv } = await import('./xlsx')
+    await expect(xlsxToCsv(new TextEncoder().encode('not a zip'))).rejects.toThrow('Could not read')
+  })
 })

@@ -6,6 +6,7 @@ export const SEARCH_METHODS = [
   'saveSearch',
   'deleteSavedSearch',
   'bulkUpdate',
+  'deleteMatching',
 ] as const
 
 export type SearchMethod = (typeof SEARCH_METHODS)[number]

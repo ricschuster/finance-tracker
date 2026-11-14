@@ -5,7 +5,7 @@ import {
   updateTransaction,
   type TransactionStatus,
 } from '../ledger/transactions'
-import { MAX_BULK } from './query'
+import { allMatchingIds, MAX_BULK, type SearchQuery } from './query'
 
 export type BulkAction =
   | { type: 'setCategory'; categoryId: number }
@@ -93,5 +93,23 @@ export function bulkUpdate(db: Database.Database, ids: number[], action: BulkAct
       changed++
     }
     return { changed, skipped }
+  })()
+}
+
+/**
+ * Delete every transaction a search matches, with no cap, in one database transaction. A transfer
+ * loses both sides, so the count can include peers that were not themselves in the result.
+ */
+export function deleteMatching(db: Database.Database, q: SearchQuery): { deleted: number } {
+  return db.transaction(() => {
+    let deleted = 0
+    for (const id of allMatchingIds(db, q)) {
+      const row = db.prepare('SELECT transfer_peer_id FROM transactions WHERE id = ?').get(id) as
+        { transfer_peer_id: number | null } | undefined
+      if (!row) continue // already removed as the other side of a transfer
+      deleteTransaction(db, id)
+      deleted += row.transfer_peer_id === null ? 1 : 2
+    }
+    return { deleted }
   })()
 }

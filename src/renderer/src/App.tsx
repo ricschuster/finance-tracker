@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   BarChart3,
+  BookOpen,
   Database,
   LayoutDashboard,
   Leaf,
@@ -27,6 +28,7 @@ import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { Budgets } from './Budgets'
 import { Dashboard } from './Dashboard'
+import { Manual } from './Manual'
 import { DataPanel } from './DataPanel'
 import { ImportHistory } from './ImportHistory'
 import { ImportWizard } from './ImportWizard'
@@ -51,6 +53,7 @@ type View =
   | 'rules'
   | 'categories'
   | 'data'
+  | 'help'
 
 const NAV: { heading?: string; items: { view: View; label: string; icon: LucideIcon }[] }[] = [
   {
@@ -70,6 +73,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
       { view: 'data', label: 'Data', icon: Database },
     ],
   },
+  { heading: 'Help', items: [{ view: 'help', label: 'Manual', icon: BookOpen }] },
 ]
 
 const SUBTITLES: Partial<Record<View, string>> = {
@@ -80,6 +84,7 @@ const SUBTITLES: Partial<Record<View, string>> = {
   rules: 'Categorize transactions automatically',
   categories: 'Organize how your spending is grouped',
   data: 'Backups, export and restore',
+  help: 'How to use the app',
 }
 
 declare global {
@@ -370,6 +375,7 @@ function Shell() {
               )}
               {view === 'categories' && <CategoriesEditor ledger={ledger} />}
               {view === 'data' && <DataPanel run={ledger.run} />}
+              {view === 'help' && <Manual />}
               {view === 'history' && <ImportHistory run={ledger.run} />}
               {view === 'ledger' && (
                 <TransactionSearch

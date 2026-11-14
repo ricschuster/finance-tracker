@@ -40,6 +40,7 @@ export function MintImport({
   const [map, setMap] = useState<Record<string, number>>({})
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  const [replace, setReplace] = useState(false)
 
   const fail = (e: unknown) =>
     setError(
@@ -64,7 +65,13 @@ export function MintImport({
       }
       setMap(accountMap)
       setChoice(accountMap)
-      setPreview(await window.api.importer.previewMint({ text: file.text, accountMap }))
+      setPreview(
+        await window.api.importer.previewMint({
+          text: file.text,
+          accountMap,
+          replaceCategories: replace,
+        }),
+      )
       setError(null)
     } catch (e) {
       fail(e)
@@ -75,7 +82,13 @@ export function MintImport({
     if (categoryId === 0) return
     try {
       await window.api.importer.setCategoryAlias(name, categoryId)
-      setPreview(await window.api.importer.previewMint({ text: file.text, accountMap: map }))
+      setPreview(
+        await window.api.importer.previewMint({
+          text: file.text,
+          accountMap: map,
+          replaceCategories: replace,
+        }),
+      )
     } catch (e) {
       fail(e)
     }
@@ -86,6 +99,7 @@ export function MintImport({
       const res = await window.api.importer.commitMint({
         text: file.text,
         accountMap: map,
+        replaceCategories: replace,
         sourceName: file.name,
       })
       setDone(
@@ -164,6 +178,14 @@ export function MintImport({
                 ))}
               </tbody>
             </table>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={replace}
+                onChange={(e) => setReplace(e.target.checked)}
+              />
+              Setup import: replace my categories with the ones in this file
+            </label>
             <p className="subtle mint-note">
               Accounts you do not already have are created with a guessed type; change it later.
               Categories are matched by name, and the ones you do not have are created.
@@ -182,6 +204,14 @@ export function MintImport({
         )}
         {preview && (
           <>
+            {replace && (
+              <div className="notice" role="status">
+                {preview.removedCategories.length === 0
+                  ? 'No categories will be removed.'
+                  : `Removed on import (unused): ${preview.removedCategories.join(', ')}.`}{' '}
+                Categories that have transactions, rules or budgets are always kept.
+              </div>
+            )}
             {preview.unknownCategories.length > 0 && (
               <div className="notice mint-unknown" role="alert">
                 <p>

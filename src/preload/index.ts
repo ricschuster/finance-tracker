@@ -63,6 +63,8 @@ const importer = {
   chooseFolder: (): Promise<string> => ipcRenderer.invoke('import:chooseFolder'),
   clearFolder: (): Promise<string> => ipcRenderer.invoke('import:clearFolder'),
   scanFolder: (): Promise<FolderScan> => ipcRenderer.invoke('import:scanFolder'),
+  convertXlsx: (name: string, bytes: Uint8Array): Promise<{ name: string; text: string }> =>
+    ipcRenderer.invoke('import:convertXlsx', name, bytes),
   readFolderFile: (name: string): Promise<{ name: string; text: string }> =>
     ipcRenderer.invoke('import:readFolderFile', name),
 }

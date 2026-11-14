@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3'
+import { deleteTransaction } from './transactions'
 import { daysBetween, normaliseDescription } from '../import/match'
 
 export const DUPLICATE_WINDOW_DAYS = 2
@@ -10,6 +11,8 @@ export interface DuplicateOptions {
   /** Largest gap in days between two rows of a group. 0 means the same day only. Default 2. */
   windowDays?: number
   strictness?: DuplicateStrictness
+  /** Also match rows in different accounts (the same row imported into two accounts). Default true. */
+  crossAccount?: boolean
 }
 
 export interface DuplicateTransaction {
@@ -77,6 +80,7 @@ export function findDuplicateGroups(
 ): DuplicateGroup[] {
   const windowDays = Math.max(0, Math.floor(opts.windowDays ?? DUPLICATE_WINDOW_DAYS))
   const strictness = opts.strictness ?? 'normal'
+  const cross = opts.crossAccount ?? true
   const rows = db
     .prepare(
       `SELECT t.id, t.account_id, a.name AS account_name, t.date, t.amount, t.raw_description,
@@ -84,7 +88,7 @@ export function findDuplicateGroups(
               t.import_batch_id AS batch
        FROM transactions t JOIN accounts a ON a.id = t.account_id
        WHERE t.transfer_peer_id IS NULL AND a.archived = 0 AND t.amount <> 0
-       ORDER BY t.account_id, t.amount, t.date, t.id`,
+       ORDER BY ${cross ? '' : 't.account_id, '}t.amount, t.date, t.id`,
     )
     .all() as Row[]
   const dismissed = new Set(
@@ -110,7 +114,12 @@ export function findDuplicateGroups(
     const a = rows[i]!
     for (let j = i + 1; j < rows.length; j++) {
       const b = rows[j]!
-      if (b.account_id !== a.account_id || b.amount !== a.amount) break
+      if (b.amount !== a.amount) break
+      if (!cross && b.account_id !== a.account_id) break
+      if (daysBetween(a.date, b.date) > windowDays && cross) {
+        // Sorted by date within an amount, so later rows are only further away.
+        break
+      }
       const gap = daysBetween(a.date, b.date)
       if (gap > windowDays) continue
       const lo = Math.min(a.id, b.id)
@@ -158,7 +167,7 @@ export function findDuplicateGroups(
         imported: r.batch !== null,
       })),
       score: Math.max(score, 0),
-      reason: `Same account and amount ${when}, ${identical ? 'identical' : 'similar'} description`,
+      reason: `${new Set(members.map((m) => m.account_id)).size > 1 ? 'Same amount, different accounts,' : 'Same account and amount'} ${when}, ${identical ? 'identical' : 'similar'} description`,
     })
   }
   return groups.sort(
@@ -174,4 +183,22 @@ export function dismissDuplicateGroup(db: Database.Database, ids: number[]): voi
       for (let j = i + 1; j < ids.length; j++)
         ins.run(Math.min(ids[i]!, ids[j]!), Math.max(ids[i]!, ids[j]!))
   })()
+}
+
+/**
+ * Delete every row of each group except the first listed, so each group keeps exactly one row.
+ * Groups with fewer than two distinct rows are left alone. Returns the ids deleted.
+ */
+export function keepOneOfEach(db: Database.Database, groups: number[][]): number[] {
+  const deleted: number[] = []
+  db.transaction(() => {
+    for (const g of groups) {
+      const ids = [...new Set(g)]
+      for (const id of ids.slice(1)) {
+        deleteTransaction(db, id)
+        deleted.push(id)
+      }
+    }
+  })()
+  return deleted
 }

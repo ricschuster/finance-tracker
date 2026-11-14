@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- Find duplicates: "Keep first, delete rest" per group and "Keep one of each" for all groups, with
+  one Undo; a group always keeps one row.
+- Find duplicates can match across accounts (on by default).
+
+### Changed
+
+- Sidebar account rows show names only; the "Owing" summary line is gone.
+- The Transactions tab always shows all accounts.
+
 ## [0.4.0] - 2026-11-14
 
 ### Added

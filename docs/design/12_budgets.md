@@ -24,16 +24,25 @@ negative (over budget).
 
 ## Screen
 
-A Budgets tab with a month picker. One row per expense category that has a
-budget, with budget, spent, remaining and a bar that turns to the warning
-colour when over. A total row compares the sum of budgets with the sum of
-spent. Below, categories without a budget are listed so a budget can be added.
-Editing an amount saves on blur; blank or zero removes the budget.
+A Budgets tab with a month stepper in the page header. Tiles show the total
+budgeted, spent and remaining (or over). One row per expense category that has
+a budget, with spent of budget, what is left and a bar that turns amber from
+85% and red when over. Spending in categories without a budget is listed with
+a quick Budget button. Adding or editing an amount is a dialog; removing a
+budget is in the row menu and asks first. See design note 13 for the look.
+
+## Dashboard widget
+
+A Budgets card on the dashboard (one of the Customize sections, on by default)
+shows the current month: total spent of total budgeted with a bar, then up to
+five budgets, the ones closest to or past their limit first. It links to the
+Budgets tab, or offers Set up when there are no budgets. It reads the same
+`getBudgetMonth` as the tab, so the two always agree.
 
 ## Out for now
 
 Rollover of unspent amounts, per-month overrides, income targets, savings
-goals, alerts and a dashboard widget. Each needs its own decision.
+goals and alerts. Each needs its own decision.
 
 ## Data
 

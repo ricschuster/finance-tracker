@@ -211,6 +211,22 @@ describe('dashboard widgets', () => {
     expect(reports.getDashboardWidgets()).toEqual([])
   })
 
+  it('shows widgets added later to people who already chose a subset', () => {
+    const { db, reports } = setup()
+    reports.setDashboardWidgets(['income'])
+    const stored = db
+      .prepare("SELECT value FROM settings WHERE key = 'dashboard_widgets'")
+      .get() as {
+      value: string
+    }
+    expect(JSON.parse(stored.value).hidden).toContain('trend')
+    // The older format stored the visible ids; Budgets did not exist then, so it shows.
+    db.prepare("UPDATE settings SET value = ? WHERE key = 'dashboard_widgets'").run(
+      JSON.stringify(['income', 'trend']),
+    )
+    expect(reports.getDashboardWidgets()).toEqual(['income', 'budgets', 'trend'])
+  })
+
   it('rejects unknown widgets', () => {
     const { reports } = setup()
     expect(() => reports.setDashboardWidgets(['nope'])).toThrow(/Unknown/)

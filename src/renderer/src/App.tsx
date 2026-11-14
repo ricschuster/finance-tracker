@@ -341,6 +341,7 @@ function Shell() {
                   accounts={ledger.accounts}
                   onOpenCategory={openCategory}
                   onReviewUncategorized={reviewUncategorized}
+                  onOpenBudgets={() => go('budgets')}
                 />
               )}
               {view === 'reports' && (

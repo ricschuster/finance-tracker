@@ -25,6 +25,15 @@ await page.waitForTimeout(500)
 console.log('STATS:', (await page.locator('.stat-row').innerText()).replace(/\n+/g, ' | '))
 await shot('budgets-added')
 
+// The dashboard widget lists them, closest to the limit first, and links back.
+await page.getByRole('tab', { name: 'Dashboard' }).click()
+await page.waitForTimeout(500)
+const widget = page.locator('.card', { has: page.getByRole('heading', { name: 'Budgets' }) })
+console.log('WIDGET:', (await widget.innerText()).replace(/\n+/g, ' | '))
+await shot('budgets-widget')
+await widget.getByRole('button', { name: 'See all' }).click()
+await page.waitForTimeout(300)
+
 // Edit from the row menu.
 await page.getByRole('button', { name: /^Actions for .* budget$/ }).first().click()
 await page.getByRole('menuitem', { name: 'Edit amount' }).click()

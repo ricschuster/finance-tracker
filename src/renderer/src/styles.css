@@ -2422,3 +2422,25 @@ details.card ul {
   font-weight: 500;
   color: var(--text);
 }
+.budget-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.budget-summary strong {
+  font-size: 20px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.budget-widget {
+  margin-top: 14px;
+}
+.budget-widget .meter:hover {
+  background: transparent;
+}
+.meter-share.neg {
+  color: var(--neg);
+}

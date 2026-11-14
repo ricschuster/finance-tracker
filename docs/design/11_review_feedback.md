@@ -58,6 +58,10 @@ and income in separate groups. Check the current sort and fix if needed.
 
 ## 6. Search by category over a date range
 
+Status: built. A Year box in the search filters sets the date range, and with a
+category filter the total counts only that category's lines, so a split
+transaction contributes its share (test in `search.test.ts`).
+
 Example: all `Business` from 2026.
 Today: search has category and date filters (note 06), so this may already
 work. Change: verify with a test, add a year shortcut to the date filter, and

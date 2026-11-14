@@ -244,3 +244,26 @@ describe('handlers', () => {
     expect(h.bulkUpdate([a], { type: 'delete' }).changed).toBe(1)
   })
 })
+
+describe('one category over a year', () => {
+  it('lists every 2026 match and totals only that category, including split shares', () => {
+    const shopping = cat('Shopping')
+    txn({ date: '2026-01-15', amount: -10_000, category: 'Shopping' })
+    txn({ date: '2026-12-31', amount: -2_500, category: 'Shopping' })
+    txn({ date: '2025-12-31', amount: -9_999, category: 'Shopping' }) // last year
+    txn({ date: '2027-01-01', amount: -9_999, category: 'Shopping' }) // next year
+    txn({ date: '2026-06-01', amount: -7_777, category: 'Groceries' }) // other category
+    createTransaction(db, {
+      accountId: chq,
+      date: '2026-06-10',
+      amount: -5_000,
+      lines: [
+        { categoryId: shopping, amount: -1_500 },
+        { categoryId: cat('Groceries'), amount: -3_500 },
+      ],
+    })
+    const r = searchTransactions(db, { categoryId: shopping, from: '2026-01-01', to: '2026-12-31' })
+    expect(r.total).toBe(3)
+    expect(r.sum).toBe(-14_000) // the split counts -1,500, not -5,000
+  })
+})

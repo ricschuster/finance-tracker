@@ -27,7 +27,10 @@ export interface SearchQuery {
 export interface SearchResult {
   transactions: Transaction[]
   total: number
-  /** Signed sum of every match, not just this page. */
+  /**
+   * Signed sum of every match, not just this page. With a category filter it is the sum of the
+   * matching lines only, so a split transaction counts just its share in that category.
+   */
   sum: number
 }
 
@@ -122,6 +125,19 @@ export function searchTransactions(db: Database.Database, q: SearchQuery = {}): 
       `SELECT COUNT(*) AS n, COALESCE(SUM(t.amount), 0) AS s FROM transactions t WHERE ${sql}`,
     )
     .get(...params) as { n: number; s: number }
+  let sum = agg.s
+  if (q.categoryId !== undefined) {
+    sum = (
+      db
+        .prepare(
+          `SELECT COALESCE(SUM(l.amount), 0) AS s
+           FROM transaction_lines l JOIN categories c ON c.id = l.category_id
+           WHERE (c.id = ? OR c.parent_id = ?)
+             AND l.transaction_id IN (SELECT t.id FROM transactions t WHERE ${sql})`,
+        )
+        .get(q.categoryId, q.categoryId, ...params) as { s: number }
+    ).s
+  }
   const limit = Math.min(Math.max(q.limit ?? 100, 1), 1000)
   const rows = db
     .prepare(
@@ -129,7 +145,7 @@ export function searchTransactions(db: Database.Database, q: SearchQuery = {}): 
        ORDER BY t.date DESC, t.id DESC LIMIT ? OFFSET ?`,
     )
     .all(...params, limit, Math.max(q.offset ?? 0, 0)) as TxnRow[]
-  return { transactions: hydrate(db, rows), total: agg.n, sum: agg.s }
+  return { transactions: hydrate(db, rows), total: agg.n, sum }
 }
 
 /** Ids of every match, for bulk actions on a whole result. Refuses more than MAX_BULK. */

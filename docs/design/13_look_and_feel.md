@@ -72,10 +72,10 @@ avoid a flash. System is the default.
   current month); one row per budget with a progress bar that turns amber
   from 85% and red when over, plus an over-budget pill; a card listing
   spending in categories without a budget, each with a quick Budget button.
-- Categories: one card per kind (spending, income, transfers), a row menu
+- Categories: one card listing all categories, a row menu
   (rename, colour and icon, merge, delete), each opening a dialog. The colour
   and icon dialog shows the Lucide icons with a live preview. Add category
-  picks the kind, colour and icon up front.
+  picks the colour and icon up front.
 - Rules: numbered list with When and Then chips, move up and down buttons, a
   row menu (edit, turn on or off, delete); the editor is a wide dialog with
   When and Then sections. The preview is a card above the list with an Apply

@@ -4,6 +4,7 @@ import { migrate } from '../db/migrations'
 import { createAccount } from '../ledger/accounts'
 import { getTransaction } from '../ledger/transactions'
 import { createImportHandlers } from './handlers'
+import { incomeVsExpenses } from '../reports/queries'
 import { getBatchRows } from './history'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 
@@ -75,20 +76,15 @@ describe('Monarch', () => {
     const [card] = getBatchRows(db, done[1]!.batchId)
     expect(getTransaction(db, card!.id)!.status).toBe('pending')
     const cats = db
-      .prepare("SELECT name, kind FROM categories WHERE name IN ('Mystery','Paychecks')")
+      .prepare("SELECT name FROM categories WHERE name IN ('Mystery','Paychecks')")
       .all()
-    expect(cats).toEqual(
-      expect.arrayContaining([
-        { name: 'Mystery', kind: 'expense' },
-        { name: 'Paychecks', kind: 'income' },
-      ]),
-    )
+    expect(cats).toHaveLength(2)
     expect(api.commitMint({ ...req, sourceName: 'monarch.csv' }).every((d) => d.added === 0)).toBe(
       true,
     )
   })
 
-  it('classifies a new category by its net, so a stray negative row keeps income as income', () => {
+  it('creates categories without a kind and reports classify by net sign', () => {
     const db = new Database(':memory:')
     migrate(db)
     const acct = createAccount(db, { name: 'Chequing', type: 'checking' })
@@ -104,15 +100,12 @@ describe('Monarch', () => {
       accountMap: { Chequing: acct },
       sourceName: 'm.csv',
     })
-    const kinds = db
-      .prepare("SELECT name, kind FROM categories WHERE name IN ('Salary Co','Gadgets')")
+    const names = db
+      .prepare("SELECT name FROM categories WHERE name IN ('Salary Co','Gadgets')")
       .all()
-    expect(kinds).toEqual(
-      expect.arrayContaining([
-        { name: 'Salary Co', kind: 'income' },
-        { name: 'Gadgets', kind: 'expense' },
-      ]),
-    )
+    expect(names).toHaveLength(2)
+    const r = incomeVsExpenses(db, { from: '2026-01-01', to: '2026-12-31' })
+    expect(r).toMatchObject({ income: 395_000, spending: 2_500 })
   })
 
   it('replaces unused categories on a setup import, keeping used ones', () => {

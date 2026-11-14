@@ -2,6 +2,13 @@
 
 Post-MVP. Status: first version built. Scope is deliberately small.
 
+## Any category
+
+Any category except the system Transfer category can have a budget, since
+categories have no kind (ADR 0007). Spent is the negated net of the month's
+lines, so an income category with a budget shows negative spent while money
+comes in.
+
 ## Model
 
 A budget is a monthly amount in integer cents for one expense category. There

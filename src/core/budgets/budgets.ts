@@ -17,7 +17,7 @@ export interface BudgetMonth {
   rows: BudgetRow[]
   totalBudget: number
   totalSpent: number
-  /** Expense categories with no budget yet, with what was spent in the month. */
+  /** Categories with no budget yet, with what was spent in the month. */
   unbudgeted: Array<{ categoryId: number; categoryName: string; spent: number }>
 }
 
@@ -25,10 +25,11 @@ export interface BudgetMonth {
 export function setBudget(db: Database.Database, categoryId: number, amount: number): void {
   if (!Number.isInteger(amount) || amount < 0)
     throw new Error('Budget must be whole cents, zero or more')
-  const cat = db.prepare('SELECT kind FROM categories WHERE id = ?').get(categoryId) as
-    { kind: string } | undefined
+  const cat = db.prepare('SELECT name, is_system FROM categories WHERE id = ?').get(categoryId) as
+    { name: string; is_system: number } | undefined
   if (!cat) throw new Error(`Category ${categoryId} not found`)
-  if (cat.kind !== 'expense') throw new Error('Only expense categories can have a budget')
+  if (cat.is_system && cat.name === 'Transfer')
+    throw new Error('The Transfer category cannot have a budget')
   if (amount === 0) {
     db.prepare('DELETE FROM budgets WHERE category_id = ?').run(categoryId)
     return
@@ -55,7 +56,7 @@ export function getBudgetMonth(db: Database.Database, year: number, month: numbe
                   JOIN transactions t ON t.id = l.transaction_id
                   WHERE t.transfer_peer_id IS NULL AND t.exclude_from_budgets = 0
                     AND t.date BETWEEN ? AND ?) l ON l.category_id = c.id
-       WHERE c.kind = 'expense'
+       WHERE NOT (c.is_system = 1 AND c.name = 'Transfer')
        GROUP BY c.id
        ORDER BY c.name COLLATE NOCASE`,
     )

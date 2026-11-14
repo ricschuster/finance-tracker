@@ -9,13 +9,20 @@ renders what it returns.
 Reports query split lines, never transaction totals (ADR 0003).
 
 - Transfers are excluded: a line is skipped when its transaction has a
-  `transfer_peer_id` or its category kind is `transfer`.
-- A line is income or expense by its category kind, not its sign, so a refund
-  in an expense category reduces spending and a reversal in an income category
-  reduces income. The exception is `Uncategorized`, which is classified by sign
-  so an unsorted deposit is not shown as negative spending.
-- Spending is reported as a positive number (the negated sum of expense lines).
-  Income is positive. Net is income minus spending.
+  `transfer_peer_id` or its category is the system `Transfer` category.
+- Categories have no kind (ADR 0007, migration 13). Amounts are netted per
+  category (and per month in the trend) first, then classified by sign: a
+  category whose net is negative is spending (the negated net), one whose net
+  is positive is income. A refund therefore reduces its category's spending
+  and a reversal in an income category reduces income. Only when refunds
+  exceed purchases in the period does a category flip to income. Splits are
+  classified per line, so each split category nets on its own. The exception
+  is `Uncategorized`, a catch-all, whose lines are classified one by one by
+  sign so an unsorted deposit never cancels an unsorted expense.
+- Spending is reported as a positive number. Income is positive. Net is
+  income minus spending, which equals the sum of all non-transfer lines.
+- Top payees and biggest transactions net all non-transfer lines per payee or
+  per transaction and keep those with negative net.
 - Pending transactions count. Archived accounts count. An optional
   `accountIds` filter narrows every report.
 

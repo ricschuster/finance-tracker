@@ -76,13 +76,14 @@ describe('budgets', () => {
     setBudget(db, cat('Groceries'), 0)
     expect(getBudgetMonth(db, 2026, 3).rows).toEqual([])
     expect(() => setBudget(db, cat('Groceries'), 1.5)).toThrow()
-    expect(() => setBudget(db, cat('Income'), 100)).toThrow(/expense/)
+    expect(() => setBudget(db, cat('Transfer'), 100)).toThrow(/Transfer/)
+    setBudget(db, cat('Income'), 100)
     expect(() => setBudget(db, 99999, 100)).toThrow(/not found/)
     expect(() => getBudgetMonth(db, 2026, 13)).toThrow()
   })
 
   it('adds budgets when categories merge', () => {
-    const extra = db.prepare("INSERT INTO categories (name, kind) VALUES ('Eats', 'expense')").run()
+    const extra = db.prepare("INSERT INTO categories (name) VALUES ('Eats')").run()
       .lastInsertRowid as number
     setBudget(db, extra, 3000)
     setBudget(db, cat('Groceries'), 5000)

@@ -285,6 +285,15 @@ CREATE TABLE budgets (
 `
 
 /**
+ * Migration 13: categories no longer have a kind. Whether money is spending or income is decided
+ * by the sign of the amounts (docs/design/07_reports.md, ADR 0007). Transfers are identified by
+ * the system category named Transfer. Ids, aliases, colours, icons and budgets are untouched.
+ */
+const DROP_CATEGORY_KIND = `
+ALTER TABLE categories DROP COLUMN kind;
+`
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -305,6 +314,7 @@ export const migrations: readonly string[] = [
   CATEGORY_ALIASES,
   EXCLUDE_FROM_BUDGETS,
   BUDGETS,
+  DROP_CATEGORY_KIND,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

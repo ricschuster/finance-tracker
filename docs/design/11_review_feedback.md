@@ -41,8 +41,8 @@ payment (payment, pmt, paiement, autopay, bill pay). The checkbox in the
 preview starts ticked and can be cleared; other candidates stay opt-in.
 Flagging an unmatched payment as "not spending" waits for item 4.
 
-Today: reports already skip transfer-linked transactions and kind `transfer`
-categories (note 07). Credit card payments are only excluded if they are
+Today: reports already skip transfer-linked transactions and the system Transfer
+category (the category kind was dropped later, ADR 0007) (note 07). Credit card payments are only excluded if they are
 linked as a transfer.
 Change: when budgets are built they use the same exclusion. Import should
 prompt to link a card payment to its other side, and an unmatched payment

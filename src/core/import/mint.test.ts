@@ -102,7 +102,7 @@ describe('Mint', () => {
     expect(getTransaction(db, shop!.id)!.lines[0]!.categoryName).toBe('Groceries')
 
     // Merging a category leaves its name as an alias of the survivor.
-    const dining = createCategory(db, { name: 'Dining Out', kind: 'expense' })
+    const dining = createCategory(db, { name: 'Dining Out' })
     mergeCategory(db, dining, food.id)
     expect(categoryIdByName(db, 'dining out')).toBe(food.id)
   })

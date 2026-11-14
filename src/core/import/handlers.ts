@@ -279,20 +279,17 @@ function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResul
 
 /**
  * Create the categories a file uses that we do not have (by name or alias), so rows keep the
- * category they had in the old tool. A name only ever seen on money in becomes an income category.
+ * category they had in the old tool. Categories have no kind; the sign of each amount decides.
  */
 function createMissingCategories(db: Database.Database, candidates: Candidate[]): void {
-  const seen = new Map<string, { name: string; total: number }>()
+  const seen = new Map<string, string>()
   for (const c of candidates) {
     const name = c.categoryName?.trim()
     if (!name || categoryIdByName(db, name) !== null) continue
     const key = name.toLowerCase()
-    const entry = seen.get(key) ?? { name, total: 0 }
-    entry.total += c.amount
-    seen.set(key, entry)
+    if (!seen.has(key)) seen.set(key, name)
   }
-  for (const { name, total } of seen.values())
-    createCategory(db, { name, kind: total > 0 ? 'income' : 'expense' })
+  for (const name of seen.values()) createCategory(db, { name })
 }
 
 /**

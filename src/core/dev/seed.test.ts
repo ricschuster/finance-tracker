@@ -37,7 +37,7 @@ describe('seedDemoData', () => {
     const used = db
       .prepare(
         `SELECT DISTINCT c.name FROM transaction_lines l JOIN categories c ON c.id = l.category_id
-         WHERE c.kind IN ('expense', 'income')`,
+         WHERE c.name <> 'Transfer'`,
       )
       .all() as { name: string }[]
     const names = used.map((r) => r.name)

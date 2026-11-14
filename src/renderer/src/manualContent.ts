@@ -94,7 +94,7 @@ export const MANUAL: ManualSection[] = [
     id: 'categories',
     title: 'Categories',
     blocks: [
-      'Categories are a flat list. Each is an expense, income or transfer category and has a colour and an icon. In the Categories tab you can add, rename, recolour, change the type of (for example from spending to income), delete (choosing where its transactions go) and merge two categories into one.',
+      'Categories are a flat list. Categories have no type: a category is not fixed as spending or income, and Reports decides by the sign of the money in it. Each has a colour and an icon. In the Categories tab you can add, rename, recolour, delete (choosing where its transactions go) and merge two categories into one.',
       'Merging moves transactions, rules, saved searches and budgets across. The old name becomes an alias, so later imports that still use it land in the surviving category.',
       'To remove several at once, tick them (or use Select all or Select unused) and choose Delete selected. Their transactions move to the category you pick, Uncategorized by default.',
       'Uncategorized and Transfer are built in and cannot be renamed or deleted.',
@@ -122,7 +122,7 @@ export const MANUAL: ManualSection[] = [
     id: 'budgets',
     title: 'Budgets',
     blocks: [
-      'A budget is a standing monthly amount for an expense category. Pick a month with the stepper at the top. For each budgeted category you see what you have spent, what is left and a bar that turns amber near the limit and red when you are over.',
+      'A budget is a standing monthly amount for a category. Pick a month with the stepper at the top. For each budgeted category you see what you have spent, what is left and a bar that turns amber near the limit and red when you are over.',
       'Spent counts every transaction line in the category for that month, so a refund reduces it. Transfers and transactions flagged to hide from budgets are left out.',
       'Spending in categories without a budget is listed underneath with a Budget button to set one quickly. Unspent money does not roll over to the next month yet.',
     ],
@@ -134,7 +134,7 @@ export const MANUAL: ManualSection[] = [
       "The Dashboard is the home screen: this month's income, spending and net, your biggest categories, budget progress, the last six months and your largest transactions. Customize chooses which sections to show. If transactions need review, a reminder links straight to them.",
       'Reports has a period picker (month, quarter, year or custom range) and an account filter. The reports are spending by category, income vs expenses with your savings rate, a monthly trend, top payees and biggest transactions.',
       'Click any category to jump to the matching transactions for that period.',
-      'Transfers are never counted. Whether a line is income or spending depends on its category, so a refund in an expense category reduces spending rather than counting as income.',
+      'Transfers are never counted. Within the period, the lines of each category are added up: a category that nets negative counts as spending and one that nets positive counts as income. So a refund in Groceries reduces Groceries spending rather than counting as income, unless the refunds exceed the purchases in that period.',
     ],
   },
   {

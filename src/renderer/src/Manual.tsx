@@ -12,7 +12,7 @@ export function Manual() {
           <button
             key={s.id}
             type="button"
-            className="nav-item"
+            className="manual-link"
             aria-current={s.id === section.id}
             onClick={() => setId(s.id)}
           >

@@ -2448,7 +2448,7 @@ details.card ul {
 /* In-app manual */
 .manual {
   display: grid;
-  grid-template-columns: 14rem minmax(0, 1fr);
+  grid-template-columns: 16rem minmax(0, 1fr);
   gap: var(--space-4, 1rem);
   align-items: start;
 }
@@ -2458,6 +2458,26 @@ details.card ul {
   gap: 2px;
   position: sticky;
   top: 0;
+}
+.manual-link {
+  display: block;
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--text-2);
+  padding: 0.45rem 0.7rem;
+  border-radius: 6px;
+}
+.manual-link:hover {
+  background: var(--surface-hover);
+}
+.manual-link[aria-current='true'] {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-weight: 600;
 }
 .manual-body {
   max-width: 46rem;

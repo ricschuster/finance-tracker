@@ -2489,3 +2489,7 @@ details.card ul {
 .manual-body ul {
   padding-left: 1.25rem;
 }
+.category-table td.select-cell {
+  width: 2rem;
+  padding-right: 0;
+}

@@ -65,6 +65,7 @@ export const MANUAL: ManualSection[] = [
       'Type in the search box to find transactions instantly. Every word must appear somewhere in the payee, bank description, notes, tags or category, in any order. Filters narrow it further: account, category, tag, status, date range, expense or income, amount range and uncategorized only. The totals line shows the number of matches and their sum.',
       'Save a search you use often and recall it later from the saved searches menu.',
       'Select several rows to act on them together: set a category, add or remove a tag, change the status or delete. Bulk edits count as your own edits, so rules will not overwrite them afterwards.',
+      'Delete all N (next to the result count) deletes every transaction the current search or account view matches, not only the rows shown on screen. With no filters that is the whole ledger. It cannot be undone, so back up first.',
       'When you change the category of a transaction, the app offers to make that a rule for similar transactions. Say yes to open a ready-made draft in the Rules editor.',
       {
         tip: 'To record a transfer, use the transfer form instead of entering two transactions by hand. Deleting one side deletes both.',
@@ -93,6 +94,7 @@ export const MANUAL: ManualSection[] = [
     blocks: [
       'Categories are a flat list. Each is an expense, income or transfer category and has a colour and an icon. In the Categories tab you can add, rename, recolour, delete (choosing where its transactions go) and merge two categories into one.',
       'Merging moves transactions, rules, saved searches and budgets across. The old name becomes an alias, so later imports that still use it land in the surviving category.',
+      'To remove several at once, tick them (or use Select all or Select unused) and choose Delete selected. Their transactions move to the category you pick, Uncategorized by default.',
       'Uncategorized and Transfer are built in and cannot be renamed or deleted.',
       'A transaction can be hidden from budgets with its exclude flag, which is useful for one-off items you do not want to count against a monthly target.',
     ],

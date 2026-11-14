@@ -5,7 +5,7 @@ import { createAccount } from '../ledger/accounts'
 import { createTransaction, createTransfer, getTransaction } from '../ledger/transactions'
 import { createRule } from '../rules/store'
 import { applyRules } from '../rules/apply'
-import { bulkUpdate } from './bulk'
+import { bulkUpdate, deleteMatching } from './bulk'
 import { createSearchHandlers } from './handlers'
 import { MAX_BULK, searchTransactionIds, searchTransactions } from './query'
 import { deleteSavedSearch, listSavedSearches, saveSearch } from './saved'
@@ -245,6 +245,28 @@ describe('bulkUpdate', () => {
     expect(() => bulkUpdate(db, [a, b], { type: 'setStatus', status: 'reconciled' })).toThrow()
     expect(getTransaction(db, a)!.status).toBe('cleared')
     expect(() => bulkUpdate(db, Array(MAX_BULK + 1).fill(1), { type: 'delete' })).toThrow(/limited/)
+  })
+})
+
+describe('deleteMatching', () => {
+  it('deletes every match with no cap, including both sides of a transfer', () => {
+    const n = MAX_BULK + 5
+    db.transaction(() => {
+      for (let i = 0; i < n; i++) txn({ desc: 'bulk row', amount: -100 })
+    })()
+    const keep = txn({ desc: 'other', accountId: card })
+    createTransfer(db, { fromAccountId: chq, toAccountId: card, date: '2026-02-02', amount: 5000 })
+    const r = deleteMatching(db, { accountIds: [chq] })
+    expect(r.deleted).toBe(n + 2)
+    expect(getTransaction(db, keep)).toBeTruthy()
+    expect(searchTransactions(db, { accountIds: [chq] }).total).toBe(0)
+    expect(searchTransactions(db, {}).total).toBe(1)
+  })
+
+  it('deletes everything with an empty query', () => {
+    txn({})
+    txn({ accountId: card })
+    expect(deleteMatching(db, {}).deleted).toBe(2)
   })
 })
 

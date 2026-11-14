@@ -9,6 +9,7 @@ export const LEDGER_METHODS = [
   'createCategory',
   'renameCategory',
   'deleteCategory',
+  'deleteCategories',
   'mergeCategory',
   'setCategoryStyle',
   'categoryUsage',

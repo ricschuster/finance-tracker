@@ -154,3 +154,7 @@ preview each unknown category has a selector that saves an alias and refreshes
 the preview. Merging a category keeps its old name as an alias of the survivor,
 so later imports that still use that name land in the right place. Deleting a
 category removes its aliases.
+
+## Bulk delete of categories
+
+The Categories tab has a checkbox per non-system category, Select all and Select unused, and a Delete selected action. All selected categories are deleted in one database transaction and their lines, rules and saved searches move to one chosen category (Uncategorized by default). `deleteCategories` is all or nothing.

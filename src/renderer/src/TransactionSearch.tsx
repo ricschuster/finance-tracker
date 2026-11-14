@@ -441,6 +441,31 @@ export function TransactionSearch({
             )}
           </span>
           <span>
+            {total > 0 && (
+              <button
+                type="button"
+                className="ghost small danger"
+                onClick={() =>
+                  void confirm(
+                    `All ${total.toLocaleString('en-CA')} transaction${total === 1 ? '' : 's'} in this list will be deleted${total > shown.length ? `, not only the ${shown.length} shown` : ''}. Transfers lose both sides. This cannot be undone, so make a backup first if you are unsure.`,
+                    {
+                      title: 'Delete all matches?',
+                      confirmLabel: `Delete ${total.toLocaleString('en-CA')}`,
+                      danger: true,
+                    },
+                  ).then((ok) => {
+                    if (ok && fullQuery) {
+                      void run(() => window.api.search.deleteMatching(fullQuery)).then(() =>
+                        setSelected(new Set()),
+                      )
+                    }
+                  })
+                }
+              >
+                <Trash2 size={14} />
+                Delete all {total.toLocaleString('en-CA')}
+              </button>
+            )}{' '}
             <span className="muted">Total </span>
             <strong className={result.sum < 0 ? '' : 'pos'}>{formatCents(result.sum)}</strong>
           </span>

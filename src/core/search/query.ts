@@ -160,3 +160,14 @@ export function searchTransactionIds(db: Database.Database, q: SearchQuery = {})
   if (ids.length > MAX_BULK) throw new Error(`More than ${MAX_BULK} matches; narrow the search`)
   return ids
 }
+
+/** Ids of every match with no cap, for deleting a whole result. */
+export function allMatchingIds(db: Database.Database, q: SearchQuery = {}): number[] {
+  validate(q)
+  const { sql, params } = buildWhere(q)
+  return (
+    db.prepare(`SELECT t.id FROM transactions t WHERE ${sql} ORDER BY t.id`).all(...params) as {
+      id: number
+    }[]
+  ).map((r) => r.id)
+}

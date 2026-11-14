@@ -7,6 +7,11 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Import preview shows the category each new row will get and lets you change it. Rows are
+  guessed from how earlier transactions with the same description were filed (at least 60%
+  agreeing); rules and the file's own category come first.
+- Rule action "Skip on import": matching rows are listed as skipped in the preview, with
+  Import anyway. It does not touch saved transactions.
 - Dashboard drill-down: click the Income, Spending or Net tile, or a month in the six-month chart,
   to see the transactions behind the figure. Transactions has a Hide transfers filter for this.
 

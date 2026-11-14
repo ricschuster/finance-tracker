@@ -10,6 +10,8 @@ export type Action =
   | { type: 'setPayee'; payee: string }
   | { type: 'setCategory'; categoryId: number }
   | { type: 'addTags'; tags: string[] }
+  /** Import only: leave the row out of the import. Does nothing to transactions already saved. */
+  | { type: 'skipImport' }
 
 export interface RuleInput {
   name?: string

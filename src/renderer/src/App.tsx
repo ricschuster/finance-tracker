@@ -347,6 +347,7 @@ function Shell() {
                 {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
                 {view === 'import' && (
                   <ImportWizard
+                    categories={ledger.categories}
                     accounts={ledger.accounts}
                     run={ledger.run}
                     onFinished={() => setView('ledger')}

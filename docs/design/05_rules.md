@@ -60,6 +60,16 @@ Changing the category of a single-line transaction in the list asks "Make this
 a rule for similar transactions?". Yes opens the draft in the rules editor,
 the same path as the Suggest rule button; No leaves the edit as it was.
 
+## Skip on import
+
+An action `skipImport` leaves a row out of an import. It is import-only: it changes nothing
+on saved transactions, so "apply rules to history" ignores it. The winner is the first
+matching rule (the same rule `planRules` picks), and it skips only if that rule carries the
+action, so a skip never fights another rule for the same row. The import preview lists such
+rows as "Skipped by rule" with an "Import anyway" button; skipped rows are counted as skipped
+in the import result. Only rows that would be added are skipped; a row that matches an existing
+transaction still offers merge.
+
 ## Known gaps
 
 - Rows imported with a category (Mint) can have it replaced by a matching

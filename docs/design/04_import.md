@@ -351,3 +351,18 @@ offers "Guess again". `core/import/preview.ts` (`previewMapping`) applies the
 current mapping to the first rows so the wizard can show the parsed date,
 signed amount and description live, with failing rows and the reason
 highlighted. The guesser never writes anything and every field stays editable.
+
+## Category guess and skip rules at import
+
+`core/import/enrich.ts` (`enrichPlan`) decides, for each row that would be added, which
+category it gets and whether a skip rule drops it. Reads only; the preview and the commit use
+the same function. Category precedence: a category the user picks in the preview, then a
+matching rule, then the file's own category (Mint), then a guess from history.
+
+The history guess keys on `suggestPattern(rawDescription)` (reference and store numbers
+dropped, first three words) plus the direction (expense or income). Only earlier
+single-category, non-transfer transactions count, and Uncategorized never does. The most
+common category is used when at least 60% of those transactions agree (for example 8 of 8 or
+2 of 3). The preview shows "guess n/m" next to a picker so the row can be corrected before
+confirming; a pick beats rules and is applied after them. Nothing is learned silently: there
+is no model, only the user's own filing history.

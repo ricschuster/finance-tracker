@@ -275,3 +275,13 @@ guessed from its name (`guessAccountType`), and categories we do not have are
 created at commit (income when every row with that name is money in, otherwise
 expense) unless the user maps them to an existing category in the preview.
 This applies to all multi-account imports (Mint, Monarch, Wealthsimple).
+
+A multi-account file can be the very first import: with no accounts yet the wizard still
+accepts it, since the file creates its own. Only single-account files (CSV, OFX) need an
+account first.
+
+Setup import: a checkbox on the account step ("replace my categories with the ones in this
+file") makes the commit remove our non-system categories that the file does not use, so the
+old tool's category set replaces the stock one. A category is only removed when nothing refers
+to it (no transaction lines, rules, budgets or saved searches), so no history is lost. The
+preview lists what will go.

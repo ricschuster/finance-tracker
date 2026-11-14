@@ -339,7 +339,8 @@ export function ImportWizard({
     setError(null)
   }
 
-  if (accounts.length === 0)
+  // A multi-account file creates its own accounts, so only a single-account file needs one first.
+  if (accounts.length === 0 && step !== 'file' && format !== 'mint')
     return (
       <section aria-label="Import">
         <div className="card">
@@ -347,6 +348,11 @@ export function ImportWizard({
             Imported transactions go into one of your accounts. Use the + next to Accounts in the
             sidebar.
           </Empty>
+          <div className="wizard-footer">
+            <button type="button" onClick={reset}>
+              Back
+            </button>
+          </div>
         </div>
       </section>
     )

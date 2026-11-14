@@ -159,3 +159,23 @@ describe('migrate', () => {
     })
   })
 })
+
+describe('duplicate dismissals', () => {
+  it('stores ordered pairs and drops them with either transaction', () => {
+    const db = new Database(':memory:')
+    db.pragma('foreign_keys = ON')
+    migrate(db)
+    db.exec("INSERT INTO accounts (name, type) VALUES ('A', 'checking')")
+    const ins = db.prepare(
+      "INSERT INTO transactions (account_id, date, amount) VALUES (1, '2026-01-01', -100)",
+    )
+    const a = Number(ins.run().lastInsertRowid)
+    const b = Number(ins.run().lastInsertRowid)
+    db.prepare('INSERT INTO duplicate_dismissals (txn_a, txn_b) VALUES (?, ?)').run(a, b)
+    expect(() =>
+      db.prepare('INSERT INTO duplicate_dismissals (txn_a, txn_b) VALUES (?, ?)').run(b, a),
+    ).toThrow()
+    db.prepare('DELETE FROM transactions WHERE id = ?').run(a)
+    expect(db.prepare('SELECT COUNT(*) AS n FROM duplicate_dismissals').get()).toEqual({ n: 0 })
+  })
+})

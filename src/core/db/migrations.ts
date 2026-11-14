@@ -294,6 +294,19 @@ ALTER TABLE categories DROP COLUMN kind;
 `
 
 /**
+ * Migration 14: pairs of transactions the user marked "not a duplicate" in Find duplicates
+ * (docs/design/04_import.md). Stored with txn_a < txn_b; deleting either row drops the pair.
+ */
+const DUPLICATE_DISMISSALS = `
+CREATE TABLE duplicate_dismissals (
+  txn_a INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  txn_b INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  PRIMARY KEY (txn_a, txn_b),
+  CHECK (txn_a < txn_b)
+);
+`
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -315,6 +328,7 @@ export const migrations: readonly string[] = [
   EXCLUDE_FROM_BUDGETS,
   BUDGETS,
   DROP_CATEGORY_KIND,
+  DUPLICATE_DISMISSALS,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

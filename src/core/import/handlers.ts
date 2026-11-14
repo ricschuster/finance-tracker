@@ -12,6 +12,7 @@ import { looksLikeMint, mapMint } from './mint'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
 import { looksLikeOfx, parseOfx } from './ofx'
+import { enrichPlan, type RowEnrichment } from './enrich'
 import { guessHeaderRow, parseCsv, type Delimiter } from './csv'
 import { alreadyImportedWarning, findBatchByHash, hashFileText } from './filehash'
 import { getBatchRows, listBatches, previewUndo, undoBatch } from './history'
@@ -75,6 +76,10 @@ export interface PreviewItem extends PlanItem {
   transfer: ExistingSummary | null
   /** The row looks like a card or loan payment, so linking it as a transfer is on unless the user clears it. */
   suggestLink: boolean
+  /** A rule says to leave this row out; it is skipped unless the user chooses to import it. */
+  skippedByRule: RowEnrichment['skippedByRule']
+  /** The category the row will get, and where it came from. */
+  category: RowEnrichment['category']
 }
 
 export interface ImportPreview {
@@ -91,6 +96,8 @@ export interface ChoiceOverride {
   choice: PossibleChoice
   /** For rows that would be added: link to the offered transfer row. */
   linkTransfer?: boolean
+  /** Category picked in the preview; wins over rules and guesses. */
+  categoryId?: number
 }
 
 export interface CommitRequest extends PreviewRequest {
@@ -201,12 +208,15 @@ function makePreview(
   if (!account) throw new Error(`Account ${accountId} not found`)
   const known =
     fileText === undefined ? null : findBatchByHash(db, accountId, hashFileText(fileText))
+  const enriched = enrichPlan(db, accountId, plan)
   return {
     items: plan.map((p) => ({
       ...p,
       match: lookup(db, p.matchId),
       transfer: lookup(db, p.transferCandidateId),
       suggestLink: suggestsLink(db, accountId, p),
+      skippedByRule: enriched.get(p.candidate.line)?.skippedByRule ?? null,
+      category: enriched.get(p.candidate.line)?.category ?? null,
     })),
     errors: mapped.errors,
     skippedForeign: mapped.skippedForeign,
@@ -248,14 +258,26 @@ function decide(
   overrideList: ChoiceOverride[] = [],
 ): ImportDecision[] {
   const overrides = new Map(overrideList.map((o) => [o.line, o]))
+  const enriched = enrichPlan(db, accountId, plan)
   return plan.map((p) => {
     const o = overrides.get(p.candidate.line)
     const candidate = p.candidate
+    const e = enriched.get(candidate.line)
+    // A guess from history is applied here; rule and file categories are applied by the commit.
+    const category: Pick<ImportDecision, 'categoryId' | 'categoryChosen'> =
+      o?.categoryId !== undefined
+        ? { categoryId: o.categoryId, categoryChosen: true }
+        : e?.category?.source === 'history'
+          ? { categoryId: e.category.id }
+          : {}
     if (p.outcome === 'duplicate') return { candidate, action: 'skip' as const }
     if (p.outcome === 'new') {
       if (o?.choice === 'skip') return { candidate, action: 'skip' as const }
+      // A skip rule drops the row unless the user chose to import it (choice "new").
+      if (e?.skippedByRule && o?.choice !== 'new') return { candidate, action: 'skip' as const }
       return {
         candidate,
+        ...category,
         action: 'add' as const,
         ...((o?.linkTransfer ?? suggestsLink(db, accountId, p)) &&
           p.transferCandidateId !== null && { linkTransferId: p.transferCandidateId }),
@@ -265,7 +287,7 @@ function decide(
     if (choice === 'merge' && p.matchId !== null)
       return { candidate, action: 'merge' as const, matchId: p.matchId }
     if (choice === 'skip') return { candidate, action: 'skip' as const }
-    return { candidate, action: 'add' as const }
+    return { candidate, ...category, action: 'add' as const }
   })
 }
 

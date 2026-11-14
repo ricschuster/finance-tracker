@@ -14,6 +14,10 @@ export interface ImportDecision {
   matchId?: number
   /** Optional for `add`: an opposite row in another account to link as a transfer. */
   linkTransferId?: number
+  /** For `add`: category to file the row under (a history guess or the user's pick). */
+  categoryId?: number
+  /** The user chose `categoryId` in the preview, so it also wins over rules. */
+  categoryChosen?: boolean
 }
 
 export interface CommitInput {
@@ -128,6 +132,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
     const usableId = (id: string | null): string | null =>
       id !== null && !idTaken.get(input.accountId, id) ? id : null
     const addedIds: number[] = []
+    const chosen: Array<[number, number]> = []
     let added = 0
     let merged = 0
     let skipped = 0
@@ -173,7 +178,8 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         continue
       }
 
-      const categoryId = c.categoryName ? categoryIdByName(db, c.categoryName) : null
+      const categoryId =
+        d.categoryId ?? (c.categoryName ? categoryIdByName(db, c.categoryName) : null)
       const id = createTransaction(db, {
         accountId: input.accountId,
         date: c.date,
@@ -192,10 +198,16 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
       )
       if (d.linkTransferId !== undefined) linkTransfer(db, batchId, id, d.linkTransferId, change)
       addedIds.push(id)
+      if (d.categoryChosen && categoryId !== null) chosen.push([id, categoryId])
       added++
     }
     // Rules run inside the same database transaction, so undoing the batch removes the rows.
     if (addedIds.length) applyRules(db, { ids: addedIds })
+    // A category picked in the preview beats any rule.
+    const setChosen = db.prepare(
+      'UPDATE transaction_lines SET category_id = ? WHERE transaction_id = ?',
+    )
+    for (const [id, categoryId] of chosen) setChosen.run(categoryId, id)
 
     db.prepare(
       `UPDATE import_batches SET rows_total = ?, rows_added = ?, rows_merged = ?,

@@ -316,6 +316,7 @@ export function StatTile({
   icon,
   iconTone,
   note,
+  onClick,
 }: {
   label: string
   value: ReactNode
@@ -323,9 +324,16 @@ export function StatTile({
   icon?: ReactNode
   iconTone?: 'pos' | 'neg' | 'accent'
   note?: ReactNode
+  /** Makes the tile a button, for drilling into the transactions behind the figure. */
+  onClick?: () => void
 }) {
+  const Tag = onClick ? 'button' : 'div'
   return (
-    <div className="stat">
+    <Tag
+      type={onClick ? 'button' : undefined}
+      onClick={onClick}
+      className={onClick ? 'stat clickable' : 'stat'}
+    >
       <div className="stat-head">
         <span>{label}</span>
         {icon && (
@@ -336,6 +344,6 @@ export function StatTile({
       </div>
       <strong className={tone}>{value}</strong>
       {note && <span className="muted">{note}</span>}
-    </div>
+    </Tag>
   )
 }

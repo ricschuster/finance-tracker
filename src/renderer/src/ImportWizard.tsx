@@ -17,6 +17,7 @@ import { previewMapping } from '../../core/import/preview'
 import { matchPresetByHeader, PRESETS } from '../../core/import/presets'
 import { formatCents } from '../../core/money'
 import { MintImport } from './MintImport'
+import { CategorySelect } from './CategorySelect'
 import { Empty, useConfirm } from './ui'
 import type { LedgerState } from './useLedger'
 
@@ -200,9 +201,10 @@ async function readDropped(f: File): Promise<{ name: string; text: string }> {
 
 export function ImportWizard({
   accounts,
+  categories,
   run,
   onFinished,
-}: Pick<LedgerState, 'accounts' | 'run'> & { onFinished: () => void }) {
+}: Pick<LedgerState, 'accounts' | 'categories' | 'run'> & { onFinished: () => void }) {
   const [step, setStep] = useState<Step>('file')
   const [file, setFile] = useState<{ name: string; text: string } | null>(null)
   const [info, setInfo] = useState<CsvInspection | null>(null)
@@ -347,9 +349,33 @@ export function ImportWizard({
   function setChoice(it: PreviewItem, choice: PossibleChoice, linkTransfer?: boolean) {
     setOverrides((o) => ({
       ...o,
-      [it.candidate.line]: { line: it.candidate.line, choice, linkTransfer },
+      [it.candidate.line]: {
+        ...o[it.candidate.line],
+        line: it.candidate.line,
+        choice,
+        linkTransfer,
+      },
     }))
   }
+
+  /** A category picked in the preview; keeps whatever choice the row already has. */
+  function setCategory(it: PreviewItem, categoryId: number) {
+    setOverrides((o) => ({
+      ...o,
+      [it.candidate.line]: {
+        choice: it.outcome === 'possible' ? it.choice : 'new',
+        ...o[it.candidate.line],
+        line: it.candidate.line,
+        categoryId,
+      },
+    }))
+  }
+
+  /** A row a rule would skip, and the user has not chosen to import. */
+  const ruleSkipped = (it: PreviewItem) =>
+    it.outcome === 'new' &&
+    it.skippedByRule !== null &&
+    overrides[it.candidate.line]?.choice !== 'new'
 
   function bulk(choice: PossibleChoice) {
     if (!preview) return
@@ -953,6 +979,7 @@ export function ImportWizard({
                     <th>Date</th>
                     <th>Description</th>
                     <th className="num">Amount</th>
+                    <th>Category</th>
                     <th>Result</th>
                   </tr>
                 </thead>
@@ -968,7 +995,51 @@ export function ImportWizard({
                           {formatCents(it.candidate.amount)}
                         </td>
                         <td>
-                          {it.outcome === 'new' && (
+                          {it.outcome !== 'duplicate' && !ruleSkipped(it) && (
+                            <div className="result-cell">
+                              <CategorySelect
+                                inline
+                                aria-label={`Category for line ${it.candidate.line}`}
+                                categories={categories}
+                                anyLabel="No category"
+                                value={
+                                  overrides[it.candidate.line]?.categoryId ?? it.category?.id ?? 0
+                                }
+                                onChange={(id) => setCategory(it, id)}
+                              />
+                              {overrides[it.candidate.line]?.categoryId === undefined &&
+                                it.category?.source === 'history' && (
+                                  <span
+                                    className="subtle"
+                                    title="Guessed from earlier transactions"
+                                  >
+                                    guess {it.category.agree}/{it.category.of}
+                                  </span>
+                                )}
+                              {overrides[it.candidate.line]?.categoryId === undefined &&
+                                it.category?.source === 'rule' && (
+                                  <span className="subtle">rule</span>
+                                )}
+                            </div>
+                          )}
+                        </td>
+                        <td>
+                          {ruleSkipped(it) && it.skippedByRule && (
+                            <div className="result-cell">
+                              <span className="pill">Skipped</span>
+                              <span className="muted">
+                                by rule &quot;{it.skippedByRule.ruleName}&quot;
+                              </span>
+                              <button
+                                type="button"
+                                className="small"
+                                onClick={() => setChoice(it, 'new')}
+                              >
+                                Import anyway
+                              </button>
+                            </div>
+                          )}
+                          {it.outcome === 'new' && !ruleSkipped(it) && (
                             <div className="result-cell">
                               <span className="pill pos">New</span>
                               {it.transfer && (

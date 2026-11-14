@@ -63,6 +63,8 @@ export function validateRule(db: Database.Database, input: RuleInput): void {
       if (!exists('SELECT 1 FROM categories WHERE id = ?', a.categoryId)) {
         throw new Error(`Category ${String(a.categoryId)} not found`)
       }
+    } else if (a.type === 'skipImport') {
+      // Nothing to check.
     } else if (a.type === 'addTags') {
       if (
         !Array.isArray(a.tags) ||

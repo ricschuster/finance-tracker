@@ -33,12 +33,14 @@ export function Dashboard({
   version,
   accounts,
   onOpenCategory,
+  onOpenRange,
   onReviewUncategorized,
   onOpenBudgets,
 }: {
   version: number
   accounts: AccountWithBalance[]
   onOpenCategory: (categoryId: number, from: string, to: string) => void
+  onOpenRange: (from: string, to: string, direction?: 'expense' | 'income') => void
   onReviewUncategorized: () => void
   onOpenBudgets: () => void
 }) {
@@ -137,6 +139,7 @@ export function Dashboard({
               icon={<ArrowDownLeft size={16} />}
               iconTone="pos"
               note="This month"
+              onClick={() => onOpenRange(period.from, period.to, 'income')}
             />
           )}
           {show('spending') && (
@@ -145,6 +148,7 @@ export function Dashboard({
               value={formatCents(summary.spending)}
               icon={<ArrowUpRight size={16} />}
               iconTone="neg"
+              onClick={() => onOpenRange(period.from, period.to, 'expense')}
               note={
                 previousSpending === 0 && summary.spending === 0
                   ? 'Nothing yet'
@@ -159,6 +163,7 @@ export function Dashboard({
               tone={summary.net < 0 ? 'neg' : 'pos'}
               icon={<Scale size={16} />}
               iconTone="accent"
+              onClick={() => onOpenRange(period.from, period.to)}
               note={
                 summary.savingsRate === null
                   ? 'No income yet'
@@ -210,6 +215,11 @@ export function Dashboard({
             </div>
             <TrendChart
               data={data.trend.map((t) => ({ key: t.month, label: monthName(t.month), ...t }))}
+              onSelect={(month) => {
+                const [y, m] = month.split('-').map(Number) as [number, number]
+                const last = new Date(y, m, 0).getDate()
+                onOpenRange(`${month}-01`, `${month}-${String(last).padStart(2, '0')}`)
+              }}
             />
           </div>
         )}

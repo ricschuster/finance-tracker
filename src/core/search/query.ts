@@ -11,6 +11,8 @@ export interface SearchQuery {
   accountIds?: number[]
   categoryId?: number
   uncategorized?: boolean
+  /** Leave out transfers (linked pairs and the system Transfer category), as reports do. */
+  excludeTransfers?: boolean
   tag?: string
   status?: TransactionStatus
   /** Inclusive ISO dates. */
@@ -90,6 +92,13 @@ export function buildWhere(q: SearchQuery): { sql: string; params: unknown[] } {
     where.push(
       `EXISTS (SELECT 1 FROM transaction_lines l JOIN categories c ON c.id = l.category_id
                WHERE l.transaction_id = t.id AND c.name = 'Uncategorized' AND c.parent_id IS NULL)`,
+    )
+  }
+  if (q.excludeTransfers) {
+    where.push(
+      `t.transfer_peer_id IS NULL AND NOT EXISTS (SELECT 1 FROM transaction_lines l
+         JOIN categories c ON c.id = l.category_id
+         WHERE l.transaction_id = t.id AND c.is_system = 1 AND c.name = 'Transfer')`,
     )
   }
   if (q.tag) {

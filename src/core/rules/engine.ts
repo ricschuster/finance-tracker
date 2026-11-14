@@ -75,7 +75,7 @@ function applyActions(
       else if (!categoryOk(a.categoryId)) continue
       else if (a.categoryId !== t.categoryId) changes.categoryId = a.categoryId
       else delete changes.categoryId
-    } else {
+    } else if (a.type === 'addTags') {
       if (has('tags')) {
         locked.add('tags')
         continue
@@ -108,6 +108,16 @@ export function planRules(
     return { ruleId: rule.id, changes, locked }
   }
   return null
+}
+
+/**
+ * The rule that drops a row at import: the first matching rule, when it has a skipImport action.
+ * Same winner as `planRules`, so a skip never fights another rule over the same row.
+ */
+export function skipRule(rules: readonly Rule[], t: RuleTarget): Rule | null {
+  if (t.isTransfer) return null
+  const rule = rules.find((r) => ruleMatches(r, t))
+  return rule?.actions.some((a) => a.type === 'skipImport') ? rule : null
 }
 
 export function hasChanges(c: RuleChanges): boolean {

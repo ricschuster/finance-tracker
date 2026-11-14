@@ -97,6 +97,13 @@ describe('searchTransactions', () => {
     expect(ids({ uncategorized: true })).toEqual([c])
   })
 
+  it('can leave out transfers like reports do', () => {
+    const a = txn({ amount: -500, category: 'Food & Dining' })
+    const t = txn({ amount: -9000, category: 'Transfer' })
+    expect(ids({})).toEqual([t, a])
+    expect(ids({ excludeTransfers: true })).toEqual([a])
+  })
+
   it('combines filters with AND and reports total and sum across pages', () => {
     for (let i = 0; i < 5; i++) txn({ desc: 'COFFEE', amount: -300, date: `2026-02-0${i + 1}` })
     txn({ desc: 'OTHER', amount: -999 })

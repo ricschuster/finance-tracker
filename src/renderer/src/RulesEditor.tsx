@@ -35,6 +35,7 @@ interface FormState {
   payee: string
   categoryId: number
   tags: string
+  skipImport: boolean
 }
 
 const blank = (): FormState => ({
@@ -50,6 +51,7 @@ const blank = (): FormState => ({
   payee: '',
   categoryId: 0,
   tags: '',
+  skipImport: false,
 })
 
 const dollars = (cents: number) => (cents / 100).toFixed(2)
@@ -81,6 +83,7 @@ function toForm(rule: RuleInput & { name?: string }): FormState | null {
     seen.add(a.type)
     if (a.type === 'setPayee') f.payee = a.payee
     else if (a.type === 'setCategory') f.categoryId = a.categoryId
+    else if (a.type === 'skipImport') f.skipImport = true
     else f.tags = a.tags.join(', ')
   }
   return f
@@ -108,6 +111,7 @@ function toInput(f: FormState): RuleInput {
     .map((t) => t.trim())
     .filter(Boolean)
   if (tags.length) actions.push({ type: 'addTags', tags })
+  if (f.skipImport) actions.push({ type: 'skipImport' })
   return { name: f.name, enabled: f.enabled, conditions, actions }
 }
 
@@ -130,6 +134,7 @@ function describeCondition(c: Condition, accounts: LedgerState['accounts']): str
 function describeAction(a: Action, categories: LedgerState['categories']): string {
   if (a.type === 'setPayee') return `Payee "${a.payee}"`
   if (a.type === 'addTags') return `Tags ${a.tags.join(', ')}`
+  if (a.type === 'skipImport') return 'Skip on import'
   return `Category ${categories.find((c) => c.id === a.categoryId)?.name ?? '(deleted)'}`
 }
 
@@ -601,6 +606,15 @@ export function RulesEditor({
                     placeholder="subscription, music"
                     onChange={(e) => set('tags', e.target.value)}
                   />
+                </label>
+                <label className="check">
+                  <input
+                    type="checkbox"
+                    checked={editing.form.skipImport}
+                    onChange={(e) => set('skipImport', e.target.checked)}
+                  />
+                  Skip on import (the import preview lists these rows as skipped; you can still
+                  import one)
                 </label>
               </div>
             </fieldset>

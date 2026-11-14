@@ -1,0 +1,46 @@
+// Import preview: category guessed from history, a "skip on import" rule, picking a category, Import anyway.
+import fs from 'node:fs'
+import path from 'node:path'
+import { launch } from './lib.mjs'
+const outDir = process.env.SCREENSHOT_DIR ?? '/tmp/ft-shots'
+const { page, errors, shot, stubOpenDialog } = await launch({ outDir })
+const past = await page.evaluate(async () => {
+  const all = await window.api.ledger.listTransactions({})
+  const cats = await window.api.ledger.listCategories()
+  const name = (id) => cats.find((c) => c.id === id)?.name
+  return all.filter((t) => t.lines.length === 1 && name(t.lines[0].categoryId) !== 'Uncategorized' && t.amount < 0 && !t.transferPeerId)
+    .slice(0, 1).map((t) => ({ raw: t.rawDescription, cat: name(t.lines[0].categoryId) }))
+})
+console.log('history sample:', JSON.stringify(past))
+const csv = path.join(outDir, 'guess.csv')
+fs.writeFileSync(csv, `Date,Description,Amount\n2026-11-01,${past[0].raw} 99,-12.00\n2026-11-02,INTERNAL XFER 7,-51.37\n2026-11-03,UNKNOWN SHOP,-4.75\n`)
+// Skip rule through the editor
+await page.getByRole('tab', { name: 'Rules' }).click()
+await page.getByRole('button', { name: 'New rule' }).click()
+await page.getByLabel('Name').last().fill('Internal transfers')
+await page.getByLabel('Text', { exact: true }).fill('internal xfer')
+await page.getByLabel(/Skip on import/).check()
+await page.getByRole('button', { name: 'Save rule' }).click()
+await page.waitForTimeout(300)
+console.log('rule chips:', (await page.locator('.chip').allInnerTexts()).join(' | '))
+await stubOpenDialog(csv)
+await page.getByRole('tab', { name: 'Import', exact: true }).click()
+await page.getByRole('button', { name: /Choose file/ }).click()
+await page.getByRole('button', { name: 'Preview', exact: true }).click()
+await page.waitForTimeout(500)
+await shot('import-guess')
+const rows = page.locator('.import-table tbody tr')
+for (let i = 0; i < (await rows.count()); i++) console.log('row', i, (await rows.nth(i).innerText()).replace(/\s+/g, ' '))
+await page.getByRole('button', { name: 'Import anyway' }).click()
+await page.waitForTimeout(300)
+console.log('after import anyway:', (await rows.nth(1).innerText()).replace(/\s+/g, ' '))
+await page.getByRole('button', { name: 'Import', exact: true }).last().click()
+await page.waitForTimeout(800)
+await shot('import-guess-done')
+const saved = await page.evaluate(async () => {
+  const all = await window.api.ledger.listTransactions({})
+  return all.filter((t) => t.date >= '2026-11-01' && /99|INTERNAL|UNKNOWN/.test(t.rawDescription)).map((t) => [t.rawDescription, t.lines[0].categoryName])
+})
+console.log('saved:', JSON.stringify(saved))
+console.log('ERRORS', errors)
+process.exit(0)

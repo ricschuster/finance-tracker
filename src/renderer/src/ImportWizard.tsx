@@ -682,7 +682,9 @@ export function ImportWizard({
                               {' '}
                               <input
                                 type="checkbox"
-                                checked={!!overrides[it.candidate.line]?.linkTransfer}
+                                checked={
+                                  overrides[it.candidate.line]?.linkTransfer ?? it.suggestLink
+                                }
                                 onChange={(e) => setChoice(it, 'new', e.target.checked)}
                               />{' '}
                               Link as transfer with {it.transfer.accountName} ({it.transfer.date})

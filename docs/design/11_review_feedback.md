@@ -35,6 +35,12 @@ a fixed palette that passes contrast in light and dark.
 
 ## 3. Transfers and card payments stay out of spending and budgets
 
+Status: import prompt built. A new row with a transfer candidate is linked by
+default when either account is a credit card or loan and the bank text says
+payment (payment, pmt, paiement, autopay, bill pay). The checkbox in the
+preview starts ticked and can be cleared; other candidates stay opt-in.
+Flagging an unmatched payment as "not spending" waits for item 4.
+
 Today: reports already skip transfer-linked transactions and kind `transfer`
 categories (note 07). Credit card payments are only excluded if they are
 linked as a transfer.

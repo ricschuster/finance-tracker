@@ -67,6 +67,8 @@ export interface ExistingSummary {
 export interface PreviewItem extends PlanItem {
   match: ExistingSummary | null
   transfer: ExistingSummary | null
+  /** The row looks like a card or loan payment, so linking it as a transfer is on unless the user clears it. */
+  suggestLink: boolean
 }
 
 export interface ImportPreview {
@@ -185,6 +187,7 @@ function makePreview(
       ...p,
       match: lookup(db, p.matchId),
       transfer: lookup(db, p.transferCandidateId),
+      suggestLink: suggestsLink(db, accountId, p),
     })),
     errors: mapped.errors,
     skippedForeign: mapped.skippedForeign,
@@ -199,8 +202,34 @@ function makePreview(
   }
 }
 
+const PAYMENT_WORDS = /\b(payment|pmt|paiement|pymt|autopay|bill pay)\b/i
+
+/**
+ * A new row with a transfer candidate is a likely card or loan payment when either account is a
+ * credit card or loan, or the bank text says payment. Such rows are linked by default so they stay
+ * out of spending; the user can clear the box. Other candidates stay opt-in.
+ */
+function suggestsLink(db: Database.Database, accountId: number, p: PlanItem): boolean {
+  if (p.outcome !== 'new' || p.transferCandidateId === null) return false
+  const types = db
+    .prepare(
+      `SELECT a.type FROM accounts a WHERE a.id = ?
+       UNION ALL SELECT a.type FROM transactions t JOIN accounts a ON a.id = t.account_id WHERE t.id = ?`,
+    )
+    .all(accountId, p.transferCandidateId) as Array<{ type: string }>
+  return (
+    types.some((t) => t.type === 'credit_card' || t.type === 'loan') &&
+    PAYMENT_WORDS.test(p.candidate.rawDescription)
+  )
+}
+
 /** Turn a plan plus the user's overrides into commit decisions. */
-function decide(plan: PlanItem[], overrideList: ChoiceOverride[] = []): ImportDecision[] {
+function decide(
+  db: Database.Database,
+  accountId: number,
+  plan: PlanItem[],
+  overrideList: ChoiceOverride[] = [],
+): ImportDecision[] {
   const overrides = new Map(overrideList.map((o) => [o.line, o]))
   return plan.map((p) => {
     const o = overrides.get(p.candidate.line)
@@ -211,7 +240,7 @@ function decide(plan: PlanItem[], overrideList: ChoiceOverride[] = []): ImportDe
       return {
         candidate,
         action: 'add' as const,
-        ...(o?.linkTransfer &&
+        ...((o?.linkTransfer ?? suggestsLink(db, accountId, p)) &&
           p.transferCandidateId !== null && { linkTransferId: p.transferCandidateId }),
       }
     }
@@ -289,7 +318,7 @@ export function createImportHandlers(db: Database.Database) {
         format: req.format ?? 'csv',
         profileId: req.profileId ?? null,
         fileHash: hashFileText(req.text),
-        decisions: decide(plan, req.overrides),
+        decisions: decide(db, req.accountId, plan, req.overrides),
         rowsError: mapped.errors.length + mapped.skippedForeign.length,
         rowsTotal: mapped.candidates.length + mapped.errors.length + mapped.skippedForeign.length,
       })
@@ -335,7 +364,7 @@ export function createImportHandlers(db: Database.Database) {
             sourceName: req.sourceName,
             format: 'mint',
             fileHash: hashFileText(req.text),
-            decisions: decide(g.plan, req.overrides),
+            decisions: decide(db, g.accountId, g.plan, req.overrides),
             rowsError: g.mapped.errors.length,
             rowsTotal: g.mapped.candidates.length + g.mapped.errors.length,
           }),

@@ -22,6 +22,27 @@ export interface SearchQuery {
   maxAmount?: number
   limit?: number
   offset?: number
+  /** Order of the returned page. Default is date, newest first. */
+  sort?: SortKey
+  dir?: 'asc' | 'desc'
+}
+
+export type SortKey = 'date' | 'payee' | 'category' | 'status' | 'amount'
+
+const SORT_SQL: Record<SortKey, string> = {
+  date: 't.date',
+  payee: "LOWER(CASE WHEN t.payee <> '' THEN t.payee ELSE t.raw_description END)",
+  category: `(SELECT LOWER(c.name) FROM transaction_lines l JOIN categories c ON c.id = l.category_id
+              WHERE l.transaction_id = t.id ORDER BY l.id LIMIT 1)`,
+  status: 't.status',
+  amount: 't.amount',
+}
+
+function orderBy(q: SearchQuery): string {
+  const key = q.sort ?? 'date'
+  if (!(key in SORT_SQL)) throw new Error(`Unknown sort "${key}"`)
+  const dir = q.dir === 'asc' ? 'ASC' : 'DESC'
+  return `${SORT_SQL[key]} ${dir}, t.date DESC, t.id DESC`
 }
 
 export interface SearchResult {
@@ -116,7 +137,7 @@ function validate(q: SearchQuery): void {
   if (q.from && q.to && q.from > q.to) throw new Error('from is after to')
 }
 
-/** Newest first, ties by id descending. Returns one page plus the total and sum of all matches. */
+/** Newest first unless `sort` says otherwise; ties by date then id descending. Returns one page plus the total and sum of all matches. */
 export function searchTransactions(db: Database.Database, q: SearchQuery = {}): SearchResult {
   validate(q)
   const { sql, params } = buildWhere(q)
@@ -142,7 +163,7 @@ export function searchTransactions(db: Database.Database, q: SearchQuery = {}): 
   const rows = db
     .prepare(
       `SELECT t.* FROM transactions t WHERE ${sql}
-       ORDER BY t.date DESC, t.id DESC LIMIT ? OFFSET ?`,
+       ORDER BY ${orderBy(q)} LIMIT ? OFFSET ?`,
     )
     .all(...params, limit, Math.max(q.offset ?? 0, 0)) as TxnRow[]
   return { transactions: hydrate(db, rows), total: agg.n, sum }

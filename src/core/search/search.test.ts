@@ -304,3 +304,24 @@ describe('one category over a year', () => {
     expect(r.sum).toBe(-14_000) // the split counts -1,500, not -5,000
   })
 })
+
+describe('sorting', () => {
+  it('orders a page by amount, payee or category in either direction', () => {
+    const db = new Database(':memory:')
+    migrate(db)
+    const a = createAccount(db, { name: 'Chq', type: 'checking' })
+    const mk = (date: string, amount: number, payee: string) =>
+      createTransaction(db, { accountId: a, date, amount, payee, rawDescription: payee })
+    mk('2026-01-01', -500, 'Beta')
+    mk('2026-01-02', -100, 'alpha')
+    mk('2026-01-03', 300, 'Gamma')
+    const payees = (q: Parameters<typeof searchTransactions>[1]) =>
+      searchTransactions(db, q).transactions.map((t) => t.payee)
+    expect(payees({})).toEqual(['Gamma', 'alpha', 'Beta'])
+    expect(payees({ sort: 'amount', dir: 'asc' })).toEqual(['Beta', 'alpha', 'Gamma'])
+    expect(payees({ sort: 'amount', dir: 'desc' })).toEqual(['Gamma', 'alpha', 'Beta'])
+    expect(payees({ sort: 'payee', dir: 'asc' })).toEqual(['alpha', 'Beta', 'Gamma'])
+    expect(payees({ sort: 'category', dir: 'asc' })).toHaveLength(3)
+    expect(() => searchTransactions(db, { sort: 'x; DROP' as never })).toThrow()
+  })
+})

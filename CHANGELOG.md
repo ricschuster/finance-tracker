@@ -5,9 +5,34 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-14
+
+### Added
+
+- Import: the wizard guesses the column mapping from header names and content, labels it as a
+  guess, and shows a live preview of the first rows that updates as you adjust the mapping.
+- Find duplicates in the Transactions toolbar, with "Not a duplicate" dismissals and undoable
+  delete.
+- Link card payments: suggests equal and opposite payment pairs between a bank account and a card
+  and links them, so the payment stops counting as spending.
+- Notes: add or edit a note on a transaction from the row menu, shown as an icon in the list.
+- Searchable category picker everywhere a category is chosen.
+
 ### Changed
 
+- Categories no longer have a type (spending, income, transfer). Reports classify each category
+  by the sign of its net amount for the period; the "Change type" action is gone. This is a
+  one-way database migration, so export a backup first.
+- Credit cards and loans show "Owing $X" instead of a red negative balance.
+- The "make a rule" prompt is a bottom toast that disappears by itself after about 8 seconds.
+- Import links more kinds of card payment wording automatically.
 - README rewritten for the public repository, with screenshots generated from the demo database.
+
+### Fixed
+
+- RBC card CSVs (for example Mastercard) failed to import because the header row was misdetected
+  when data rows omit the empty trailing USD$ cell. Missing-column errors now name the column and
+  list the headers found.
 
 ## [0.3.0] - 2026-11-14
 

@@ -4,7 +4,8 @@
 
 Finished the look and feel pass on the remaining screens, removed the last
 native dialogs, and built the budgets dashboard widget. PR #17
-(`feat/look-and-feel-part-2`).
+(`feat/look-and-feel-part-2`), squash-merged into `main` at the end of the
+session.
 
 ## Completed
 

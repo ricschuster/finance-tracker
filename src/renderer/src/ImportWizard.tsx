@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { ImportFolder } from './ImportFolder'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { guessDateFormat, type DateFormat } from '../../core/import/dates'
 import type {
@@ -206,7 +207,14 @@ export function ImportWizard({
   async function chooseFile() {
     try {
       const f = await window.api.importer.pickFile()
-      if (!f) return
+      if (f) await openFile(f)
+    } catch (e) {
+      fail(e)
+    }
+  }
+
+  async function openFile(f: { name: string; text: string }) {
+    try {
       const ofx = await window.api.importer.inspectOfx(f.text)
       if (ofx) {
         setFile(f)
@@ -361,6 +369,11 @@ export function ImportWizard({
           <button type="button" onClick={() => void chooseFile()}>
             Choose file...
           </button>
+          <ImportFolder
+            onOpen={(name) =>
+              void window.api.importer.readFolderFile(name).then(openFile).catch(fail)
+            }
+          />
         </div>
       )}
 

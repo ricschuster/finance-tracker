@@ -4,6 +4,12 @@ import type Database from 'better-sqlite3'
 import { BrowserWindow, dialog, ipcMain } from 'electron'
 import { decodeBytes, MAX_FILE_BYTES } from '../core/import/csv'
 import { createImportHandlers } from '../core/import/handlers'
+import {
+  getImportFolder,
+  readFolderFile,
+  scanImportFolder,
+  setImportFolder,
+} from '../core/import/folder'
 import { IMPORT_METHODS } from '../core/import/methods'
 
 /** Expose import handlers as `import:<method>`, plus the native file picker as `import:pickFile`. */
@@ -33,4 +39,24 @@ export function registerImportIpc(db: Database.Database): void {
     // Only the file name leaves main, never the full path.
     return { name: basename(path), text: decodeBytes(await readFile(path)) }
   })
+
+  // The folder is only ever set through the native picker, and files are read by bare name from it.
+  ipcMain.handle('import:getFolder', () => getImportFolder(db))
+  ipcMain.handle('import:chooseFolder', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    const options = {
+      title: 'Choose the folder your bank files are saved in',
+      properties: ['openDirectory' as const],
+    }
+    const result = win
+      ? await dialog.showOpenDialog(win, options)
+      : await dialog.showOpenDialog(options)
+    const path = result.filePaths[0]
+    return result.canceled || !path ? getImportFolder(db) : setImportFolder(db, path)
+  })
+  ipcMain.handle('import:clearFolder', () => setImportFolder(db, ''))
+  ipcMain.handle('import:scanFolder', () => scanImportFolder(db, getImportFolder(db)))
+  ipcMain.handle('import:readFolderFile', (_event, name: string) =>
+    readFolderFile(getImportFolder(db), String(name)),
+  )
 }

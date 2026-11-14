@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { BackupSettings, CsvExportFilter } from '../core/backup'
 import type { DataStatus } from '../main/data-ipc'
 import type { LedgerApi } from '../core/ledger/handlers'
+import type { FolderScan } from '../core/import/folder'
 import type { ImportApi } from '../core/import/handlers'
 import { IMPORT_METHODS } from '../core/import/methods'
 import { LEDGER_METHODS } from '../core/ledger/methods'
@@ -49,6 +50,12 @@ const importer = {
   ) as unknown as ImportApi),
   pickFile: (): Promise<{ name: string; text: string } | null> =>
     ipcRenderer.invoke('import:pickFile'),
+  getFolder: (): Promise<string> => ipcRenderer.invoke('import:getFolder'),
+  chooseFolder: (): Promise<string> => ipcRenderer.invoke('import:chooseFolder'),
+  clearFolder: (): Promise<string> => ipcRenderer.invoke('import:clearFolder'),
+  scanFolder: (): Promise<FolderScan> => ipcRenderer.invoke('import:scanFolder'),
+  readFolderFile: (name: string): Promise<{ name: string; text: string }> =>
+    ipcRenderer.invoke('import:readFolderFile', name),
 }
 
 const data = {

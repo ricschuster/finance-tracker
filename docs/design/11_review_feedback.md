@@ -79,6 +79,13 @@ category without treating it as income.
 
 ## 8. Import from one watched folder
 
+Status: built (folder setting, scan, review through the wizard). The folder is
+checked when the import screen opens and on "Check folder"; live file system
+watching is not built. The folder is set only through the native picker and
+files are read by bare name. OFX, QFX and Mint files count as ready; a CSV is
+ready only when its header matches a saved profile. Already imported files
+(by hash) are hidden unless asked for.
+
 Change: a setting `import_folder`. On startup and on demand ("Check folder"),
 list new files, run each through its saved mapping profile, and put the
 results in the import review screen. Files are never deleted or moved by

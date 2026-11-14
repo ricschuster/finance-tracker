@@ -44,7 +44,7 @@ describe('presets', () => {
 
   it('Tangerine maps a signed amount and joins name and memo', () => {
     const rows = [
-      ['Transaction date', 'Transaction', 'Name', 'Memo', 'Amount'],
+      ['Date', 'Transaction', 'Name', 'Memo', 'Amount'],
       ['1/8/2026', 'DEBIT', 'SAFEWAY', 'POS', '-45.00'],
     ]
     const r = mapRows(rows, preset('tangerine').config)

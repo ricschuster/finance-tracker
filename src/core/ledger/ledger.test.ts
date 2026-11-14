@@ -4,7 +4,10 @@ import { migrate } from '../db/migrations'
 import {
   accountBalance,
   createAccount,
+  categoryUsage,
   createCategory,
+  deleteAccount,
+  accountImpact,
   createTransaction,
   createTransfer,
   deleteCategory,
@@ -55,6 +58,28 @@ describe('accounts', () => {
   })
 })
 
+describe('account deletion', () => {
+  it('deletes an empty account', () => {
+    deleteAccount(db, visa)
+    expect(listAccounts(db, { includeArchived: true }).map((a) => a.name)).toEqual(['Chequing'])
+  })
+
+  it('refuses an account with transactions unless told to delete them', () => {
+    createTransaction(db, { accountId: visa, date: '2026-01-05', amount: -100 })
+    expect(accountImpact(db, visa)).toEqual({ transactions: 1, transferPeers: 0 })
+    expect(() => deleteAccount(db, visa)).toThrow(/transactions/)
+    deleteAccount(db, visa, { deleteTransactions: true })
+    expect(listAccounts(db).map((a) => a.name)).toEqual(['Chequing'])
+  })
+
+  it('removes the other half of a transfer too', () => {
+    createTransfer(db, { fromAccountId: chq, toAccountId: visa, date: '2026-01-06', amount: 5_000 })
+    expect(accountImpact(db, visa)).toEqual({ transactions: 1, transferPeers: 1 })
+    deleteAccount(db, visa, { deleteTransactions: true })
+    expect(accountBalance(db, chq)).toBe(100_000)
+  })
+})
+
 describe('categories', () => {
   it('creates children that inherit kind and limits nesting to one level', () => {
     const income = getCategoryByName(db, 'Income')!.id
@@ -65,6 +90,17 @@ describe('categories', () => {
     })
     expect(() => createCategory(db, { name: 'Deep', parentId: child })).toThrow(/one level/)
     expect(() => createCategory(db, { name: 'salary', parentId: income })).toThrow(/UNIQUE/)
+  })
+
+  it('counts transaction lines per category', () => {
+    createTransaction(db, {
+      accountId: chq,
+      date: '2026-01-05',
+      amount: -400,
+      lines: [{ categoryId: groceries, amount: -400 }],
+    })
+    expect(categoryUsage(db)[groceries]).toBe(1)
+    expect(categoryUsage(db)[dining]).toBeUndefined()
   })
 
   it('protects system categories', () => {

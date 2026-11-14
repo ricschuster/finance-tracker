@@ -10,6 +10,7 @@ import {
   topPayees,
   type ReportFilter,
 } from './queries'
+import { getDashboardWidgets, setDashboardWidgets } from './widgets'
 
 /** The reports API as plain functions over a database, exposed over IPC unchanged. */
 export function createReportsHandlers(db: Database.Database) {
@@ -21,6 +22,8 @@ export function createReportsHandlers(db: Database.Database) {
     biggestTransactions: (p: Period, limit?: number, f?: ReportFilter) =>
       biggestTransactions(db, p, limit, f),
     dashboard: (today: string, f?: ReportFilter) => dashboard(db, today, f),
+    getDashboardWidgets: () => getDashboardWidgets(db),
+    setDashboardWidgets: (ids: string[]) => setDashboardWidgets(db, ids),
   } satisfies Record<ReportsMethod, (...args: never[]) => unknown>
 }
 

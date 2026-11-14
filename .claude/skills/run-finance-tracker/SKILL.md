@@ -23,7 +23,7 @@ xvfb-run -a -s "-screen 0 1440x900x24" node .claude/skills/run-finance-tracker/t
 ```
 
 `tour.mjs` covers search, rules and CSV import; `import-formats.mjs` covers OFX, QFX (fitid duplicates) and Mint import from `test-data/import/`; `reports.mjs` covers the dashboard,
-reports and the drill-down; `data.mjs` covers the Data tab (backups, export, CSV, staged restore). The app opens on the Dashboard tab.
+reports and the drill-down; `categories.mjs` covers the Categories tab (add, subcategory, rename, delete with reassign); `accounts-dashboard.mjs` covers account edit, archive and delete and the dashboard Customize panel; `data.mjs` covers the Data tab (backups, export, CSV, staged restore). The app opens on the Dashboard tab.
 
 `lib.mjs` exports `launch()` returning `{ app, page, errors, shot, stubOpenDialog }`.
 Write new flows as small scripts that import it. Then read the PNGs.

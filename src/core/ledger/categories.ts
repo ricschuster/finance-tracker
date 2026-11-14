@@ -38,6 +38,14 @@ export function listCategories(db: Database.Database): Category[] {
   return rows.map(toCategory)
 }
 
+/** Number of transaction lines per category id, for categories that have any. */
+export function categoryUsage(db: Database.Database): Record<number, number> {
+  const rows = db
+    .prepare('SELECT category_id AS id, COUNT(*) AS n FROM transaction_lines GROUP BY category_id')
+    .all() as { id: number; n: number }[]
+  return Object.fromEntries(rows.map((r) => [r.id, r.n]))
+}
+
 export function getCategoryByName(
   db: Database.Database,
   name: string,

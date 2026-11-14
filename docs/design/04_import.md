@@ -236,6 +236,6 @@ user change the choice for possible matches in bulk or one by one.
 Each step is usable on its own and goes through the session PR.
 
 Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
-the per-account mapping step, and RBC, TD and Tangerine presets (marked
-unverified in the UI until checked against a real export header). Not built:
+the per-account mapping step, and RBC, TD and Tangerine presets (all three
+checked against real exports on 2026-11-13: header row and date format). Not built:
 presets for other banks, and Mint label-to-tag import.

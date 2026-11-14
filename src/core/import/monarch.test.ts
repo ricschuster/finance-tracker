@@ -115,3 +115,31 @@ describe('Monarch', () => {
     )
   })
 })
+
+describe('Monarch xlsx', () => {
+  it('converts a spreadsheet to CSV that the Monarch import recognises', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { xlsxToCsv } = await import('./xlsx')
+    const text = await xlsxToCsv(readFileSync('test-data/import/monarch.xlsx'))
+    expect(text).toContain(
+      '2026-01-08,Safeway,Groceries,Chequing,SAFEWAY #4412,weekly,-45,"Food, Weekly"',
+    )
+    expect(text).toContain('2026-01-09,Acme,Paychecks')
+    const api = createImportHandlers(
+      (() => {
+        const db = new Database(':memory:')
+        migrate(db)
+        return db
+      })(),
+    )
+    const found = api.inspectMint(text)
+    expect(found?.source).toBe('Monarch')
+    expect(found?.accountNames).toEqual(['Chequing'])
+    expect(found?.count).toBe(2)
+  })
+
+  it('rejects a file that is not a spreadsheet', async () => {
+    const { xlsxToCsv } = await import('./xlsx')
+    await expect(xlsxToCsv(new TextEncoder().encode('not a zip'))).rejects.toThrow('Could not read')
+  })
+})

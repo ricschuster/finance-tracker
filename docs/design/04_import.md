@@ -285,3 +285,11 @@ file") makes the commit remove our non-system categories that the file does not 
 old tool's category set replaces the stock one. A category is only removed when nothing refers
 to it (no transaction lines, rules, budgets or saved searches), so no history is lost. The
 preview lists what will go.
+
+## Spreadsheets (.xlsx)
+
+An `.xlsx` file is converted to CSV text in the main process (first sheet only, ADR 0006) and then
+handled like any CSV, so a Monarch spreadsheet is detected by its header row. The file picker, the
+watched folder and drag and drop all accept it. The watched folder lists spreadsheets as ready
+without inspecting them. The conversion is only checked against a synthetic fixture
+(`test-data/import/monarch.xlsx`), not a real export.

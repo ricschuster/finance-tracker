@@ -147,6 +147,13 @@ function fromProfile(info: CsvInspection, p: MappingProfile): MapState {
 
 type Step = 'file' | 'map' | 'preview' | 'done'
 
+/** A dropped file as text; spreadsheets are converted to CSV in the main process. */
+async function readDropped(f: File): Promise<{ name: string; text: string }> {
+  if (f.name.toLowerCase().endsWith('.xlsx'))
+    return window.api.importer.convertXlsx(f.name, new Uint8Array(await f.arrayBuffer()))
+  return { name: f.name, text: await f.text() }
+}
+
 export function ImportWizard({
   accounts,
   run,
@@ -430,7 +437,7 @@ export function ImportWizard({
               e.preventDefault()
               setDragging(false)
               const f = e.dataTransfer.files[0]
-              if (f) void f.text().then((text) => openFile({ name: f.name, text }), fail)
+              if (f) void readDropped(f).then(openFile, fail)
             }}
           >
             <span className="drop-icon" aria-hidden="true">
@@ -438,8 +445,8 @@ export function ImportWizard({
             </span>
             <strong>Drop a bank file here, or choose one</strong>
             <span className="muted">
-              CSV, OFX, QFX, or a Mint, Monarch or Wealthsimple export. Nothing is saved until you
-              confirm.
+              CSV, XLSX, OFX, QFX, or a Mint, Monarch or Wealthsimple export. Nothing is saved until
+              you confirm.
             </span>
             <button type="button" className="primary" onClick={() => void chooseFile()}>
               <FolderOpen size={16} />

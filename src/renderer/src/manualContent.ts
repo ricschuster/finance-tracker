@@ -75,7 +75,7 @@ export const MANUAL: ManualSection[] = [
     id: 'import',
     title: 'Importing transactions',
     blocks: [
-      'Import accepts CSV files, OFX and QFX files, and exports from Mint, Monarch and Wealthsimple. Nothing is saved until you confirm the preview, and every import can be undone.',
+      'Import accepts CSV and Excel (.xlsx) files, OFX and QFX files, and exports from Mint, Monarch and Wealthsimple. Nothing is saved until you confirm the preview, and every import can be undone.',
       'Single-account files (CSV, OFX, QFX): choose the account the file belongs to, map the columns (the app recognises RBC, TD and Tangerine presets and remembers mappings you save as profiles), then review the preview.',
       'Multi-account files (Monarch, Mint, Wealthsimple): the file holds several accounts. For each one you choose an existing account or "Create a new account". Categories are matched by name; ones you do not have are created, or you can map them to one of yours.',
       'First-time setup: when moving over from another tool, tick "Setup import: replace my categories with the ones in this file". Your unused stock categories are then removed so the file\'s set takes over. Categories that already have transactions, rules or budgets are always kept. The preview lists what will go.',

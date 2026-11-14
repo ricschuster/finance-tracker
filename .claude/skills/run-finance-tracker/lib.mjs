@@ -36,3 +36,10 @@ export async function launch({ outDir = '/tmp/ft-shots', dbName = 'ui.sqlite', f
     }, file)
   return { app, page, errors, shot, stubOpenDialog, outDir }
 }
+
+/** Choose a category in the searchable picker: open it, type to filter, click the option. */
+export async function pickCategory(scope, label, name, { exact = false, nth = 0 } = {}) {
+  await scope.getByRole('combobox', { name: label, exact }).nth(nth).click()
+  await scope.getByLabel('Filter categories').fill(name)
+  await scope.getByRole('option', { name, exact: true }).first().click()
+}

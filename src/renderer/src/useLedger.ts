@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import type { Category } from '../../core/ledger/categories'
+import type { Category, CategoryAlias } from '../../core/ledger/categories'
 import type { Transaction } from '../../core/ledger/transactions'
 
 export interface LedgerState {
   accounts: AccountWithBalance[]
   categories: Category[]
+  categoryAliases: CategoryAlias[]
   transactions: Transaction[]
   error: string | null
   /** Bumps after every reload, so views with their own queries can refetch. */
@@ -19,19 +20,22 @@ export interface LedgerState {
 export function useLedger(accountId: number | null): LedgerState {
   const [accounts, setAccounts] = useState<AccountWithBalance[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [categoryAliases, setCategoryAliases] = useState<CategoryAlias[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState(0)
 
   const reload = useCallback(async () => {
     const { ledger } = window.api
-    const [a, c, t] = await Promise.all([
+    const [a, c, al, t] = await Promise.all([
       ledger.listAccounts(),
       ledger.listCategories(),
+      ledger.listCategoryAliases(),
       ledger.listTransactions(accountId === null ? { limit: 500 } : { accountId, limit: 500 }),
     ])
     setAccounts(a)
     setCategories(c)
+    setCategoryAliases(al)
     setTransactions(t)
     setVersion((v) => v + 1)
   }, [accountId])
@@ -58,6 +62,7 @@ export function useLedger(accountId: number | null): LedgerState {
   return {
     accounts,
     categories,
+    categoryAliases,
     transactions,
     error,
     version,

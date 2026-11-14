@@ -1,6 +1,6 @@
 // Click through the Transactions screen: dialogs, filters, bulk bar, row menu, split, rule prompt.
 // Usage: xvfb-run -a -s "-screen 0 1440x900x24" node .claude/skills/run-finance-tracker/transactions.mjs [outDir]
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const outDir = process.argv[2] ?? '/tmp/ft-shots/transactions'
 const { app, page, errors, shot } = await launch({ outDir })
@@ -26,7 +26,7 @@ await page.keyboard.press('Escape')
 
 // Filters
 await page.getByRole('button', { name: 'Filters' }).click()
-await page.getByLabel('Category filter').selectOption({ label: 'Groceries' })
+await pickCategory(page, 'Category filter', 'Groceries')
 await page.waitForTimeout(400)
 await shot('filters')
 console.log('FILTERED:', await page.locator('.result-summary').innerText())
@@ -48,13 +48,13 @@ await page.waitForTimeout(200)
 await shot('split')
 await page.getByRole('button', { name: 'Cancel' }).click()
 
-// Category change prompts for a rule (in-app dialog)
-const cat = page.getByLabel(/^Category for transaction/).nth(2)
-await cat.selectOption({ label: 'Shopping' })
-await confirmDialog.waitFor()
+// Category change offers a rule in a non-blocking toast
+await pickCategory(page, /^Category for transaction/, 'Shopping', { nth: 2 })
+const toast = page.getByTestId('toast')
+await toast.waitFor()
 await shot('rule-prompt')
-console.log('PROMPT:', (await confirmDialog.innerText()).replace(/\n+/g, ' | '))
-await confirmDialog.getByRole('button', { name: 'Not now' }).click()
+console.log('PROMPT:', (await toast.innerText()).replace(/\n+/g, ' | '))
+await toast.getByRole('button', { name: 'Dismiss' }).click()
 
 // Delete via menu + confirm
 await page.getByRole('row', { name: /Test Cafe/ }).getByRole('button', { name: /^Actions for transaction/ }).click()

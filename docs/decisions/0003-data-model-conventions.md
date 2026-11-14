@@ -41,7 +41,7 @@ Migration 8 merged every child into its parent and categories are now flat (no
 subcategories). See `docs/design/11_review_feedback.md`. The text below records
 what migration 3 added.
 
-Added by migration 3. Children inherit the parent kind, nesting is one level
+Added by migration 3. Children inherit the parent kind (since removed, ADR 0007), nesting is one level
 deep, and names are unique across the whole tree. `Groceries`, `Transfer` and
 `Uncategorized` have no children. Property Tax lives only under Home and
 Hobbies only under Shopping.

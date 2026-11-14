@@ -57,9 +57,11 @@ export interface BigTransaction {
 }
 
 /**
- * Split lines that count toward reports: transfers are out, and each line is
- * income or expense by its category kind. Uncategorized is classified by sign.
- * See docs/design/07_reports.md.
+ * Split lines that count toward reports: transfers are out (a transfer-linked transaction, or the
+ * system Transfer category). Categories have no kind: spending and income are decided by sign.
+ * Each report nets amounts first (so a refund reduces its category) and then classifies the net:
+ * negative is spending, positive is income. Uncategorized is the exception: it is a catch-all of
+ * unrelated money, so each of its lines is classified by its own sign. See docs/design/07_reports.md and ADR 0007.
  */
 function base(period: Period, f: ReportFilter): { from: string; params: unknown[] } {
   const params: unknown[] = [period.from, period.to]
@@ -73,13 +75,13 @@ function base(period: Period, f: ReportFilter): { from: string; params: unknown[
             c.parent_id AS pid, t.date AS date, t.account_id AS account_id,
             t.exclude_from_budgets AS hidden,
             CASE WHEN t.payee <> '' THEN t.payee ELSE t.raw_description END AS payee,
-            CASE WHEN c.name = 'Uncategorized' AND c.parent_id IS NULL
-                 THEN CASE WHEN l.amount < 0 THEN 'expense' ELSE 'income' END
-                 ELSE c.kind END AS kind
+            CASE WHEN c.is_system = 1 AND c.name = 'Uncategorized'
+                 THEN c.id || CASE WHEN l.amount < 0 THEN 'd' ELSE 'c' END
+                 ELSE CAST(c.id AS TEXT) END AS grp
      FROM transaction_lines l
      JOIN transactions t ON t.id = l.transaction_id
      JOIN categories c ON c.id = l.category_id
-     WHERE t.transfer_peer_id IS NULL AND c.kind <> 'transfer'
+     WHERE t.transfer_peer_id IS NULL AND NOT (c.is_system = 1 AND c.name = 'Transfer')
        AND t.date BETWEEN ? AND ? ${accounts}) AS x`
   return { from, params }
 }
@@ -92,9 +94,9 @@ export function incomeVsExpenses(
   const { from, params } = base(period, f)
   const row = db
     .prepare(
-      `SELECT COALESCE(SUM(CASE WHEN kind = 'income' THEN amount END), 0) AS income,
-              COALESCE(-SUM(CASE WHEN kind = 'expense' THEN amount END), 0) AS spending
-       FROM ${from}`,
+      `SELECT COALESCE(SUM(CASE WHEN net > 0 THEN net END), 0) AS income,
+              COALESCE(-SUM(CASE WHEN net < 0 THEN net END), 0) AS spending
+       FROM (SELECT SUM(amount) AS net FROM ${from} GROUP BY grp)`,
     )
     .get(...params) as { income: number; spending: number }
   const net = row.income - row.spending
@@ -112,8 +114,7 @@ export function spendingByCategory(
       `SELECT cid, cname, pid, COALESCE(p.name, cname) AS top_name, COALESCE(pid, cid) AS top_id,
               -SUM(amount) AS total, COUNT(DISTINCT tid) AS count
        FROM ${from} LEFT JOIN categories p ON p.id = x.pid
-       WHERE x.kind = 'expense'
-       GROUP BY cid`,
+       GROUP BY cid, grp HAVING SUM(amount) < 0`,
     )
     .all(...params) as {
     cid: number
@@ -154,10 +155,12 @@ export function monthlyTrend(
   const { from, params } = base(period, f)
   const rows = db
     .prepare(
-      `SELECT substr(date, 1, 7) AS month,
-              COALESCE(SUM(CASE WHEN kind = 'income' THEN amount END), 0) AS income,
-              COALESCE(-SUM(CASE WHEN kind = 'expense' THEN amount END), 0) AS spending
-       FROM ${from} GROUP BY month`,
+      `SELECT month,
+              COALESCE(SUM(CASE WHEN net > 0 THEN net END), 0) AS income,
+              COALESCE(-SUM(CASE WHEN net < 0 THEN net END), 0) AS spending
+       FROM (SELECT substr(date, 1, 7) AS month, SUM(amount) AS net
+             FROM ${from} GROUP BY month, grp)
+       GROUP BY month`,
     )
     .all(...params) as { month: string; income: number; spending: number }[]
   const byMonth = new Map(rows.map((r) => [r.month, r]))
@@ -177,7 +180,7 @@ export function topPayees(
   return db
     .prepare(
       `SELECT payee, -SUM(amount) AS total, COUNT(DISTINCT tid) AS count
-       FROM ${from} WHERE kind = 'expense' AND payee <> ''
+       FROM ${from} WHERE payee <> ''
        GROUP BY payee COLLATE NOCASE HAVING total > 0
        ORDER BY total DESC, payee LIMIT ?`,
     )
@@ -195,7 +198,7 @@ export function biggestTransactions(
     .prepare(
       `SELECT tid AS id, date, payee, account_id AS accountId, hidden AS excludeFromBudgets,
               -SUM(amount) AS total
-       FROM ${from} WHERE kind = 'expense'
+       FROM ${from}
        GROUP BY tid HAVING total > 0
        ORDER BY total DESC, date DESC, tid LIMIT ?`,
     )

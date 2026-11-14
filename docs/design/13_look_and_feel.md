@@ -72,10 +72,10 @@ avoid a flash. System is the default.
   current month); one row per budget with a progress bar that turns amber
   from 85% and red when over, plus an over-budget pill; a card listing
   spending in categories without a budget, each with a quick Budget button.
-- Categories: one card per kind (spending, income, transfers), a row menu
+- Categories: one card listing all categories, a row menu
   (rename, colour and icon, merge, delete), each opening a dialog. The colour
   and icon dialog shows the Lucide icons with a live preview. Add category
-  picks the kind, colour and icon up front.
+  picks the colour and icon up front.
 - Rules: numbered list with When and Then chips, move up and down buttons, a
   row menu (edit, turn on or off, delete); the editor is a wide dialog with
   When and Then sections. The preview is a card above the list with an Apply
@@ -88,3 +88,18 @@ avoid a flash. System is the default.
   row menu (show rows, undo import).
 - Data: cards for export and restore, CSV export and automatic backups (on or
   off pill, last backup, count, settings form).
+
+## Category picker, notes and toast (session feedback)
+
+- Category picker: `CategorySelect` is a searchable combobox (button plus a filter box and
+  listbox) used for every category choice. Filtering is `filterCategoryOptions` in
+  `core/ledger/categoryPicker.ts`: every word must match the category name, its parent or an
+  alias, ignoring case and accents. Aliases come from `listCategoryAliases` via `useLedger`.
+  Keys: arrows move, Enter picks, Escape closes only the picker (also inside a dialog).
+  The budget add dialog keeps a plain select because its options carry spent amounts.
+- Notes: `transactions.notes` is edited from the row menu (Add or Edit note) in an inline
+  row, shown as a note icon next to the payee with the text as tooltip, searched by the
+  main search box and written to the CSV export. Rules do not match on notes.
+- Toast: changing a category in the list no longer opens a dialog. A bottom toast offers
+  Create rule, dismisses itself after 8 seconds, pauses while hovered or focused, and is
+  replaced by the next one. `ToastProvider` and `useToast` live in `ui.tsx`.

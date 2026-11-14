@@ -28,3 +28,16 @@ export const ACCOUNT_GROUPS: { label: string; types: AccountType[] }[] = [
   { label: 'Loans', types: ['loan'] },
   { label: 'Other', types: ['other'] },
 ]
+
+import { formatCents } from '../../core/money'
+
+/** Credit cards and loans hold a negative balance that means money owed. */
+export const isLiability = (t: AccountType) => t === 'credit_card' || t === 'loan'
+
+/** Balance text for an account: liabilities read "Owing $X" (or "Credit $X" when overpaid). */
+export function balanceText(type: AccountType, balance: number): string {
+  if (!isLiability(type)) return formatCents(balance)
+  if (balance < 0) return `Owing ${formatCents(-balance)}`
+  if (balance > 0) return `Credit ${formatCents(balance)}`
+  return formatCents(0)
+}

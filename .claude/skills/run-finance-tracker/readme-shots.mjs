@@ -1,6 +1,6 @@
 // Capture the README screenshots on the synthetic demo database, in light and dark.
 // Usage: xvfb-run -a -s "-screen 0 1440x900x24" node .claude/skills/run-finance-tracker/readme-shots.mjs [outDir]
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const outDir = process.argv[2] ?? 'docs/images'
 const { app, page, errors, shot } = await launch({ outDir: '/tmp/ft-shots/readme' })
@@ -35,7 +35,7 @@ for (const [name, text, category] of [
   await page.getByRole('button', { name: 'New rule' }).click()
   await dialog.getByLabel('Name').fill(name)
   await dialog.getByLabel('Text', { exact: true }).fill(text)
-  await dialog.getByLabel('Category', { exact: true }).selectOption({ label: category })
+  await pickCategory(dialog, 'Category', category, { exact: true })
   await dialog.getByRole('button', { name: 'Save rule' }).click()
   await page.waitForTimeout(300)
 }

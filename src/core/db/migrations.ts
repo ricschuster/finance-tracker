@@ -285,6 +285,28 @@ CREATE TABLE budgets (
 `
 
 /**
+ * Migration 13: categories no longer have a kind. Whether money is spending or income is decided
+ * by the sign of the amounts (docs/design/07_reports.md, ADR 0007). Transfers are identified by
+ * the system category named Transfer. Ids, aliases, colours, icons and budgets are untouched.
+ */
+const DROP_CATEGORY_KIND = `
+ALTER TABLE categories DROP COLUMN kind;
+`
+
+/**
+ * Migration 14: pairs of transactions the user marked "not a duplicate" in Find duplicates
+ * (docs/design/04_import.md). Stored with txn_a < txn_b; deleting either row drops the pair.
+ */
+const DUPLICATE_DISMISSALS = `
+CREATE TABLE duplicate_dismissals (
+  txn_a INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  txn_b INTEGER NOT NULL REFERENCES transactions(id) ON DELETE CASCADE,
+  PRIMARY KEY (txn_a, txn_b),
+  CHECK (txn_a < txn_b)
+);
+`
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -305,6 +327,8 @@ export const migrations: readonly string[] = [
   CATEGORY_ALIASES,
   EXCLUDE_FROM_BUDGETS,
   BUDGETS,
+  DROP_CATEGORY_KIND,
+  DUPLICATE_DISMISSALS,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

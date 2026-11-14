@@ -93,7 +93,12 @@ function resolveColumn(ref: ColumnRef, header: string[] | null): number {
   if (!header) throw new Error(`Column "${ref}" needs a header row`)
   const want = ref.trim().toLowerCase()
   const idx = header.findIndex((h) => h.trim().toLowerCase() === want)
-  if (idx < 0) throw new Error(`Column "${ref}" not found in header`)
+  if (idx < 0) {
+    const found = header.map((h) => h.trim()).filter((h) => h !== '')
+    throw new Error(
+      `Column "${ref}" not found in the header row (found: ${found.slice(0, 10).join(', ') || 'nothing'}). Check that the header row is the right line, or map the columns by hand.`,
+    )
+  }
   return idx
 }
 

@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   BookOpen,
+  Copy,
   Database,
   LayoutDashboard,
   Leaf,
@@ -23,9 +24,16 @@ import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import { ACCOUNT_GROUPS, ACCOUNT_ICONS, accountTypeLabel } from './accountTypes'
+import {
+  ACCOUNT_GROUPS,
+  ACCOUNT_ICONS,
+  accountTypeLabel,
+  balanceText,
+  isLiability,
+} from './accountTypes'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
+import { CategoryAliasProvider } from './CategorySelect'
 import { Budgets } from './Budgets'
 import { Dashboard } from './Dashboard'
 import { Manual } from './Manual'
@@ -35,11 +43,13 @@ import { ImportWizard } from './ImportWizard'
 import { PageActionsContext } from './PageActions'
 import { Reports } from './Reports'
 import { RulesEditor } from './RulesEditor'
+import { DuplicatesForm } from './DuplicatesForm'
+import { LinkPaymentsForm } from './LinkPaymentsForm'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
 import { TransactionSearch } from './TransactionSearch'
 import { useTheme, type ThemePref } from './theme'
-import { ConfirmProvider, Dialog, useAlert } from './ui'
+import { ConfirmProvider, Dialog, ToastProvider, useAlert } from './ui'
 import { useLedger } from './useLedger'
 import './styles.css'
 
@@ -96,7 +106,9 @@ declare global {
 export function App() {
   return (
     <ConfirmProvider>
-      <Shell />
+      <ToastProvider>
+        <Shell />
+      </ToastProvider>
     </ConfirmProvider>
   )
 }
@@ -113,7 +125,7 @@ function Shell() {
   } | null>(null)
   const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
   const [dialog, setDialog] = useState<
-    'account' | 'editAccount' | 'transaction' | 'transfer' | null
+    'account' | 'editAccount' | 'transaction' | 'transfer' | 'linkPayments' | 'duplicates' | null
   >(null)
   const [theme, setTheme] = useTheme()
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
@@ -154,6 +166,9 @@ function Shell() {
       : (ledger.accounts.find((a) => a.id === accountId) ??
         archived.find((a) => a.id === accountId))
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
+  const owing = ledger.accounts
+    .filter((a) => isLiability(a.type) && a.balance < 0)
+    .reduce((sum, a) => sum - a.balance, 0)
 
   const navView: View = view === 'history' ? 'import' : view
   const title =
@@ -165,7 +180,7 @@ function Shell() {
       ? new Date().toLocaleString('en-CA', { month: 'long', year: 'numeric' })
       : view === 'ledger'
         ? selected
-          ? `${accountTypeLabel(selected.type)}${selected.archived ? ' (archived)' : ''} · Balance ${formatCents(selected.balance)}`
+          ? `${accountTypeLabel(selected.type)}${selected.archived ? ' (archived)' : ''} · ${isLiability(selected.type) ? '' : 'Balance '}${balanceText(selected.type, selected.balance)}`
           : `All accounts · ${ledger.accounts.length} account${ledger.accounts.length === 1 ? '' : 's'}`
         : SUBTITLES[view]
 
@@ -181,7 +196,9 @@ function Shell() {
         >
           <Icon size={16} aria-hidden="true" />
           <span className="grow">{a.name}</span>
-          <span className={a.balance < 0 ? 'amount neg' : 'amount'}>{formatCents(a.balance)}</span>
+          <span className={a.balance < 0 && !isLiability(a.type) ? 'amount neg' : 'amount'}>
+            {balanceText(a.type, a.balance)}
+          </span>
         </button>
       </li>
     )
@@ -189,273 +206,309 @@ function Shell() {
 
   return (
     <CategoryStyleProvider value={ledger.categories}>
-      <PageActionsContext.Provider value={slot}>
-        <div className="layout">
-          <aside className="sidebar">
-            <div className="brand">
-              <span className="brand-mark" aria-hidden="true">
-                <Leaf size={17} strokeWidth={2.4} />
-              </span>
-              <h1>Finance Tracker</h1>
-            </div>
-            <div className="sidebar-scroll">
-              <nav aria-label="Main">
-                {NAV.map((group, i) => (
-                  <div key={i} className="nav-group">
-                    {group.heading && <div className="nav-heading">{group.heading}</div>}
-                    <div
-                      role="tablist"
-                      aria-orientation="vertical"
-                      aria-label={group.heading ?? 'Views'}
-                    >
-                      {group.items.map(({ view: v, label, icon: Icon }) => (
-                        <button
-                          key={v}
-                          type="button"
-                          role="tab"
-                          className="nav-item"
-                          aria-selected={navView === v}
-                          onClick={() => go(v)}
-                        >
-                          <Icon size={17} aria-hidden="true" />
-                          <span className="grow">{label}</span>
-                        </button>
-                      ))}
+      <CategoryAliasProvider value={ledger.categoryAliases}>
+        <PageActionsContext.Provider value={slot}>
+          <div className="layout">
+            <aside className="sidebar">
+              <div className="brand">
+                <span className="brand-mark" aria-hidden="true">
+                  <Leaf size={17} strokeWidth={2.4} />
+                </span>
+                <h1>Finance Tracker</h1>
+              </div>
+              <div className="sidebar-scroll">
+                <nav aria-label="Main">
+                  {NAV.map((group, i) => (
+                    <div key={i} className="nav-group">
+                      {group.heading && <div className="nav-heading">{group.heading}</div>}
+                      <div
+                        role="tablist"
+                        aria-orientation="vertical"
+                        aria-label={group.heading ?? 'Views'}
+                      >
+                        {group.items.map(({ view: v, label, icon: Icon }) => (
+                          <button
+                            key={v}
+                            type="button"
+                            role="tab"
+                            className="nav-item"
+                            aria-selected={navView === v}
+                            onClick={() => go(v)}
+                          >
+                            <Icon size={17} aria-hidden="true" />
+                            <span className="grow">{label}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                  ))}
+                </nav>
+                <nav aria-label="Accounts" className="nav-group">
+                  <div className="nav-heading">
+                    Accounts
+                    <button
+                      type="button"
+                      aria-label="Add account"
+                      title="Add account"
+                      onClick={() => setDialog('account')}
+                    >
+                      <Plus size={15} />
+                    </button>
                   </div>
-                ))}
-              </nav>
-              <nav aria-label="Accounts" className="nav-group">
-                <div className="nav-heading">
-                  Accounts
-                  <button
-                    type="button"
-                    aria-label="Add account"
-                    title="Add account"
-                    onClick={() => setDialog('account')}
-                  >
-                    <Plus size={15} />
-                  </button>
-                </div>
-                <div className="net-worth">
-                  <span>Net worth</span>
-                  <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
-                </div>
-                <ul>
-                  <li>
-                    <button
-                      type="button"
-                      className="nav-item"
-                      aria-current={view === 'ledger' && accountId === null}
-                      onClick={() => pickAccount(null)}
-                    >
-                      <span className="grow">All accounts</span>
-                    </button>
-                  </li>
-                </ul>
-                {ACCOUNT_GROUPS.map((g) => {
-                  const list = ledger.accounts.filter((a) => g.types.includes(a.type))
-                  if (list.length === 0) return null
-                  return (
-                    <div key={g.label}>
-                      <div className="account-type">{g.label}</div>
-                      <ul>{list.map(accountButton)}</ul>
+                  <div className="net-worth">
+                    <span>Net worth</span>
+                    <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
+                  </div>
+                  {owing > 0 && (
+                    <div className="subtle" style={{ padding: '0 12px 6px', fontSize: 12 }}>
+                      Owing on cards and loans {formatCents(owing)}, already included in net worth
                     </div>
-                  )
-                })}
-                {archived.length > 0 && (
-                  <details>
-                    <summary>Archived ({archived.length})</summary>
-                    <ul>{archived.map(accountButton)}</ul>
-                  </details>
-                )}
-              </nav>
-            </div>
-            <footer className="sidebar-footer">
-              <span title={info ? `Schema ${info.schemaVersion}` : undefined}>
-                {info ? `v${info.version}` : ''}
-              </span>
-              <ThemeSwitch value={theme} onChange={setTheme} />
-            </footer>
-          </aside>
-          <div className="main">
-            <header className="page-header">
-              <div>
-                <h2>{title}</h2>
-                {subtitle && <div className="subtitle">{subtitle}</div>}
+                  )}
+                  <ul>
+                    <li>
+                      <button
+                        type="button"
+                        className="nav-item"
+                        aria-current={view === 'ledger' && accountId === null}
+                        onClick={() => pickAccount(null)}
+                      >
+                        <span className="grow">All accounts</span>
+                      </button>
+                    </li>
+                  </ul>
+                  {ACCOUNT_GROUPS.map((g) => {
+                    const list = ledger.accounts.filter((a) => g.types.includes(a.type))
+                    if (list.length === 0) return null
+                    return (
+                      <div key={g.label}>
+                        <div className="account-type">{g.label}</div>
+                        <ul>{list.map(accountButton)}</ul>
+                      </div>
+                    )
+                  })}
+                  {archived.length > 0 && (
+                    <details>
+                      <summary>Archived ({archived.length})</summary>
+                      <ul>{archived.map(accountButton)}</ul>
+                    </details>
+                  )}
+                </nav>
               </div>
-              <div className="page-actions" ref={setSlot}>
-                {view === 'ledger' && (
-                  <>
-                    {selected && (
-                      <button type="button" onClick={() => setDialog('editAccount')}>
-                        <Pencil size={15} />
-                        Edit account
+              <footer className="sidebar-footer">
+                <span title={info ? `Schema ${info.schemaVersion}` : undefined}>
+                  {info ? `v${info.version}` : ''}
+                </span>
+                <ThemeSwitch value={theme} onChange={setTheme} />
+              </footer>
+            </aside>
+            <div className="main">
+              <header className="page-header">
+                <div>
+                  <h2>{title}</h2>
+                  {subtitle && <div className="subtitle">{subtitle}</div>}
+                </div>
+                <div className="page-actions" ref={setSlot}>
+                  {view === 'ledger' && (
+                    <>
+                      {selected && (
+                        <button type="button" onClick={() => setDialog('editAccount')}>
+                          <Pencil size={15} />
+                          Edit account
+                        </button>
+                      )}
+                      {ledger.accounts.length > 1 && (
+                        <button type="button" onClick={() => setDialog('transfer')}>
+                          <ArrowLeftRight size={15} />
+                          Transfer
+                        </button>
+                      )}
+                      {ledger.accounts.some((a) => isLiability(a.type)) && (
+                        <button type="button" onClick={() => setDialog('linkPayments')}>
+                          <ArrowLeftRight size={15} />
+                          Link card payments
+                        </button>
+                      )}
+                      <button type="button" onClick={() => setDialog('duplicates')}>
+                        <Copy size={15} />
+                        Find duplicates
                       </button>
-                    )}
-                    {ledger.accounts.length > 1 && (
-                      <button type="button" onClick={() => setDialog('transfer')}>
-                        <ArrowLeftRight size={15} />
-                        Transfer
+                      <button
+                        type="button"
+                        className="primary"
+                        onClick={() => setDialog('transaction')}
+                      >
+                        <Plus size={16} />
+                        Add transaction
                       </button>
-                    )}
+                    </>
+                  )}
+                </div>
+              </header>
+              <main className="content">
+                {ledger.error && (
+                  <div className="error" role="alert">
+                    <span>{ledger.error}</span>
+                    <button type="button" className="small" onClick={ledger.clearError}>
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+                {(view === 'import' || view === 'history') && (
+                  <div className="subtabs" role="tablist" aria-label="Import">
                     <button
                       type="button"
-                      className="primary"
-                      onClick={() => setDialog('transaction')}
+                      role="tab"
+                      aria-selected={view === 'import'}
+                      onClick={() => go('import')}
                     >
-                      <Plus size={16} />
-                      Add transaction
+                      New import
                     </button>
-                  </>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={view === 'history'}
+                      onClick={() => go('history')}
+                    >
+                      Import history
+                    </button>
+                  </div>
                 )}
-              </div>
-            </header>
-            <main className="content">
-              {ledger.error && (
-                <div className="error" role="alert">
-                  <span>{ledger.error}</span>
-                  <button type="button" className="small" onClick={ledger.clearError}>
-                    Dismiss
-                  </button>
-                </div>
-              )}
-              {(view === 'import' || view === 'history') && (
-                <div className="subtabs" role="tablist" aria-label="Import">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={view === 'import'}
-                    onClick={() => go('import')}
-                  >
-                    New import
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={view === 'history'}
-                    onClick={() => go('history')}
-                  >
-                    Import history
-                  </button>
-                </div>
-              )}
-              {view === 'dashboard' && (
-                <Dashboard
-                  version={ledger.version}
-                  accounts={ledger.accounts}
-                  onOpenCategory={openCategory}
-                  onReviewUncategorized={reviewUncategorized}
-                  onOpenBudgets={() => go('budgets')}
-                />
-              )}
-              {view === 'reports' && (
-                <Reports
-                  accounts={ledger.accounts}
-                  version={ledger.version}
-                  onOpenCategory={openCategory}
-                />
-              )}
-              {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
-              {view === 'import' && (
-                <ImportWizard
-                  accounts={ledger.accounts}
-                  run={ledger.run}
-                  onFinished={() => setView('ledger')}
-                />
-              )}
-              {view === 'rules' && (
-                <RulesEditor
-                  accounts={ledger.accounts}
-                  categories={ledger.categories}
-                  run={ledger.run}
-                  draft={ruleDraft}
-                  onDraftUsed={clearDraft}
-                />
-              )}
-              {view === 'categories' && <CategoriesEditor ledger={ledger} />}
-              {view === 'data' && <DataPanel run={ledger.run} />}
-              {view === 'help' && <Manual />}
-              {view === 'history' && <ImportHistory run={ledger.run} />}
-              {view === 'ledger' && (
-                <TransactionSearch
-                  accounts={ledger.accounts}
-                  categories={ledger.categories}
-                  run={ledger.run}
-                  version={ledger.version}
-                  accountId={accountId}
-                  preset={preset}
-                  onSuggestRule={(id) =>
-                    void ledger.run(async () => {
-                      const s = await window.api.rules.suggestRule(id)
-                      if (!s) {
-                        await alert(
-                          'Edit the payee or category by hand first, then suggest a rule.',
-                          'Nothing to suggest yet',
-                        )
-                        return
-                      }
-                      setRuleDraft(s.draft)
-                      setView('rules')
-                    })
-                  }
-                />
-              )}
-            </main>
+                {view === 'dashboard' && (
+                  <Dashboard
+                    version={ledger.version}
+                    accounts={ledger.accounts}
+                    onOpenCategory={openCategory}
+                    onReviewUncategorized={reviewUncategorized}
+                    onOpenBudgets={() => go('budgets')}
+                  />
+                )}
+                {view === 'reports' && (
+                  <Reports
+                    accounts={ledger.accounts}
+                    version={ledger.version}
+                    onOpenCategory={openCategory}
+                  />
+                )}
+                {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
+                {view === 'import' && (
+                  <ImportWizard
+                    accounts={ledger.accounts}
+                    run={ledger.run}
+                    onFinished={() => setView('ledger')}
+                  />
+                )}
+                {view === 'rules' && (
+                  <RulesEditor
+                    accounts={ledger.accounts}
+                    categories={ledger.categories}
+                    run={ledger.run}
+                    draft={ruleDraft}
+                    onDraftUsed={clearDraft}
+                  />
+                )}
+                {view === 'categories' && <CategoriesEditor ledger={ledger} />}
+                {view === 'data' && <DataPanel run={ledger.run} />}
+                {view === 'help' && <Manual />}
+                {view === 'history' && <ImportHistory run={ledger.run} />}
+                {view === 'ledger' && (
+                  <TransactionSearch
+                    accounts={ledger.accounts}
+                    categories={ledger.categories}
+                    run={ledger.run}
+                    version={ledger.version}
+                    accountId={accountId}
+                    preset={preset}
+                    onSuggestRule={(id) =>
+                      void ledger.run(async () => {
+                        const s = await window.api.rules.suggestRule(id)
+                        if (!s) {
+                          await alert(
+                            'Edit the payee or category by hand first, then suggest a rule.',
+                            'Nothing to suggest yet',
+                          )
+                          return
+                        }
+                        setRuleDraft(s.draft)
+                        setView('rules')
+                      })
+                    }
+                  />
+                )}
+              </main>
+            </div>
           </div>
-        </div>
 
-        <Dialog
-          open={dialog === 'account'}
-          onOpenChange={(o) => setDialog(o ? 'account' : null)}
-          title="Add account"
-          description="Track a bank account, credit card, loan or cash."
-        >
-          <AccountForm run={ledger.run} onDone={() => setDialog(null)} />
-        </Dialog>
-        <Dialog
-          open={dialog === 'editAccount' && selected !== undefined}
-          onOpenChange={(o) => setDialog(o ? 'editAccount' : null)}
-          title={selected ? `Edit ${selected.name}` : 'Edit account'}
-        >
-          {selected && (
-            <AccountEditor
-              account={selected}
+          <Dialog
+            open={dialog === 'account'}
+            onOpenChange={(o) => setDialog(o ? 'account' : null)}
+            title="Add account"
+            description="Track a bank account, credit card, loan or cash."
+          >
+            <AccountForm run={ledger.run} onDone={() => setDialog(null)} />
+          </Dialog>
+          <Dialog
+            open={dialog === 'editAccount' && selected !== undefined}
+            onOpenChange={(o) => setDialog(o ? 'editAccount' : null)}
+            title={selected ? `Edit ${selected.name}` : 'Edit account'}
+          >
+            {selected && (
+              <AccountEditor
+                account={selected}
+                run={ledger.run}
+                onDone={() => setDialog(null)}
+                onDeleted={() => {
+                  setDialog(null)
+                  setAccountId(null)
+                }}
+              />
+            )}
+          </Dialog>
+          <Dialog
+            open={dialog === 'transaction'}
+            onOpenChange={(o) => setDialog(o ? 'transaction' : null)}
+            title="Add transaction"
+          >
+            <TransactionForm
+              accounts={ledger.accounts}
+              categories={ledger.categories}
+              run={ledger.run}
+              accountId={accountId}
+              onDone={() => setDialog(null)}
+            />
+          </Dialog>
+          <Dialog
+            open={dialog === 'transfer'}
+            onOpenChange={(o) => setDialog(o ? 'transfer' : null)}
+            title="Transfer between accounts"
+            description="Moves money without counting it as income or spending."
+          >
+            <TransferForm
+              accounts={ledger.accounts}
               run={ledger.run}
               onDone={() => setDialog(null)}
-              onDeleted={() => {
-                setDialog(null)
-                setAccountId(null)
-              }}
             />
-          )}
-        </Dialog>
-        <Dialog
-          open={dialog === 'transaction'}
-          onOpenChange={(o) => setDialog(o ? 'transaction' : null)}
-          title="Add transaction"
-        >
-          <TransactionForm
-            accounts={ledger.accounts}
-            categories={ledger.categories}
-            run={ledger.run}
-            accountId={accountId}
-            onDone={() => setDialog(null)}
-          />
-        </Dialog>
-        <Dialog
-          open={dialog === 'transfer'}
-          onOpenChange={(o) => setDialog(o ? 'transfer' : null)}
-          title="Transfer between accounts"
-          description="Moves money without counting it as income or spending."
-        >
-          <TransferForm
-            accounts={ledger.accounts}
-            run={ledger.run}
-            onDone={() => setDialog(null)}
-          />
-        </Dialog>
-      </PageActionsContext.Provider>
+          </Dialog>
+          <Dialog
+            open={dialog === 'duplicates'}
+            onOpenChange={(o) => setDialog(o ? 'duplicates' : null)}
+            title="Find duplicates"
+            description="Transactions in the same account with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
+            wide
+          >
+            {dialog === 'duplicates' && <DuplicatesForm run={ledger.run} />}
+          </Dialog>
+          <Dialog
+            open={dialog === 'linkPayments'}
+            onOpenChange={(o) => setDialog(o ? 'linkPayments' : null)}
+            title="Link card payments"
+            description="Payments that reduce a card or loan but were never linked to the paying account."
+          >
+            {dialog === 'linkPayments' && (
+              <LinkPaymentsForm run={ledger.run} onDone={() => setDialog(null)} />
+            )}
+          </Dialog>
+        </PageActionsContext.Provider>
+      </CategoryAliasProvider>
     </CategoryStyleProvider>
   )
 }

@@ -8,12 +8,12 @@ export const LEDGER_METHODS = [
   'listCategories',
   'createCategory',
   'renameCategory',
-  'setCategoryKind',
   'deleteCategory',
   'deleteCategories',
   'mergeCategory',
   'setCategoryStyle',
   'categoryUsage',
+  'listCategoryAliases',
   'listTags',
   'getTransaction',
   'listTransactions',
@@ -21,6 +21,10 @@ export const LEDGER_METHODS = [
   'updateTransaction',
   'deleteTransaction',
   'createTransfer',
+  'findDuplicateGroups',
+  'dismissDuplicateGroup',
+  'findTransferPairs',
+  'linkTransferPair',
 ] as const
 
 export type LedgerMethod = (typeof LEDGER_METHODS)[number]

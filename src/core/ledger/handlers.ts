@@ -1,3 +1,5 @@
+import { dismissDuplicateGroup, findDuplicateGroups } from './duplicates'
+import { findTransferPairs, linkTransferPair } from './transferPairs'
 import type Database from 'better-sqlite3'
 import {
   accountImpact,
@@ -12,11 +14,10 @@ import {
   deleteCategories,
   deleteCategory,
   mergeCategory,
-  setCategoryKind,
   setCategoryStyle,
   listCategories,
+  listCategoryAliases,
   renameCategory,
-  type CategoryKind,
 } from './categories'
 import type { LedgerMethod } from './methods'
 import { listTags } from './tags'
@@ -46,13 +47,13 @@ export function createLedgerHandlers(db: Database.Database) {
     listCategories: () => listCategories(db),
     createCategory: (input: Parameters<typeof createCategory>[1]) => createCategory(db, input),
     renameCategory: (id: number, name: string) => renameCategory(db, id, name),
-    setCategoryKind: (id: number, kind: CategoryKind) => setCategoryKind(db, id, kind),
     deleteCategory: (id: number, reassignTo?: number) => deleteCategory(db, id, reassignTo),
     deleteCategories: (ids: number[], reassignTo?: number) => deleteCategories(db, ids, reassignTo),
     setCategoryStyle: (id: number, style: Parameters<typeof setCategoryStyle>[2]) =>
       setCategoryStyle(db, id, style),
     mergeCategory: (fromId: number, intoId: number) => mergeCategory(db, fromId, intoId),
     categoryUsage: () => categoryUsage(db),
+    listCategoryAliases: () => listCategoryAliases(db),
     listTags: () => listTags(db),
     getTransaction: (id: number) => getTransaction(db, id) ?? null,
     listTransactions: (filter?: Parameters<typeof listTransactions>[1]) =>
@@ -63,6 +64,11 @@ export function createLedgerHandlers(db: Database.Database) {
       updateTransaction(db, id, patch),
     deleteTransaction: (id: number) => deleteTransaction(db, id),
     createTransfer: (input: Parameters<typeof createTransfer>[1]) => createTransfer(db, input),
+    findDuplicateGroups: (opts?: Parameters<typeof findDuplicateGroups>[1]) =>
+      findDuplicateGroups(db, opts),
+    dismissDuplicateGroup: (ids: number[]) => dismissDuplicateGroup(db, ids),
+    findTransferPairs: () => findTransferPairs(db),
+    linkTransferPair: (aId: number, bId: number) => linkTransferPair(db, aId, bId),
   } satisfies Record<LedgerMethod, (...args: never[]) => unknown>
 }
 

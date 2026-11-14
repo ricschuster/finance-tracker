@@ -1,16 +1,6 @@
-import {
-  ArrowRightLeft,
-  Check,
-  GitMerge,
-  Lock,
-  Palette,
-  Pencil,
-  Plus,
-  Tags,
-  Trash2,
-} from 'lucide-react'
+import { Check, GitMerge, Lock, Palette, Pencil, Plus, Tags, Trash2 } from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
-import type { Category, CategoryKind } from '../../core/ledger/categories'
+import type { Category } from '../../core/ledger/categories'
 import { CATEGORY_COLORS, type CategoryIconKey } from '../../core/ledger/categoryStyle'
 import { CATEGORY_LUCIDE, CategoryIcon } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
@@ -22,16 +12,9 @@ type Pending =
   | { type: 'add' }
   | { type: 'rename'; category: Category }
   | { type: 'style'; category: Category }
-  | { type: 'kind'; category: Category }
   | { type: 'merge'; category: Category }
   | { type: 'delete'; category: Category }
   | { type: 'deleteMany' }
-
-const GROUPS: { kind: CategoryKind; title: string }[] = [
-  { kind: 'expense', title: 'Spending' },
-  { kind: 'income', title: 'Income' },
-  { kind: 'transfer', title: 'Transfers' },
-]
 
 const lines = (n: number) => `${n} transaction ${n === 1 ? 'line' : 'lines'}`
 
@@ -65,14 +48,12 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
   const runAndClose = (action: () => Promise<unknown>) =>
     void ledger.run(action).then((ok) => ok && close())
 
-  const mergeTargets = (c: Category) =>
-    categories.filter((x) => x.id !== c.id && !x.isSystem && x.kind === c.kind)
+  const mergeTargets = (c: Category) => categories.filter((x) => x.id !== c.id && !x.isSystem)
 
   const titles: Record<Pending['type'], string> = {
     add: 'Add category',
     rename: 'Rename category',
     style: 'Colour and icon',
-    kind: 'Change type',
     merge: 'Merge category',
     delete: 'Delete category',
     deleteMany: 'Delete categories',
@@ -134,13 +115,12 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
         </div>
       )}
 
-      {GROUPS.map(({ kind, title }) => {
-        const list = categories.filter((c) => c.kind === kind)
+      {[categories].map((list) => {
         if (list.length === 0) return null
         return (
-          <div key={kind} className="card flush category-card">
+          <div key="all" className="card flush category-card">
             <div className="card-header">
-              <h3>{title}</h3>
+              <h3>All categories</h3>
               <span className="subtle">
                 {list.length} categor{list.length === 1 ? 'y' : 'ies'}
               </span>
@@ -190,11 +170,6 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
                                 onSelect: () => setPending({ type: 'style', category: c }),
                               },
                               {
-                                label: 'Change type',
-                                icon: <ArrowRightLeft size={14} />,
-                                onSelect: () => setPending({ type: 'kind', category: c }),
-                              },
-                              {
                                 label: 'Merge into...',
                                 icon: <GitMerge size={14} />,
                                 disabled: mergeTargets(c).length === 0,
@@ -237,9 +212,9 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
           <AddForm
             defaultColor={CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length]!}
             onCancel={close}
-            onSave={(name, kind, style) =>
+            onSave={(name, style) =>
               runAndClose(async () => {
-                await window.api.ledger.createCategory({ name, kind, ...style })
+                await window.api.ledger.createCategory({ name, ...style })
               })
             }
           />
@@ -259,15 +234,6 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
             onCancel={close}
             onSave={(style) =>
               runAndClose(() => window.api.ledger.setCategoryStyle(pending.category.id, style))
-            }
-          />
-        )}
-        {pending?.type === 'kind' && (
-          <KindForm
-            category={pending.category}
-            onCancel={close}
-            onSave={(kind) =>
-              runAndClose(() => window.api.ledger.setCategoryKind(pending.category.id, kind))
             }
           />
         )}
@@ -355,15 +321,14 @@ function AddForm({
   onCancel,
 }: {
   defaultColor: string
-  onSave: (name: string, kind: CategoryKind, style: Style) => void
+  onSave: (name: string, style: Style) => void
   onCancel: () => void
 }) {
   const [name, setName] = useState('')
-  const [kind, setKind] = useState<CategoryKind>('expense')
   const [style, setStyle] = useState<Style>({ color: defaultColor, icon: 'tag' })
   const submit = (e: FormEvent) => {
     e.preventDefault()
-    onSave(name, kind, style)
+    onSave(name, style)
   }
   return (
     <form className="stack" onSubmit={submit}>
@@ -377,22 +342,6 @@ function AddForm({
           onChange={(e) => setName(e.target.value)}
         />
       </label>
-      <div className="field">
-        Type
-        <div className="segmented" role="radiogroup" aria-label="Category type">
-          {(['expense', 'income'] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={kind === k}
-              onClick={() => setKind(k)}
-            >
-              {k === 'expense' ? 'Spending' : 'Income'}
-            </button>
-          ))}
-        </div>
-      </div>
       <StylePicker name={name || 'New category'} value={style} onChange={setStyle} />
       <DialogButtons onCancel={onCancel} label="Add category" disabled={name.trim() === ''} />
     </form>
@@ -431,52 +380,6 @@ function RenameForm({
         label="Save"
         disabled={name.trim() === '' || name.trim() === category.name}
       />
-    </form>
-  )
-}
-
-const KIND_LABEL: Record<CategoryKind, string> = {
-  expense: 'Spending',
-  income: 'Income',
-  transfer: 'Transfer',
-}
-
-function KindForm({
-  category,
-  onSave,
-  onCancel,
-}: {
-  category: Category
-  onSave: (kind: CategoryKind) => void
-  onCancel: () => void
-}) {
-  const [kind, setKind] = useState<CategoryKind>(category.kind)
-  return (
-    <form
-      className="stack"
-      onSubmit={(e) => {
-        e.preventDefault()
-        onSave(kind)
-      }}
-    >
-      <p className="move-text">
-        Reports group by type: income counts toward income, spending toward expenses, and transfers
-        are left out of both. Existing transactions keep their amounts.
-      </p>
-      <div className="segmented" role="radiogroup" aria-label="Category type">
-        {(['expense', 'income', 'transfer'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={kind === k}
-            onClick={() => setKind(k)}
-          >
-            {KIND_LABEL[k]}
-          </button>
-        ))}
-      </div>
-      <DialogButtons onCancel={onCancel} label="Save" disabled={kind === category.kind} />
     </form>
   )
 }

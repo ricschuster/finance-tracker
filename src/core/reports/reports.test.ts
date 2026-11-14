@@ -96,6 +96,20 @@ describe('reports', () => {
     expect(reports.incomeVsExpenses(NOV)).toMatchObject({ income: 1_000, spending: 7_800 })
   })
 
+  it('classifies a category by its net sign, with no category kind', () => {
+    const { reports, add } = setup()
+    add('2026-11-01', -4_000, 'Groceries')
+    add('2026-11-02', 1_500, 'Groceries')
+    add('2026-11-03', 9_000, 'Income')
+    add('2026-11-04', -1_000, 'Income')
+    expect(reports.incomeVsExpenses(NOV)).toMatchObject({ income: 8_000, spending: 2_500 })
+    expect(reports.spendingByCategory(NOV).map((c) => [c.name, c.total])).toEqual([
+      ['Groceries', 2_500],
+    ])
+    add('2026-11-05', 5_000, 'Groceries')
+    expect(reports.incomeVsExpenses(NOV)).toMatchObject({ income: 8_000 + 2_500, spending: 0 })
+  })
+
   it('groups spending by category with shares and ordering', () => {
     const { reports, add } = setup()
     add('2026-11-01', -3_000, 'Food & Dining')

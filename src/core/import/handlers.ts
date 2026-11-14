@@ -7,6 +7,7 @@ import {
   type ImportFormat,
 } from './commit'
 import { createCategory, deleteCategory } from '../ledger/categories'
+import { PAYMENT_WORDS } from '../ledger/transferPairs'
 import { looksLikeMint, mapMint } from './mint'
 import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
@@ -220,8 +221,6 @@ function makePreview(
   }
 }
 
-const PAYMENT_WORDS = /\b(payment|pmt|paiement|pymt|autopay|bill pay)\b/i
-
 /**
  * A new row with a transfer candidate is a likely card or loan payment when either account is a
  * credit card or loan, or the bank text says payment. Such rows are linked by default so they stay
@@ -280,20 +279,17 @@ function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResul
 
 /**
  * Create the categories a file uses that we do not have (by name or alias), so rows keep the
- * category they had in the old tool. A name only ever seen on money in becomes an income category.
+ * category they had in the old tool. Categories have no kind; the sign of each amount decides.
  */
 function createMissingCategories(db: Database.Database, candidates: Candidate[]): void {
-  const seen = new Map<string, { name: string; total: number }>()
+  const seen = new Map<string, string>()
   for (const c of candidates) {
     const name = c.categoryName?.trim()
     if (!name || categoryIdByName(db, name) !== null) continue
     const key = name.toLowerCase()
-    const entry = seen.get(key) ?? { name, total: 0 }
-    entry.total += c.amount
-    seen.set(key, entry)
+    if (!seen.has(key)) seen.set(key, name)
   }
-  for (const { name, total } of seen.values())
-    createCategory(db, { name, kind: total > 0 ? 'income' : 'expense' })
+  for (const name of seen.values()) createCategory(db, { name })
 }
 
 /**

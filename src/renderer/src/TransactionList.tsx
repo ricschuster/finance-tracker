@@ -1,11 +1,22 @@
-import { ArrowDown, ArrowUp, EyeOff, Eye, Split, Trash2, Wand2, Receipt } from 'lucide-react'
+import {
+  ArrowDown,
+  ArrowUp,
+  EyeOff,
+  Eye,
+  NotebookPen,
+  Split,
+  StickyNote,
+  Trash2,
+  Wand2,
+  Receipt,
+} from 'lucide-react'
 import { Fragment, useState } from 'react'
 import { formatCents } from '../../core/money'
 import type { SortKey } from '../../core/search/query'
 import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import { SplitEditor } from './SplitEditor'
-import { ActionMenu, Empty, useConfirm } from './ui'
+import { ActionMenu, Empty, useConfirm, useToast } from './ui'
 import type { LedgerState } from './useLedger'
 
 const thisYear = String(new Date().getFullYear())
@@ -22,6 +33,44 @@ const STATUS_PILL: Record<string, string> = {
   pending: 'pill warn',
   cleared: 'pill',
   reconciled: 'pill pos',
+}
+
+/** Inline editor for a transaction's free-text note. Saving an empty note removes it. */
+function NoteEditor(props: {
+  transactionId: number
+  initial: string
+  run: LedgerState['run']
+  onClose: () => void
+}) {
+  const [text, setText] = useState(props.initial)
+  const save = () =>
+    void props
+      .run(() => window.api.ledger.updateTransaction(props.transactionId, { notes: text.trim() }))
+      .then((ok) => ok && props.onClose())
+  return (
+    <form
+      className="note-editor"
+      onSubmit={(e) => {
+        e.preventDefault()
+        save()
+      }}
+    >
+      <input
+        autoFocus
+        aria-label={`Note for transaction ${props.transactionId}`}
+        placeholder="Add a note"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && props.onClose()}
+      />
+      <button type="button" className="ghost small" onClick={props.onClose}>
+        Cancel
+      </button>
+      <button type="submit" className="primary small">
+        Save note
+      </button>
+    </form>
+  )
 }
 
 export function TransactionList({
@@ -59,7 +108,9 @@ export function TransactionList({
     </th>
   )
   const [splitting, setSplitting] = useState<number | null>(null)
+  const [noting, setNoting] = useState<number | null>(null)
   const confirm = useConfirm()
+  const toast = useToast()
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
   if (transactions.length === 0)
     return (
@@ -94,9 +145,7 @@ export function TransactionList({
           {transactions.map((t) => {
             const isTransfer = t.transferPeerId !== null
             const single = t.lines.length === 1 ? t.lines[0] : undefined
-            const sub = [showAccount ? accountName.get(t.accountId) : null, t.notes || null].filter(
-              Boolean,
-            )
+            const sub = [showAccount ? accountName.get(t.accountId) : null].filter(Boolean)
             return (
               <Fragment key={t.id}>
                 <tr className={selected.has(t.id) ? 'selected' : undefined}>
@@ -112,6 +161,17 @@ export function TransactionList({
                   <td className="payee">
                     <div className="payee-name">
                       {t.payee || t.rawDescription || <span className="muted">(none)</span>}
+                      {t.notes && (
+                        <button
+                          type="button"
+                          className="note-indicator"
+                          title={t.notes}
+                          aria-label={`Note: ${t.notes}`}
+                          onClick={() => setNoting(t.id)}
+                        >
+                          <StickyNote size={13} />
+                        </button>
+                      )}
                     </div>
                     {(sub.length > 0 || t.tags.length > 0) && (
                       <div className="payee-sub">
@@ -132,8 +192,8 @@ export function TransactionList({
                       </span>
                     ) : single ? (
                       <span className="cat-select">
-                        <CategoryBadge id={single.categoryId} size="sm" />
                         <CategorySelect
+                          inline
                           aria-label={`Category for transaction ${t.id}`}
                           categories={categories}
                           value={single.categoryId}
@@ -142,20 +202,14 @@ export function TransactionList({
                               window.api.ledger.updateTransaction(t.id, {
                                 lines: [{ categoryId, amount: t.amount, memo: single.memo }],
                               }),
-                            ).then(async (ok) => {
-                              if (
-                                ok &&
-                                (await confirm(
-                                  'Apply the same category to similar transactions automatically, now and on future imports.',
-                                  {
-                                    title: 'Make this a rule?',
-                                    confirmLabel: 'Create rule',
-                                    cancelLabel: 'Not now',
-                                  },
-                                ))
-                              ) {
-                                onSuggestRule(t.id)
-                              }
+                            ).then((ok) => {
+                              if (ok)
+                                toast({
+                                  message:
+                                    'Apply this category to similar transactions automatically?',
+                                  actionLabel: 'Create rule',
+                                  onAction: () => onSuggestRule(t.id),
+                                })
                             })
                           }
                         />
@@ -198,6 +252,11 @@ export function TransactionList({
                                 label: 'Split',
                                 icon: <Split size={15} />,
                                 onSelect: () => setSplitting(t.id),
+                              },
+                              {
+                                label: t.notes ? 'Edit note' : 'Add note',
+                                icon: <NotebookPen size={15} />,
+                                onSelect: () => setNoting(t.id),
                               },
                               {
                                 label: 'Make a rule',
@@ -244,6 +303,18 @@ export function TransactionList({
                     />
                   </td>
                 </tr>
+                {noting === t.id && (
+                  <tr className="split-row">
+                    <td colSpan={7}>
+                      <NoteEditor
+                        transactionId={t.id}
+                        initial={t.notes}
+                        run={run}
+                        onClose={() => setNoting(null)}
+                      />
+                    </td>
+                  </tr>
+                )}
                 {splitting === t.id && (
                   <tr className="split-row">
                     <td colSpan={7}>

@@ -1,6 +1,6 @@
 // Click through the Categories tab: add (dialog), merge, rename, delete with reassign,
 // colour and icon. Row actions are in a "..." menu; each opens a dialog.
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const { app, page, errors, shot } = await launch()
 const list = async () =>
@@ -35,7 +35,7 @@ console.log(
 
 await add('Vet')
 await menu('Vet', 'Merge into...')
-await dialog.getByLabel('Merge into').selectOption({ label: 'Pets' })
+await pickCategory(dialog, 'Merge into', 'Pets')
 await shot('categories-merge')
 await dialog.getByRole('button', { name: 'Merge', exact: true }).click()
 await page.waitForTimeout(400)
@@ -68,19 +68,6 @@ console.log(
   await groceries.locator('.category-icon svg').first().getAttribute('class'),
 )
 
-// Change type: Groceries moves from Spending to Income and back.
-await menu('Groceries', 'Change type')
-await dialog.getByRole('radio', { name: 'Income' }).click()
-await shot('categories-kind')
-await dialog.getByRole('button', { name: 'Save' }).click()
-await page.waitForTimeout(400)
-const incomeCard = page.locator('.category-card', { has: page.getByRole('heading', { name: 'Income' }) })
-console.log('KIND TO INCOME:', (await incomeCard.innerText()).includes('Groceries'))
-await menu('Groceries', 'Change type')
-await dialog.getByRole('radio', { name: 'Spending' }).click()
-await dialog.getByRole('button', { name: 'Save' }).click()
-await page.waitForTimeout(400)
-console.log('KIND BACK:', !(await incomeCard.innerText()).includes('Groceries'))
 
 // A category in use: the delete dialog names the line count and offers a target.
 await menu('Food & Dining', 'Delete')

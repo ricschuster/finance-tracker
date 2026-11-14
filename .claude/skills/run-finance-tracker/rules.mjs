@@ -1,6 +1,6 @@
 // Click through the Rules tab: new rule in the dialog, preview, apply through the in-app
 // confirm, reorder, turn off, delete.
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const { app, page, errors, shot } = await launch()
 const dialog = page.getByRole('dialog')
@@ -18,7 +18,7 @@ for (const [name, text, category] of [
   await page.getByRole('button', { name: 'New rule' }).click()
   await dialog.getByLabel('Name').fill(name)
   await dialog.getByLabel('Text', { exact: true }).fill(text)
-  await dialog.getByLabel('Category', { exact: true }).selectOption({ label: category })
+  await pickCategory(dialog, 'Category', category, { exact: true })
   if (name === 'Coffee') await shot('rules-editor')
   await dialog.getByRole('button', { name: 'Save rule' }).click()
   await page.waitForTimeout(300)

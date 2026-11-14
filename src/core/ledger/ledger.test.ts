@@ -13,7 +13,6 @@ import {
   deleteCategory,
   deleteCategories,
   mergeCategory,
-  setCategoryKind,
   setCategoryStyle,
   isCategoryColor,
   isCategoryIcon,
@@ -89,11 +88,9 @@ describe('account deletion', () => {
 
 describe('categories', () => {
   it('creates flat categories with unique names and takes no parent', () => {
-    const id = createCategory(db, { name: 'Salary', kind: 'income' })
-    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({
-      kind: 'income',
-      parentId: null,
-    })
+    const id = createCategory(db, { name: 'Salary' })
+    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({ parentId: null })
+    expect(listCategories(db).find((c) => c.id === id)).not.toHaveProperty('kind')
     expect(() => createCategory(db, { name: 'salary' })).toThrow(/UNIQUE/)
   })
 
@@ -160,11 +157,10 @@ describe('categories', () => {
     expect(JSON.parse(saved.query)).toEqual({ categoryId: dining, text: 'x' })
   })
 
-  it('refuses to merge system, mismatched or identical categories', () => {
+  it('refuses to merge system or identical categories, but merges across former kinds', () => {
     const unc = getCategoryByName(db, 'Uncategorized')!.id
-    const income = getCategoryByName(db, 'Income')!.id
     expect(() => mergeCategory(db, unc, dining)).toThrow(/System/)
-    expect(() => mergeCategory(db, dining, income)).toThrow(/different kinds/)
+    expect(() => mergeCategory(db, dining, unc)).toThrow(/system/)
     expect(() => mergeCategory(db, dining, dining)).toThrow(/itself/)
   })
 })
@@ -270,6 +266,21 @@ describe('updateTransaction', () => {
     const t = getTransaction(db, id)!
     expect(t.payee).toBe('Safeway Inc')
     expect(t.editedFields.sort()).toEqual(['notes', 'payee', 'tags'])
+  })
+
+  it('sets and clears a note without touching other fields', () => {
+    const id = createTransaction(db, {
+      accountId: chq,
+      date: '2026-11-03',
+      amount: -500,
+      payee: 'X',
+    })
+    updateTransaction(db, id, { notes: 'birthday gift' })
+    expect(getTransaction(db, id)!.notes).toBe('birthday gift')
+    updateTransaction(db, id, { payee: 'Y' })
+    expect(getTransaction(db, id)!.notes).toBe('birthday gift')
+    updateTransaction(db, id, { notes: '' })
+    expect(getTransaction(db, id)!.notes).toBe('')
   })
 
   it('rescales the line of an unsplit transaction when the amount changes', () => {
@@ -429,15 +440,5 @@ describe('category style', () => {
     expect(() => setCategoryStyle(db, id, { color: '#123456', icon: null })).toThrow(/colour/)
     expect(() => setCategoryStyle(db, id, { color: null, icon: 'rocket' })).toThrow(/icon/)
     expect(() => setCategoryStyle(db, 9999, { color: null, icon: null })).toThrow(/not found/)
-  })
-
-  it('changes a category kind, but not for system categories', () => {
-    const id = createCategory(db, { name: 'Side gig' })
-    setCategoryKind(db, id, 'income')
-    expect(listCategories(db).find((c) => c.id === id)?.kind).toBe('income')
-    const sys = listCategories(db).find((c) => c.isSystem)!
-    expect(() => setCategoryKind(db, sys.id, 'income')).toThrow(/System/)
-    expect(() => setCategoryKind(db, 9999, 'income')).toThrow(/not found/)
-    expect(() => setCategoryKind(db, id, 'bogus' as never)).toThrow(/kind/)
   })
 })

@@ -1,13 +1,10 @@
 import type Database from 'better-sqlite3'
 import { CATEGORY_COLORS, isCategoryColor, isCategoryIcon } from './categoryStyle'
 
-export type CategoryKind = 'expense' | 'income' | 'transfer'
-
 export interface Category {
   id: number
   parentId: number | null
   name: string
-  kind: CategoryKind
   isSystem: boolean
   sortOrder: number
   /** A key from `CATEGORY_COLORS`, or null. */
@@ -20,7 +17,6 @@ interface CategoryRow {
   id: number
   parent_id: number | null
   name: string
-  kind: CategoryKind
   is_system: number
   sort_order: number
   color: string | null
@@ -31,7 +27,6 @@ const toCategory = (r: CategoryRow): Category => ({
   id: r.id,
   parentId: r.parent_id,
   name: r.name,
-  kind: r.kind,
   isSystem: r.is_system === 1,
   sortOrder: r.sort_order,
   color: r.color,
@@ -69,7 +64,7 @@ export function getCategoryByName(
 /** Create a category. Categories are flat: there are no subcategories. */
 export function createCategory(
   db: Database.Database,
-  input: { name: string; kind?: CategoryKind; color?: string | null; icon?: string | null },
+  input: { name: string; color?: string | null; icon?: string | null },
 ): number {
   const name = input.name.trim()
   if (!name) throw new Error('Category name is required')
@@ -82,12 +77,9 @@ export function createCategory(
   ).n
   return Number(
     db
-      .prepare(
-        'INSERT INTO categories (name, kind, sort_order, color, icon) VALUES (?, ?, ?, ?, ?)',
-      )
+      .prepare('INSERT INTO categories (name, sort_order, color, icon) VALUES (?, ?, ?, ?)')
       .run(
         name,
-        input.kind ?? 'expense',
         sort,
         input.color ?? CATEGORY_COLORS[(sort - 1) % CATEGORY_COLORS.length],
         input.icon ?? null,
@@ -103,16 +95,6 @@ export function renameCategory(db: Database.Database, id: number, name: string):
   if (!cat) throw new Error(`Category ${id} not found`)
   if (cat.is_system) throw new Error('System categories cannot be renamed')
   db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(trimmed, id)
-}
-
-/** Change a category's kind (spending, income or transfer). Existing lines keep their amounts. */
-export function setCategoryKind(db: Database.Database, id: number, kind: CategoryKind): void {
-  if (!['expense', 'income', 'transfer'].includes(kind)) throw new Error('Unknown category kind')
-  const cat = db.prepare('SELECT is_system FROM categories WHERE id = ?').get(id) as
-    { is_system: number } | undefined
-  if (!cat) throw new Error(`Category ${id} not found`)
-  if (cat.is_system) throw new Error('System categories cannot be changed')
-  db.prepare('UPDATE categories SET kind = ? WHERE id = ?').run(kind, id)
 }
 
 /**
@@ -158,18 +140,18 @@ export function deleteCategories(
 
 /**
  * Merge `fromId` into `intoId`: lines, rule actions and saved searches move over and `fromId` is
- * deleted. Both must be non-system and of the same kind, so income never silently becomes spending.
+ * deleted. The source must not be a system category.
  */
 export function mergeCategory(db: Database.Database, fromId: number, intoId: number): void {
   db.transaction(() => {
     if (fromId === intoId) throw new Error('Cannot merge a category into itself')
-    const get = db.prepare('SELECT is_system, kind FROM categories WHERE id = ?')
-    const from = get.get(fromId) as { is_system: number; kind: CategoryKind } | undefined
-    const into = get.get(intoId) as { is_system: number; kind: CategoryKind } | undefined
+    const get = db.prepare('SELECT is_system FROM categories WHERE id = ?')
+    const from = get.get(fromId) as { is_system: number } | undefined
+    const into = get.get(intoId) as { is_system: number } | undefined
     if (!from) throw new Error(`Category ${fromId} not found`)
     if (!into) throw new Error(`Category ${intoId} not found`)
     if (from.is_system) throw new Error('System categories cannot be merged')
-    if (from.kind !== into.kind) throw new Error('Categories of different kinds cannot be merged')
+    if (into.is_system) throw new Error('Cannot merge into a system category')
     moveReferences(db, fromId, intoId)
     const fromBudget = db
       .prepare('SELECT amount FROM budgets WHERE category_id = ?')
@@ -244,4 +226,17 @@ export function setCategoryStyle(
     .prepare('UPDATE categories SET color = ?, icon = ? WHERE id = ?')
     .run(style.color, style.icon, id)
   if (r.changes === 0) throw new Error(`Category ${id} not found`)
+}
+
+export interface CategoryAlias {
+  alias: string
+  categoryId: number
+}
+
+/** Every alias (an alternative name that import maps to a category), for the category picker. */
+export function listCategoryAliases(db: Database.Database): CategoryAlias[] {
+  const rows = db
+    .prepare('SELECT alias, category_id FROM category_aliases ORDER BY alias')
+    .all() as { alias: string; category_id: number }[]
+  return rows.map((r) => ({ alias: r.alias, categoryId: r.category_id }))
 }

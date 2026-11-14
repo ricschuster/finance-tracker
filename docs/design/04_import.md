@@ -52,7 +52,12 @@ changes, so main keeps no wizard state.
   bytes are not valid UTF-8 (older bank exports).
 - Sniff the delimiter among comma, semicolon and tab from the first lines.
 - Skip blank lines. Allow a preamble: the user picks the header row, with the
-  first plausible row preselected. Trailing summary rows (totals, balances)
+  first plausible row preselected: the first row at least as wide as the most
+  common row width. (At least, not exactly: RBC drops the empty trailing USD$
+  cell from most data rows, so the header is wider than the data and an exact
+  match picked the first data row as the header, failing the import. Fixed;
+  see `test-data/import/rbc-mastercard.csv`.) A missing column error names the
+  column and lists the headers found. Trailing summary rows (totals, balances)
   fail mapping and are reported, not imported.
 - Limits: 20 MB and 100,000 rows per file, with a clear error beyond that.
 
@@ -146,6 +151,26 @@ Identity is decided per target account in three tiers, strongest first.
 
 Candidates are matched in file order against a snapshot of the ledger, then
 against each other, so a file cannot duplicate itself on a re-run.
+
+### Finding duplicates already in the ledger
+
+Status: built (migration 14). `findDuplicateGroups` in `src/core/ledger/duplicates.ts`
+reuses the import normalisation (`normaliseDescription`, `daysBetween`). A pair is
+flagged when both rows are in the same account, have the same total amount, are
+within a window (default 2 days, 0 means same day only) and their text agrees:
+`strict` needs identical normalised text, `normal` also accepts one text containing the
+other or at least 60 percent shared words. Both legs of a transfer, zero amounts and
+archived accounts are skipped; split transactions are compared by their total, never
+by their lines. Pairs sharing a row merge into one group, with a score (0 to 100,
+lower for larger date gaps and looser text) and a reason string.
+
+False-positive guards: the same amount a month apart (subscriptions) is outside any
+window, and identical purchases on different days are not flagged at window 0. A group
+marked "Not a duplicate" stores every pair of its rows in `duplicate_dismissals`
+(ordered ids, cascade on delete), so it is not shown again, while a new look-alike row
+can still surface. The "Find duplicates" dialog in the page toolbar has a window and
+a strictness control, and deletes through the confirm dialog with an Undo toast that
+re-creates the row (its id changes, and the hand-edited field markers are not restored).
 
 ### File hash and bank id collisions
 
@@ -293,3 +318,36 @@ handled like any CSV, so a Monarch spreadsheet is detected by its header row. Th
 watched folder and drag and drop all accept it. The watched folder lists spreadsheets as ready
 without inspecting them. The conversion is only checked against a synthetic fixture
 (`test-data/import/monarch.xlsx`), not a real export.
+
+## Guessing the column mapping
+
+The wizard no longer starts from fixed defaults. `core/import/guess.ts`
+(`guessMapping`) looks at the first 40 rows and proposes a full mapping, with a
+confidence between 0 and 1 for each field:
+
+- **Header row**: a row with no date-like or amount-like cell and at least two
+  text cells is a header; otherwise the file is treated as headerless.
+- **Date column and format**: content first (at least 60% of values parse as a
+  date), header words (`date`, `posted`, `transaction date` preferred) break
+  ties. When day-first and month-first both fit, row order decides if one
+  reading is sorted and the other is not; otherwise month-first is assumed and
+  the field is flagged ambiguous with low confidence.
+- **Amounts**: header words (`amount`, `CAD$`, `debit`/`withdrawals`,
+  `credit`/`deposits`, a `type` column with debit/credit values) pick signed,
+  debit/credit or directional mode. Without telling headers, two numeric columns
+  that are never filled in the same row become debit and credit, and a column
+  that follows the running total of another is a balance. Numeric columns
+  without decimals (check numbers, ids) are not amounts. The decimal separator
+  is detected. Notes warn when every amount is positive (consider Flip sign).
+- **Description**: header words, else the longest text column; at most two.
+- Everything else with data (balance, category, extra dates) is listed as
+  ignored.
+
+Precedence on opening a file: a saved profile with a matching header
+fingerprint, then a bank preset whose header names all appear
+(`matchPresetByHeader`), then the guess. The wizard labels which one is in use,
+shows a confidence pill per field while the mapping is an unedited guess, and
+offers "Guess again". `core/import/preview.ts` (`previewMapping`) applies the
+current mapping to the first rows so the wizard can show the parsed date,
+signed amount and description live, with failing rows and the reason
+highlighted. The guesser never writes anything and every field stays editable.

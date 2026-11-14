@@ -200,6 +200,7 @@ describe('transactions CSV', () => {
       amount: -3000,
       payee: 'Costco, Burnaby',
       tags: ['bulk'],
+      notes: 'for the party, again',
       lines: [
         { categoryId: cat('Groceries'), amount: -2000, memo: 'food' },
         { categoryId: cat('Home'), amount: -1000 },
@@ -215,6 +216,7 @@ describe('transactions CSV', () => {
     expect(lines).toHaveLength(1 + 1 + 2 + 2)
     expect(lines[1]).toContain('2026-03-01,Chequing,Safeway,,-12.34,Uncategorized')
     expect(lines[2]).toContain('"Costco, Burnaby",,-20.00,Groceries,food,bulk')
+    expect(lines[2]).toContain('bulk,"for the party, again"')
     expect(lines[3]).toContain(',-10.00,Home,,bulk')
     expect(lines[4]).toMatch(/,yes$/)
 

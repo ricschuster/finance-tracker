@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { ACCOUNT_TYPES, type AccountType } from '../../core/ledger/accounts'
 import { parseAmountToCents } from '../../core/money'
-import { accountTypeLabel } from './accountTypes'
+import { accountTypeLabel, isLiability } from './accountTypes'
 import type { LedgerState } from './useLedger'
 
 /** New account form, shown in the Add account dialog. */
@@ -57,6 +57,12 @@ export function AccountForm({ run, onDone }: Pick<LedgerState, 'run'> & { onDone
             placeholder="0.00"
             inputMode="decimal"
           />
+          {isLiability(type) && (
+            <span className="subtle">
+              Enter what you owe as a negative number, for example -500.00. A positive number counts
+              as money you hold.
+            </span>
+          )}{' '}
         </label>
       </div>
       <div className="dialog-actions">

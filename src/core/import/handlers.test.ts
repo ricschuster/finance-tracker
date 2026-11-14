@@ -122,6 +122,14 @@ describe('import handlers', () => {
     expect(linked().n).toBe(2)
   })
 
+  it('suggests linking a bank-worded card payment such as MB-CREDIT CARD/LOC PAY.', () => {
+    const { db, accountId, api } = setup()
+    const card = createAccount(db, { name: 'Visa', type: 'credit_card' })
+    createTransaction(db, { accountId: card, date: '2026-02-04', amount: 9000, payee: 'Thanks' })
+    const text = 'Date,Desc,Amount\n2026-02-03,MB-CREDIT CARD/LOC PAY.,-90.00\n'
+    expect(api.previewImport({ text, profile, accountId }).items[0]!.suggestLink).toBe(true)
+  })
+
   it('does not link when the box is cleared', () => {
     const { db, accountId, api } = setup()
     const card = createAccount(db, { name: 'Visa', type: 'credit_card' })

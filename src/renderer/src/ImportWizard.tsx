@@ -12,7 +12,9 @@ import type {
 } from '../../core/import/handlers'
 import type { ForeignPolicy, MappingProfile } from '../../core/import/mapping'
 import type { PossibleChoice } from '../../core/import/match'
-import { PRESETS } from '../../core/import/presets'
+import { guessMapping, type MappingGuess } from '../../core/import/guess'
+import { previewMapping } from '../../core/import/preview'
+import { matchPresetByHeader, PRESETS } from '../../core/import/presets'
 import { formatCents } from '../../core/money'
 import { MintImport } from './MintImport'
 import { Empty, useConfirm } from './ui'
@@ -145,6 +147,48 @@ function fromProfile(info: CsvInspection, p: MappingProfile): MapState {
   }
 }
 
+/** Turn the guesser's proposal into editable form state. */
+function fromGuess(info: CsvInspection, g: MappingGuess): MapState {
+  const base = initialMap(info)
+  const m: MapState = {
+    ...base,
+    hasHeader: g.hasHeader,
+    headerRow: g.headerRow,
+    decimal: g.decimal,
+    desc: g.description.columns.length > 0 ? g.description.columns : base.desc,
+    memo: NONE,
+    foreign: NONE,
+  }
+  if (g.date) {
+    m.date = g.date.column
+    m.dateFormat = g.date.format
+  }
+  const a = g.amount
+  if (a) {
+    m.amountMode = a.mode
+    if (a.mode === 'debitCredit') {
+      m.debit = a.debit
+      m.credit = a.credit
+    } else {
+      m.amount = a.column
+    }
+    if (a.mode === 'directional') {
+      m.direction = a.direction
+      m.debitValues = a.debitValues.join(', ')
+    } else if (a.foreign !== null) m.foreign = a.foreign
+  }
+  return m
+}
+
+type MapSource = 'saved' | 'preset' | 'guess' | 'edited'
+
+/** Confidence as a word and a pill colour. */
+function confidenceLabel(c: number): { text: string; cls: string } {
+  if (c >= 0.75) return { text: 'high confidence', cls: 'pill pos' }
+  if (c >= 0.5) return { text: 'medium confidence', cls: 'pill warn' }
+  return { text: 'low confidence', cls: 'pill neg' }
+}
+
 type Step = 'file' | 'map' | 'preview' | 'done'
 
 /** A dropped file as text; spreadsheets are converted to CSV in the main process. */
@@ -167,6 +211,8 @@ export function ImportWizard({
   const [mint, setMint] = useState<MintInspection | null>(null)
   const [map, setMap] = useState<MapState | null>(null)
   const [profileId, setProfileId] = useState<number | null>(null)
+  const [guess, setGuess] = useState<MappingGuess | null>(null)
+  const [source, setSource] = useState<MapSource>('guess')
   const [saveName, setSaveName] = useState('')
   const [foreign, setForeign] = useState<ForeignPolicy>('skip')
   const [preview, setPreview] = useState<ImportPreview | null>(null)
@@ -258,11 +304,23 @@ export function ImportWizard({
       setUndone(false)
       if (i.matchedProfile) {
         setMap(fromProfile(i, i.matchedProfile.config))
+        setSource('saved')
+        setGuess(null)
         setProfileId(i.matchedProfile.id)
         if (i.matchedProfile.accountId) setAccountId(i.matchedProfile.accountId)
         setStep('map')
       } else {
-        setMap(initialMap(i))
+        // A known bank header wins over the heuristic guess.
+        const preset = matchPresetByHeader(i.sample[i.headerRowGuess] ?? [])
+        const g = guessMapping(i.sample)
+        setGuess(g)
+        if (preset) {
+          setMap(fromProfile(i, preset.config))
+          setSource('preset')
+        } else {
+          setMap(fromGuess(i, g))
+          setSource('guess')
+        }
         setProfileId(null)
         setStep('map')
       }
@@ -272,8 +330,16 @@ export function ImportWizard({
     }
   }
 
-  const set = <K extends keyof MapState>(k: K, v: MapState[K]) =>
+  const set = <K extends keyof MapState>(k: K, v: MapState[K]) => {
     setMap((m) => (m ? { ...m, [k]: v } : m))
+    setSource((s) => (s === 'guess' ? 'edited' : s))
+  }
+
+  /** The first rows as they would be read with the current mapping. */
+  const livePreview = useMemo(
+    () => (info && profile ? previewMapping(info.sample, profile, { limit: 10 }) : null),
+    [info, profile],
+  )
 
   const choiceOf = (it: PreviewItem): PossibleChoice =>
     overrides[it.candidate.line]?.choice ?? it.choice
@@ -413,6 +479,22 @@ export function ImportWizard({
       : [],
   )
   const counts = preview?.summary.counts
+  /** A confidence pill next to a field label while the mapping is still the guess. */
+  const conf = (field: 'date' | 'format' | 'desc' | 'amount') => {
+    if (source !== 'guess' || !guess) return null
+    const c =
+      field === 'date' || field === 'format'
+        ? guess.date?.confidence
+        : field === 'desc'
+          ? guess.description.confidence
+          : guess.amount?.confidence
+    const l = confidenceLabel(c ?? 0)
+    return <span className={`${l.cls} guess-tag`}>{l.text}</span>
+  }
+  const ignoredNames =
+    guess && map
+      ? guess.ignored.filter((i) => !used.has(i)).map((i) => columnName(info!, map, i))
+      : []
 
   return (
     <section aria-label="Import">
@@ -489,6 +571,21 @@ export function ImportWizard({
 
       {step === 'map' && format === 'csv' && info && map && (
         <>
+          <MapBanner
+            source={source}
+            guess={guess}
+            presetName={
+              source === 'preset'
+                ? matchPresetByHeader(info.sample[info.headerRowGuess] ?? [])?.name
+                : undefined
+            }
+            onReguess={() => {
+              const g = guessMapping(info.sample)
+              setGuess(g)
+              setMap(fromGuess(info, g))
+              setSource('guess')
+            }}
+          />
           <div className="card">
             {fileCard(
               <>
@@ -506,7 +603,10 @@ export function ImportWizard({
                   value=""
                   onChange={(e) => {
                     const p = PRESETS.find((x) => x.id === e.target.value)
-                    if (p) setMap(fromProfile(info, p.config))
+                    if (p) {
+                      setMap(fromProfile(info, p.config))
+                      setSource('preset')
+                    }
                   }}
                 >
                   <option value="">(choose)</option>
@@ -546,13 +646,13 @@ export function ImportWizard({
             </div>
             <div className="map-grid">
               <label className="field">
-                Date column
+                <span>Date column{conf('date')}</span>
                 <select value={map.date} onChange={(e) => set('date', num(e))}>
                   {colOptions()}
                 </select>
               </label>
               <label className="field">
-                Date format
+                <span>Date format{conf('format')}</span>
                 <select
                   value={map.dateFormat}
                   onChange={(e) => set('dateFormat', e.target.value as DateFormat)}
@@ -563,7 +663,7 @@ export function ImportWizard({
                 </select>
               </label>
               <label className="field">
-                Description column
+                <span>Description column{conf('desc')}</span>
                 <select
                   value={map.desc[0] ?? 0}
                   onChange={(e) => set('desc', [num(e), ...map.desc.slice(1)])}
@@ -592,7 +692,7 @@ export function ImportWizard({
             <h4 className="map-subhead">Amounts</h4>
             <div className="map-grid">
               <label className="field">
-                Amounts are
+                <span>Amounts are{conf('amount')}</span>
                 <select
                   value={map.amountMode}
                   onChange={(e) => set('amountMode', e.target.value as AmountMode)}
@@ -696,11 +796,76 @@ export function ImportWizard({
               </table>
             </div>
           </div>
+          {livePreview && (
+            <div className="card flush">
+              <div className="card-header">
+                <h3>How the first rows will be read</h3>
+                <span className="subtle">Updates as you change the columns above</span>
+              </div>
+              {livePreview.error && (
+                <div className="error" role="alert">
+                  {livePreview.error}
+                </div>
+              )}
+              {livePreview.failed > 0 && (
+                <div className="error" role="alert">
+                  {livePreview.failed} of these {livePreview.total} rows cannot be read with this
+                  mapping. Check the date column and format, the amount columns and the header row.
+                </div>
+              )}
+              {ignoredNames.length > 0 && (
+                <p className="subtle map-note">Not used: {ignoredNames.join(', ')}</p>
+              )}
+              {source === 'guess' &&
+                guess?.notes.map((n) => (
+                  <p className="subtle map-note" key={n}>
+                    {n}
+                  </p>
+                ))}
+              <div className="table-wrap">
+                <table className="import-table" aria-label="Mapping preview">
+                  <thead>
+                    <tr>
+                      <th>Line</th>
+                      <th>Date</th>
+                      <th>Description</th>
+                      <th className="num">Amount</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {livePreview.rows.map((r) => (
+                      <tr key={r.line} className={r.ok ? undefined : 'row-bad'}>
+                        <td className="subtle">{r.line}</td>
+                        <td className="nowrap">{r.date ?? ''}</td>
+                        <td>{r.ok ? r.description : r.cells.join(' | ')}</td>
+                        <td className={`num amount ${(r.amount ?? 0) < 0 ? '' : 'pos'}`}>
+                          {r.amount === undefined ? '' : formatCents(r.amount)}
+                        </td>
+                        <td>
+                          {r.ok ? (
+                            <span className="pill pos">OK</span>
+                          ) : (
+                            <span className="neg">{r.message}</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <div className="wizard-footer">
             <button type="button" onClick={reset}>
               Back
             </button>
-            <button type="button" className="primary" onClick={() => setStep('preview')}>
+            <button
+              type="button"
+              className="primary"
+              disabled={!!livePreview?.error}
+              onClick={() => setStep('preview')}
+            >
               Preview
             </button>
           </div>
@@ -921,6 +1086,48 @@ export function ImportWizard({
         </div>
       )}
     </section>
+  )
+}
+
+function MapBanner({
+  source,
+  guess,
+  presetName,
+  onReguess,
+}: {
+  source: MapSource
+  guess: MappingGuess | null
+  presetName?: string | undefined
+  onReguess: () => void
+}) {
+  if (source === 'saved') return null
+  const l = guess ? confidenceLabel(guess.confidence) : null
+  return (
+    <div className="notice map-banner" role="note">
+      <div className="grow">
+        {source === 'preset' ? (
+          <>
+            <strong>Recognised {presetName ?? 'a known bank layout'}.</strong> The columns below
+            come from that bank&apos;s preset.
+          </>
+        ) : source === 'guess' ? (
+          <>
+            <strong>This is our best guess.</strong> We read the headers and the values in each
+            column. Check the preview below and change anything that looks wrong.
+          </>
+        ) : (
+          <>
+            <strong>Edited.</strong> You changed the guessed mapping.
+          </>
+        )}{' '}
+        {source === 'guess' && l && <span className={l.cls}>overall {l.text}</span>}
+      </div>
+      {guess && source !== 'guess' && (
+        <button type="button" className="small" onClick={onReguess}>
+          Guess again
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -5,6 +5,27 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
+### Added
+
+- First import from an empty database for multi-account files (Monarch, Mint,
+  Wealthsimple). The setup option removes unused categories the file does not
+  use.
+- Spreadsheet (`.xlsx`) import, for example the Monarch spreadsheet export.
+- In-app Manual in the sidebar.
+- Categories tab: select several categories and delete them at once, and
+  change a category's type (Spending, Income, Transfer).
+- Transactions: sortable columns, and Delete all for every match of a search.
+
+### Changed
+
+- better-sqlite3 updated to 13.
+
+### Fixed
+
+- Imported categories now get the right type.
+
 ## [0.2.0] - 2026-11-14
 
 ### Added

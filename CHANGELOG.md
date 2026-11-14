@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Keyboard shortcuts: `/` focuses the Transactions search, `n` opens Add transaction, `g` then `d`, `t`, `b`, `r`, `a` or `i` goes to Dashboard, Transactions, Budgets, Reports, Accounts or Import, and `?` lists them. A keyboard button in the sidebar footer opens the same list. Shortcuts are ignored while typing or in a dialog.
+- Search hint: a "How search works" popover next to the search box, and the empty result explains how terms are matched.
 - First run: the Dashboard shows a Get started checklist (add an account, import or add a transaction, optional rules and budgets) until there is an account and a transaction. Transactions says "No transactions yet" with Add transaction and Import buttons, and asks for an account first when there are none.
 - Import: with more than one account the wizard asks you to choose one ("Choose an account") instead of silently using the first; a saved profile or a file name that mentions an account preselects it and says why. A file with no data rows shows "This file has no transactions" and cannot be previewed; the "Nothing to import" message no longer points to missing notes.
 - Add transaction and Transfer warn, without blocking, about a zero amount, an amount over $1,000,000 and a date more than a year ahead or 20 years back; Save anyway continues.
@@ -24,6 +26,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- Search is predictable: a typed word prefix finds the word, `sho*` works like `sho`, quotes group a phrase, AND/OR/NOT/NEAR are plain words, stray quotes, parentheses and colons no longer return nothing, punctuation-only input (a lone `-`) is ignored, and apostrophes are optional (`mcdonalds` finds McDonald's).
 - Below 900px wide the sidebar collapses to icons only; tabs keep their names for screen readers and show them as tooltips.
 
 ### Fixed

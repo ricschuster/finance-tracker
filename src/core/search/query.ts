@@ -61,20 +61,47 @@ export const MAX_BULK = 10_000
 
 const likeEscape = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`)
 
+/**
+ * Split typed search text into terms. Words are matched anywhere in a field, so a typed prefix
+ * finds the whole word. Double quotes group a phrase. AND, OR, NOT and NEAR are ordinary words.
+ * Stray `*`, parentheses, colons and unbalanced quotes are dropped rather than matched, and a
+ * term with no letter or digit (a lone "-" or "'") is ignored. Apostrophes (straight or curly)
+ * are ignored on both sides, so "mcdonalds" and "McDonald's" find each other.
+ */
+export function searchTerms(text: string): string[] {
+  const terms: string[] = []
+  const add = (raw: string) => {
+    const t = raw
+      .replace(/['‘’ʼ]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+    if (/[\p{L}\p{N}]/u.test(t)) terms.push(t)
+  }
+  const parts = text.replace(/[“”]/g, '"').split('"')
+  parts.forEach((part, i) => {
+    if (i % 2 === 1) add(part.replace(/\*/g, ''))
+    else for (const w of part.replace(/[*():]/g, ' ').split(/\s+/)) add(w)
+  })
+  return terms
+}
+
+const noApos = (col: string) =>
+  `REPLACE(REPLACE(REPLACE(${col}, char(39), ''), char(8217), ''), char(8216), '')`
+
 /** Build the WHERE clause (without the keyword) and its parameters. */
 export function buildWhere(q: SearchQuery): { sql: string; params: unknown[] } {
   const where: string[] = []
   const params: unknown[] = []
-  for (const word of (q.text ?? '').split(/\s+/).filter(Boolean)) {
+  for (const word of searchTerms(q.text ?? '')) {
     const like = `%${likeEscape(word)}%`
     where.push(`(
-      t.payee LIKE ? ESCAPE '\\' OR t.raw_description LIKE ? ESCAPE '\\' OR t.notes LIKE ? ESCAPE '\\'
+      ${noApos('t.payee')} LIKE ? ESCAPE '\\' OR ${noApos('t.raw_description')} LIKE ? ESCAPE '\\' OR ${noApos('t.notes')} LIKE ? ESCAPE '\\'
       OR EXISTS (SELECT 1 FROM transaction_tags tt JOIN tags g ON g.id = tt.tag_id
-                 WHERE tt.transaction_id = t.id AND g.name LIKE ? ESCAPE '\\')
+                 WHERE tt.transaction_id = t.id AND ${noApos('g.name')} LIKE ? ESCAPE '\\')
       OR EXISTS (SELECT 1 FROM transaction_lines l JOIN categories c ON c.id = l.category_id
                  LEFT JOIN categories p ON p.id = c.parent_id
                  WHERE l.transaction_id = t.id
-                   AND (c.name LIKE ? ESCAPE '\\' OR p.name LIKE ? ESCAPE '\\')))`)
+                   AND (${noApos('c.name')} LIKE ? ESCAPE '\\' OR ${noApos('p.name')} LIKE ? ESCAPE '\\')))`)
     params.push(like, like, like, like, like, like)
   }
   if (q.accountIds?.length) {

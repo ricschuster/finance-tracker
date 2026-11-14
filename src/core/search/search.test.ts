@@ -7,7 +7,7 @@ import { createRule } from '../rules/store'
 import { applyRules } from '../rules/apply'
 import { bulkUpdate, deleteMatching } from './bulk'
 import { createSearchHandlers } from './handlers'
-import { MAX_BULK, searchTransactionIds, searchTransactions } from './query'
+import { MAX_BULK, searchTerms, searchTransactionIds, searchTransactions } from './query'
 import { deleteSavedSearch, listSavedSearches, saveSearch } from './saved'
 
 let db: Database.Database
@@ -330,5 +330,57 @@ describe('sorting', () => {
     expect(payees({ sort: 'payee', dir: 'asc' })).toEqual(['alpha', 'Beta', 'Gamma'])
     expect(payees({ sort: 'category', dir: 'asc' })).toHaveLength(3)
     expect(() => searchTransactions(db, { sort: 'x; DROP' as never })).toThrow()
+  })
+})
+
+describe('predictable text search', () => {
+  it('splits terms, quoting phrases and dropping stray syntax', () => {
+    expect(searchTerms('sho*')).toEqual(['sho'])
+    expect(searchTerms('"cafe latte" bar')).toEqual(['cafe latte', 'bar'])
+    expect(searchTerms('(foo) bar:baz "unbalanced')).toEqual(['foo', 'bar', 'baz', 'unbalanced'])
+    expect(searchTerms('- * " ( ) : \'')).toEqual([])
+    expect(searchTerms('AND OR NOT NEAR')).toEqual(['AND', 'OR', 'NOT', 'NEAR'])
+    expect(searchTerms("it's")).toEqual(['its'])
+  })
+
+  it('finds a word by its typed prefix, with or without a wildcard', () => {
+    const a = txn({ payee: 'Shopify' })
+    const b = txn({ payee: 'Shoppers Drug Mart' })
+    txn({ payee: 'Safeway' })
+    expect(ids({ text: 'sho' }).sort()).toEqual([a, b].sort())
+    expect(ids({ text: 'sho*' }).sort()).toEqual([a, b].sort())
+  })
+
+  it('finds names with apostrophes however they are typed', () => {
+    const a = txn({ payee: "McDonald's" })
+    const b = txn({ payee: 'Joe\u2019s Diner' })
+    expect(ids({ text: "mcdonald's" })).toEqual([a])
+    expect(ids({ text: 'mcdonalds' })).toEqual([a])
+    expect(ids({ text: 'McDonald\u2019s' })).toEqual([a])
+    expect(ids({ text: "joe's" })).toEqual([b])
+  })
+
+  it('treats AND, OR, NOT and NEAR as plain words', () => {
+    const a = txn({ payee: 'Salt and Pepper' })
+    const b = txn({ payee: 'Cats or Dogs' })
+    txn({ payee: 'Other' })
+    expect(ids({ text: 'and' })).toEqual([a])
+    expect(ids({ text: 'salt AND pepper' })).toEqual([a])
+    expect(ids({ text: 'cats OR dogs' })).toEqual([b])
+    expect(ids({ text: 'cats NOT dogs' })).toEqual([])
+  })
+
+  it('never fails or empties on stray punctuation, and ignores punctuation-only input', () => {
+    const a = txn({ payee: 'Cafe Latte' })
+    const b = txn({ payee: '7-Eleven' })
+    for (const t of ['"', '(', ')', '*', ':', '"cafe', 'cafe)', '(cafe', 'cafe*', 'caf*e:']) {
+      expect(() => ids({ text: t })).not.toThrow()
+    }
+    expect(ids({ text: '"cafe' })).toEqual([a])
+    expect(ids({ text: '(cafe)' })).toEqual([a])
+    expect(ids({ text: '-' }).sort()).toEqual([a, b].sort())
+    expect(ids({ text: '"cafe latte"' })).toEqual([a])
+    expect(ids({ text: '"latte cafe"' })).toEqual([])
+    expect(ids({ text: '7-eleven' })).toEqual([b])
   })
 })

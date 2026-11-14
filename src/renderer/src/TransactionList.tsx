@@ -147,7 +147,8 @@ export function TransactionList({
           </Empty>
         ) : (
           <Empty icon={<Receipt size={28} />} title="No matching transactions">
-            Try clearing the search or filters.
+            Try clearing the search or filters. Search matches words inside payee, description,
+            notes, tags and categories; quotes group a phrase and punctuation is ignored.
           </Empty>
         )}
       </div>

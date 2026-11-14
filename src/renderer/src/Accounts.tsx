@@ -1,3 +1,4 @@
+import { Pencil } from 'lucide-react'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents } from '../../core/money'
 import {
@@ -12,10 +13,11 @@ interface Props {
   accounts: AccountWithBalance[]
   archived: AccountWithBalance[]
   onOpen: (accountId: number) => void
+  onEdit: (accountId: number) => void
 }
 
 /** Every account with its type and balance, grouped like the sidebar; a row opens its transactions. */
-export function Accounts({ accounts, archived, onOpen }: Props) {
+export function Accounts({ accounts, archived, onOpen, onEdit }: Props) {
   const assets = accounts.filter((a) => !isLiability(a.type)).reduce((s, a) => s + a.balance, 0)
   const owing = accounts
     .filter((a) => isLiability(a.type) && a.balance < 0)
@@ -39,9 +41,22 @@ export function Accounts({ accounts, archived, onOpen }: Props) {
               {a.name}
             </button>
           </td>
-          <td className="subtle">{accountTypeLabel(a.type)}</td>
+          <td className="subtle" style={{ width: 180 }}>
+            {accountTypeLabel(a.type)}
+          </td>
           <td className={a.balance < 0 && !isLiability(a.type) ? 'num neg' : 'num'}>
             {balanceText(a.type, a.balance)}
+          </td>
+          <td className="actions" style={{ width: 150, textAlign: 'right' }}>
+            <button
+              type="button"
+              className="small"
+              aria-label={`Edit account ${a.name}`}
+              onClick={() => onEdit(a.id)}
+            >
+              <Pencil size={14} />
+              Edit account
+            </button>
           </td>
         </tr>
       )

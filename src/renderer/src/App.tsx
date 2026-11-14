@@ -120,6 +120,7 @@ export function App() {
 
 function Shell() {
   const [accountId, setAccountId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
   const [view, setView] = useState<View>('dashboard')
   const [preset, setPreset] = useState<{
@@ -170,6 +171,10 @@ function Shell() {
       ? undefined
       : (ledger.accounts.find((a) => a.id === accountId) ??
         archived.find((a) => a.id === accountId))
+  const editTarget =
+    editId === null
+      ? undefined
+      : (ledger.accounts.find((a) => a.id === editId) ?? archived.find((a) => a.id === editId))
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
 
   const navView: View = view === 'history' ? 'import' : view
@@ -258,21 +263,6 @@ function Shell() {
                     <span>Net worth</span>
                     <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
                   </div>
-                  <ul>
-                    <li>
-                      <button
-                        type="button"
-                        className="nav-item"
-                        aria-current={view === 'accounts'}
-                        onClick={() => {
-                          setAccountId(null)
-                          go('accounts')
-                        }}
-                      >
-                        <span className="grow">All accounts</span>
-                      </button>
-                    </li>
-                  </ul>
                   {ACCOUNT_GROUPS.map((g) => {
                     const list = ledger.accounts.filter((a) => g.types.includes(a.type))
                     if (list.length === 0) return null
@@ -308,7 +298,13 @@ function Shell() {
                   {view === 'ledger' && (
                     <>
                       {selected && (
-                        <button type="button" onClick={() => setDialog('editAccount')}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditId(accountId)
+                            setDialog('editAccount')
+                          }}
+                        >
                           <Pencil size={15} />
                           Edit account
                         </button>
@@ -387,7 +383,15 @@ function Shell() {
                   />
                 )}
                 {view === 'accounts' && (
-                  <Accounts accounts={ledger.accounts} archived={archived} onOpen={pickAccount} />
+                  <Accounts
+                    accounts={ledger.accounts}
+                    archived={archived}
+                    onOpen={pickAccount}
+                    onEdit={(id) => {
+                      setEditId(id)
+                      setDialog('editAccount')
+                    }}
+                  />
                 )}
                 {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
                 {view === 'import' && (
@@ -447,18 +451,18 @@ function Shell() {
             <AccountForm run={ledger.run} onDone={() => setDialog(null)} />
           </Dialog>
           <Dialog
-            open={dialog === 'editAccount' && selected !== undefined}
+            open={dialog === 'editAccount' && editTarget !== undefined}
             onOpenChange={(o) => setDialog(o ? 'editAccount' : null)}
-            title={selected ? `Edit ${selected.name}` : 'Edit account'}
+            title={editTarget ? `Edit ${editTarget.name}` : 'Edit account'}
           >
-            {selected && (
+            {editTarget && (
               <AccountEditor
-                account={selected}
+                account={editTarget}
                 run={ledger.run}
                 onDone={() => setDialog(null)}
                 onDeleted={() => {
                   setDialog(null)
-                  setAccountId(null)
+                  if (accountId === editId) setAccountId(null)
                 }}
               />
             )}

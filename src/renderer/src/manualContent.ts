@@ -124,7 +124,7 @@ export const MANUAL: ManualSection[] = [
     id: 'accounts',
     title: 'Accounts',
     blocks: [
-      'The Accounts tab (also opened by All accounts in the sidebar) lists every account with its type and balance, grouped as Cash, Credit cards, Loans and Other, with assets, owing and net worth on top. Cards and loans read Owing, and the owing amount is already included in net worth. Click an account to see its transactions. The Transactions tab always shows every account.',
+      'The Accounts tab lists every account with its type and balance, grouped as Cash, Credit cards, Loans and Other, with assets, owing and net worth on top. Cards and loans read Owing, and the owing amount is already included in net worth. Click an account to see its transactions, or use Edit account on its row to rename, archive or delete it. The Transactions tab always shows every account.',
     ],
   },
   {

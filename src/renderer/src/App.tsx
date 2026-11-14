@@ -481,7 +481,7 @@ function Shell() {
             open={dialog === 'duplicates'}
             onOpenChange={(o) => setDialog(o ? 'duplicates' : null)}
             title="Find duplicates"
-            description="Transactions in the same account with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
+            description="Transactions with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
             wide
           >
             {dialog === 'duplicates' && <DuplicatesForm run={ledger.run} />}

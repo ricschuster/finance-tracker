@@ -111,8 +111,8 @@ export function DuplicatesForm({ run }: Pick<LedgerState, 'run'>) {
   }
 
   return (
-    <div className="stack">
-      <div className="row" style={{ gap: 12 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <label>
           Dates{' '}
           <select value={windowDays} onChange={(e) => setWindowDays(Number(e.target.value))}>
@@ -152,12 +152,14 @@ export function DuplicatesForm({ run }: Pick<LedgerState, 'run'>) {
       {groups?.map((g) => (
         <section
           key={g.transactions.map((t) => t.id).join('-')}
-          className="stack"
+          style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
           data-testid="dup-group"
         >
-          <div className="row" style={{ gap: 12 }}>
-            <strong className="grow">{g.reason}</strong>
-            <span className="muted">Score {g.score}</span>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+            <strong style={{ flex: '1 1 100%' }}>{g.reason}</strong>
+            <span className="muted" style={{ flex: 1 }}>
+              Score {g.score}
+            </span>
             <button type="button" className="danger" onClick={() => void keepOne([g])}>
               Keep first, delete rest
             </button>
@@ -172,10 +174,19 @@ export function DuplicatesForm({ run }: Pick<LedgerState, 'run'>) {
               Not a duplicate
             </button>
           </div>
-          <ul className="stack" style={{ listStyle: 'none', padding: 0 }}>
+          <ul
+            style={{
+              listStyle: 'none',
+              padding: 0,
+              margin: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 6,
+            }}
+          >
             {g.transactions.map((t) => (
-              <li key={t.id} className="row" style={{ gap: 12 }}>
-                <span className="grow">
+              <li key={t.id} style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <span style={{ flex: 1 }}>
                   {t.date} {t.accountName}: {t.description || 'no description'}{' '}
                   {formatCents(t.amount)}
                   {t.split ? ' (split)' : ''}

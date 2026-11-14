@@ -19,13 +19,15 @@ Second round of owner feedback after v0.4.0, in one PR. No version cut; more cha
 `npm run check` passes. Migrations are still at 14. Version is still 0.4.0 (Unreleased section in
 the changelog holds these changes).
 
-## Not verified in the real UI
+## Verified in the real UI (headless)
 
-- The new buttons, confirm dialog and Undo in Find duplicates, and the sidebar and tab changes,
-  were not clicked through. README screenshots were not regenerated (the sidebar changed).
+- New `duplicates.mjs` skill script: seeds duplicates, checks the names-only sidebar, the
+  all-accounts Transactions tab, cross-account on and off, Keep one of each, and Undo. No page errors.
+- The Find duplicates dialog had no layout (`.row`, `.stack` and `.grow` have no CSS); fixed with
+  inline flex styles. Its description no longer says "same account".
+- README screenshots regenerated (sidebar changed; demo data makes some figures differ).
 
 ## Next actions
 
-1. Regenerate README screenshots (`readme-shots.mjs`) since the sidebar looks different.
-2. Owner confirms "across accounts" is what they meant by the duplicate search comment.
-3. Remaining items from the v0.4.0 handoff (real-UI checks, budget rollover decision).
+1. Owner confirms "across accounts" is what they meant by the duplicate search comment.
+2. Remaining items from the v0.4.0 handoff (real-UI checks, budget rollover decision).

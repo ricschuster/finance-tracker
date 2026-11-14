@@ -2632,3 +2632,19 @@ th.num .sort-head {
 .toast-message {
   flex: 1;
 }
+
+.map-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.guess-tag {
+  margin-left: 6px;
+  font-size: 11px;
+}
+.map-note {
+  margin: 4px 16px;
+}
+.import-table tr.row-bad td {
+  background: color-mix(in srgb, var(--neg, #c0392b) 10%, transparent);
+}

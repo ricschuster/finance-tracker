@@ -298,3 +298,36 @@ handled like any CSV, so a Monarch spreadsheet is detected by its header row. Th
 watched folder and drag and drop all accept it. The watched folder lists spreadsheets as ready
 without inspecting them. The conversion is only checked against a synthetic fixture
 (`test-data/import/monarch.xlsx`), not a real export.
+
+## Guessing the column mapping
+
+The wizard no longer starts from fixed defaults. `core/import/guess.ts`
+(`guessMapping`) looks at the first 40 rows and proposes a full mapping, with a
+confidence between 0 and 1 for each field:
+
+- **Header row**: a row with no date-like or amount-like cell and at least two
+  text cells is a header; otherwise the file is treated as headerless.
+- **Date column and format**: content first (at least 60% of values parse as a
+  date), header words (`date`, `posted`, `transaction date` preferred) break
+  ties. When day-first and month-first both fit, row order decides if one
+  reading is sorted and the other is not; otherwise month-first is assumed and
+  the field is flagged ambiguous with low confidence.
+- **Amounts**: header words (`amount`, `CAD$`, `debit`/`withdrawals`,
+  `credit`/`deposits`, a `type` column with debit/credit values) pick signed,
+  debit/credit or directional mode. Without telling headers, two numeric columns
+  that are never filled in the same row become debit and credit, and a column
+  that follows the running total of another is a balance. Numeric columns
+  without decimals (check numbers, ids) are not amounts. The decimal separator
+  is detected. Notes warn when every amount is positive (consider Flip sign).
+- **Description**: header words, else the longest text column; at most two.
+- Everything else with data (balance, category, extra dates) is listed as
+  ignored.
+
+Precedence on opening a file: a saved profile with a matching header
+fingerprint, then a bank preset whose header names all appear
+(`matchPresetByHeader`), then the guess. The wizard labels which one is in use,
+shows a confidence pill per field while the mapping is an unedited guess, and
+offers "Guess again". `core/import/preview.ts` (`previewMapping`) applies the
+current mapping to the first rows so the wizard can show the parsed date,
+signed amount and description live, with failing rows and the reason
+highlighted. The guesser never writes anything and every field stays editable.

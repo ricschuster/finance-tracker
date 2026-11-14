@@ -52,6 +52,8 @@ show the total of the result set.
 
 ## 7. Import income and spending, including refunds
 
+Status: verified by tests (`refunds.test.ts`), no code change was needed.
+
 Today: signed amounts import and reports classify by category kind, so a
 refund in an expense category reduces that category.
 Change: add tests for refunds in each importer (CSV with separate debit and

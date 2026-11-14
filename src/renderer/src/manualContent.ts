@@ -21,7 +21,7 @@ export const MANUAL: ManualSection[] = [
       {
         list: [
           'Import your history. If you are coming from Monarch, Mint or Wealthsimple, go to Import and choose the export file. The file creates your accounts, so you do not need to add any first.',
-          'Otherwise add an account with the + next to Accounts in the sidebar, then import a bank file into it, or add transactions by hand.',
+          'Otherwise add an account with Add account on the Accounts tab, then import a bank file into it, or add transactions by hand.',
           'Check the Categories tab and tidy it to match how you think about spending.',
           'Create rules for payees that come up again and again, then apply them to your past transactions.',
           'Open Dashboard and Reports to see the result, and set up Budgets for the categories you want to watch.',
@@ -49,7 +49,7 @@ export const MANUAL: ManualSection[] = [
       'Accounts live in the sidebar, grouped by type (chequing, savings, credit card, cash, loan, other). Click one to see only its transactions; click Transactions to see everything.',
       {
         list: [
-          'Add an account with the + next to Accounts. Give it a name, a type and an opening balance.',
+          'Add an account with Add account on the Accounts tab. Give it a name, a type and an opening balance.',
           'Edit, archive or delete an account from its page. Archiving hides it from the sidebar but keeps its history in reports.',
           'The balance shown is the opening balance plus every transaction. If it does not match your bank, you have a missing or duplicated transaction, or the opening balance is off.',
         ],

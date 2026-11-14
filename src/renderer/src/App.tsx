@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { RuleInput } from '../../core/rules/types'
-import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
@@ -175,7 +174,6 @@ function Shell() {
     editId === null
       ? undefined
       : (ledger.accounts.find((a) => a.id === editId) ?? archived.find((a) => a.id === editId))
-  const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
 
   const navView: View = view === 'history' ? 'import' : view
   const title =
@@ -248,21 +246,7 @@ function Shell() {
                   ))}
                 </nav>
                 <nav aria-label="Accounts" className="nav-group">
-                  <div className="nav-heading">
-                    Accounts
-                    <button
-                      type="button"
-                      aria-label="Add account"
-                      title="Add account"
-                      onClick={() => setDialog('account')}
-                    >
-                      <Plus size={15} />
-                    </button>
-                  </div>
-                  <div className="net-worth">
-                    <span>Net worth</span>
-                    <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
-                  </div>
+                  <div className="nav-heading">Accounts</div>
                   {ACCOUNT_GROUPS.map((g) => {
                     const list = ledger.accounts.filter((a) => g.types.includes(a.type))
                     if (list.length === 0) return null
@@ -387,6 +371,7 @@ function Shell() {
                     accounts={ledger.accounts}
                     archived={archived}
                     onOpen={pickAccount}
+                    onAdd={() => setDialog('account')}
                     onEdit={(id) => {
                       setEditId(id)
                       setDialog('editAccount')

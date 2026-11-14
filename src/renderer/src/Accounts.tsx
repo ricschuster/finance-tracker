@@ -1,6 +1,7 @@
-import { Pencil } from 'lucide-react'
+import { Pencil, Plus } from 'lucide-react'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents } from '../../core/money'
+import { PageActions } from './PageActions'
 import {
   ACCOUNT_GROUPS,
   ACCOUNT_ICONS,
@@ -14,10 +15,11 @@ interface Props {
   archived: AccountWithBalance[]
   onOpen: (accountId: number) => void
   onEdit: (accountId: number) => void
+  onAdd: () => void
 }
 
 /** Every account with its type and balance, grouped like the sidebar; a row opens its transactions. */
-export function Accounts({ accounts, archived, onOpen, onEdit }: Props) {
+export function Accounts({ accounts, archived, onOpen, onEdit, onAdd }: Props) {
   const assets = accounts.filter((a) => !isLiability(a.type)).reduce((s, a) => s + a.balance, 0)
   const owing = accounts
     .filter((a) => isLiability(a.type) && a.balance < 0)
@@ -64,6 +66,12 @@ export function Accounts({ accounts, archived, onOpen, onEdit }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <PageActions>
+        <button type="button" className="primary" onClick={onAdd}>
+          <Plus size={16} />
+          Add account
+        </button>
+      </PageActions>
       <div className="card">
         <table>
           <tbody>

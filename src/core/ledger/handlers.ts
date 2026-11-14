@@ -11,6 +11,7 @@ import {
   createCategory,
   deleteCategory,
   mergeCategory,
+  setCategoryStyle,
   listCategories,
   renameCategory,
 } from './categories'
@@ -43,6 +44,8 @@ export function createLedgerHandlers(db: Database.Database) {
     createCategory: (input: Parameters<typeof createCategory>[1]) => createCategory(db, input),
     renameCategory: (id: number, name: string) => renameCategory(db, id, name),
     deleteCategory: (id: number, reassignTo?: number) => deleteCategory(db, id, reassignTo),
+    setCategoryStyle: (id: number, style: Parameters<typeof setCategoryStyle>[2]) =>
+      setCategoryStyle(db, id, style),
     mergeCategory: (fromId: number, intoId: number) => mergeCategory(db, fromId, intoId),
     categoryUsage: () => categoryUsage(db),
     listTags: () => listTags(db),

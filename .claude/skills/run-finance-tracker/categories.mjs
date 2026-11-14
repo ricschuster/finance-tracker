@@ -42,6 +42,16 @@ await page.getByRole('button', { name: 'Delete category' }).click()
 await page.waitForTimeout(400)
 console.log('GONE:', !/Animals/.test(await tree()))
 
+// Colour and icon.
+const home = page.locator('li.category-parent', { hasText: 'Groceries' })
+await home.getByRole('button', { name: 'Colour and icon' }).click()
+await home.getByRole('button', { name: 'Icon pet' }).click()
+await page.waitForTimeout(300)
+await home.getByRole('button', { name: 'Colour #e15759' }).click()
+await page.waitForTimeout(300)
+console.log('STYLED:', (await home.locator('.category-dot').first().getAttribute('style')), (await home.locator('.category-badge').first().innerText()))
+await shot('categories-style')
+
 // A category in use: delete one and check the line count text first.
 await page.locator('li.category-parent', { hasText: 'Food & Dining' }).getByRole('button', { name: 'Delete' }).first().click()
 console.log('IN USE PROMPT:', (await page.locator('.category-delete').innerText()).replace(/\n+/g, ' | ').slice(0, 200))

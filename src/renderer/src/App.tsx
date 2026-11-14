@@ -6,6 +6,7 @@ import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { CategoriesEditor } from './CategoriesEditor'
+import { CategoryStyleProvider } from './CategoryBadge'
 import { Dashboard } from './Dashboard'
 import { DataPanel } from './DataPanel'
 import { ImportHistory } from './ImportHistory'
@@ -76,147 +77,153 @@ export function App() {
   const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
 
   return (
-    <div className="layout">
-      <nav className="sidebar" aria-label="Accounts">
-        <h1>Finance Tracker</h1>
-        <ul>
-          <li>
-            <button
-              type="button"
-              aria-current={accountId === null}
-              onClick={() => setAccountId(null)}
-            >
-              <span>All accounts</span>
-              <span>{formatCents(total)}</span>
-            </button>
-          </li>
-          {ledger.accounts.map((a) => (
-            <li key={a.id}>
+    <CategoryStyleProvider value={ledger.categories}>
+      <div className="layout">
+        <nav className="sidebar" aria-label="Accounts">
+          <h1>Finance Tracker</h1>
+          <ul>
+            <li>
               <button
                 type="button"
-                aria-current={accountId === a.id}
-                onClick={() => setAccountId(a.id)}
+                aria-current={accountId === null}
+                onClick={() => setAccountId(null)}
               >
-                <span>{a.name}</span>
-                <span className={a.balance < 0 ? 'neg' : ''}>{formatCents(a.balance)}</span>
+                <span>All accounts</span>
+                <span>{formatCents(total)}</span>
               </button>
             </li>
-          ))}
-        </ul>
-        {archived.length > 0 && (
-          <details>
-            <summary>Archived ({archived.length})</summary>
-            <ul>
-              {archived.map((a) => (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    aria-current={accountId === a.id}
-                    onClick={() => setAccountId(a.id)}
-                  >
-                    <span>{a.name}</span>
-                    <span>{formatCents(a.balance)}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </details>
-        )}
-        {selected && (
-          <AccountEditor account={selected} run={ledger.run} onDeleted={() => setAccountId(null)} />
-        )}
-        <AccountForm run={ledger.run} />
-        <p className="muted">{info ? `v${info.version}, schema ${info.schemaVersion}` : ''}</p>
-      </nav>
-      <main className="content">
-        {ledger.error && (
-          <div className="error" role="alert">
-            {ledger.error}{' '}
-            <button type="button" onClick={ledger.clearError}>
-              Dismiss
-            </button>
+            {ledger.accounts.map((a) => (
+              <li key={a.id}>
+                <button
+                  type="button"
+                  aria-current={accountId === a.id}
+                  onClick={() => setAccountId(a.id)}
+                >
+                  <span>{a.name}</span>
+                  <span className={a.balance < 0 ? 'neg' : ''}>{formatCents(a.balance)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {archived.length > 0 && (
+            <details>
+              <summary>Archived ({archived.length})</summary>
+              <ul>
+                {archived.map((a) => (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      aria-current={accountId === a.id}
+                      onClick={() => setAccountId(a.id)}
+                    >
+                      <span>{a.name}</span>
+                      <span>{formatCents(a.balance)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+          {selected && (
+            <AccountEditor
+              account={selected}
+              run={ledger.run}
+              onDeleted={() => setAccountId(null)}
+            />
+          )}
+          <AccountForm run={ledger.run} />
+          <p className="muted">{info ? `v${info.version}, schema ${info.schemaVersion}` : ''}</p>
+        </nav>
+        <main className="content">
+          {ledger.error && (
+            <div className="error" role="alert">
+              {ledger.error}{' '}
+              <button type="button" onClick={ledger.clearError}>
+                Dismiss
+              </button>
+            </div>
+          )}
+          <div className="tabs" role="tablist">
+            {(Object.keys(VIEW_LABELS) as (keyof typeof VIEW_LABELS)[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="tab"
+                aria-selected={view === v}
+                onClick={() => {
+                  setPreset(null)
+                  setView(v)
+                }}
+              >
+                {VIEW_LABELS[v]}
+              </button>
+            ))}
           </div>
-        )}
-        <div className="tabs" role="tablist">
-          {(Object.keys(VIEW_LABELS) as (keyof typeof VIEW_LABELS)[]).map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="tab"
-              aria-selected={view === v}
-              onClick={() => {
-                setPreset(null)
-                setView(v)
-              }}
-            >
-              {VIEW_LABELS[v]}
-            </button>
-          ))}
-        </div>
-        {view === 'dashboard' && (
-          <Dashboard
-            version={ledger.version}
-            onOpenCategory={openCategory}
-            onReviewUncategorized={reviewUncategorized}
-          />
-        )}
-        {view === 'reports' && (
-          <Reports
-            accounts={ledger.accounts}
-            version={ledger.version}
-            onOpenCategory={openCategory}
-          />
-        )}
-        {view === 'import' && (
-          <ImportWizard
-            accounts={ledger.accounts}
-            run={ledger.run}
-            onFinished={() => setView('ledger')}
-          />
-        )}
-        {view === 'rules' && (
-          <RulesEditor
-            accounts={ledger.accounts}
-            categories={ledger.categories}
-            run={ledger.run}
-            draft={ruleDraft}
-            onDraftUsed={clearDraft}
-          />
-        )}
-        {view === 'categories' && <CategoriesEditor ledger={ledger} />}
-        {view === 'data' && <DataPanel run={ledger.run} />}
-        {view === 'history' && <ImportHistory run={ledger.run} />}
-        {view === 'ledger' && (
-          <>
-            <TransactionForm
-              accounts={ledger.accounts}
-              categories={ledger.categories}
-              run={ledger.run}
-              accountId={accountId}
-            />
-            <TransferForm accounts={ledger.accounts} run={ledger.run} />
-            <TransactionSearch
-              accounts={ledger.accounts}
-              categories={ledger.categories}
-              run={ledger.run}
+          {view === 'dashboard' && (
+            <Dashboard
               version={ledger.version}
-              accountId={accountId}
-              preset={preset}
-              onSuggestRule={(id) =>
-                void ledger.run(async () => {
-                  const s = await window.api.rules.suggestRule(id)
-                  if (!s) {
-                    window.alert('Edit the payee or category by hand first, then suggest a rule.')
-                    return
-                  }
-                  setRuleDraft(s.draft)
-                  setView('rules')
-                })
-              }
+              onOpenCategory={openCategory}
+              onReviewUncategorized={reviewUncategorized}
             />
-          </>
-        )}
-      </main>
-    </div>
+          )}
+          {view === 'reports' && (
+            <Reports
+              accounts={ledger.accounts}
+              version={ledger.version}
+              onOpenCategory={openCategory}
+            />
+          )}
+          {view === 'import' && (
+            <ImportWizard
+              accounts={ledger.accounts}
+              run={ledger.run}
+              onFinished={() => setView('ledger')}
+            />
+          )}
+          {view === 'rules' && (
+            <RulesEditor
+              accounts={ledger.accounts}
+              categories={ledger.categories}
+              run={ledger.run}
+              draft={ruleDraft}
+              onDraftUsed={clearDraft}
+            />
+          )}
+          {view === 'categories' && <CategoriesEditor ledger={ledger} />}
+          {view === 'data' && <DataPanel run={ledger.run} />}
+          {view === 'history' && <ImportHistory run={ledger.run} />}
+          {view === 'ledger' && (
+            <>
+              <TransactionForm
+                accounts={ledger.accounts}
+                categories={ledger.categories}
+                run={ledger.run}
+                accountId={accountId}
+              />
+              <TransferForm accounts={ledger.accounts} run={ledger.run} />
+              <TransactionSearch
+                accounts={ledger.accounts}
+                categories={ledger.categories}
+                run={ledger.run}
+                version={ledger.version}
+                accountId={accountId}
+                preset={preset}
+                onSuggestRule={(id) =>
+                  void ledger.run(async () => {
+                    const s = await window.api.rules.suggestRule(id)
+                    if (!s) {
+                      window.alert('Edit the payee or category by hand first, then suggest a rule.')
+                      return
+                    }
+                    setRuleDraft(s.draft)
+                    setView('rules')
+                  })
+                }
+              />
+            </>
+          )}
+        </main>
+      </div>
+    </CategoryStyleProvider>
   )
 }

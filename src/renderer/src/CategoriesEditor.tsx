@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Category } from '../../core/ledger/categories'
+import { CATEGORY_COLORS, CATEGORY_ICONS } from '../../core/ledger/categoryStyle'
+import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import type { LedgerState } from './useLedger'
 
@@ -7,6 +9,7 @@ type Pending =
   | { type: 'rename'; id: number; name: string }
   | { type: 'delete'; id: number; reassignTo: number }
   | { type: 'merge'; id: number; into: number }
+  | { type: 'style'; id: number }
   | { type: 'add'; name: string }
 
 /** Add, rename, merge and delete categories. The set is flat. System categories are read-only. */
@@ -49,6 +52,7 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
             </form>
           ) : (
             <>
+              <CategoryBadge id={c.id} />
               <span className="category-name">{c.name}</span>
               <span className="muted">
                 {n} {n === 1 ? 'line' : 'lines'}
@@ -61,6 +65,9 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
                     onClick={() => setPending({ type: 'rename', id: c.id, name: c.name })}
                   >
                     Rename
+                  </button>
+                  <button type="button" onClick={() => setPending({ type: 'style', id: c.id })}>
+                    Colour and icon
                   </button>
                   {mergeTargets.length > 0 && (
                     <button
@@ -85,6 +92,48 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
             </>
           )}
         </div>
+        {p?.type === 'style' && (
+          <div className="category-delete">
+            <div className="style-picker" role="group" aria-label={`Colour for ${c.name}`}>
+              {CATEGORY_COLORS.map((col) => (
+                <button
+                  key={col}
+                  type="button"
+                  aria-label={`Colour ${col}`}
+                  aria-pressed={c.color === col}
+                  style={{ background: col }}
+                  onClick={() =>
+                    void ledger.run(() =>
+                      window.api.ledger.setCategoryStyle(c.id, { color: col, icon: c.icon }),
+                    )
+                  }
+                >
+                  &nbsp;
+                </button>
+              ))}
+            </div>
+            <div className="style-picker" role="group" aria-label={`Icon for ${c.name}`}>
+              {Object.entries(CATEGORY_ICONS).map(([key, glyph]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-label={`Icon ${key}`}
+                  aria-pressed={c.icon === key}
+                  onClick={() =>
+                    void ledger.run(() =>
+                      window.api.ledger.setCategoryStyle(c.id, { color: c.color, icon: key }),
+                    )
+                  }
+                >
+                  {glyph}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={() => setPending(null)}>
+              Done
+            </button>
+          </div>
+        )}
         {p?.type === 'merge' && (
           <div className="category-delete" role="alert">
             <p>

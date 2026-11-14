@@ -9,7 +9,7 @@ change scope need a decision before work starts (see Decisions).
 Status: built (migration 8 flattens, `mergeCategory`, flat Categories tab). The
 existing 15 top-level starter categories are kept as the editable defaults
 instead of being replaced by `Category N` placeholders, so nothing a user has
-already renamed is lost. Colours and icons (item 2) are not built yet. Mint
+already renamed is lost. Mint
 category names that were children (for example `Restaurants`) now import as
 Uncategorized and are listed as unknown in the preview.
 
@@ -23,6 +23,10 @@ The schema column `parent_id` can stay unused. Needs category merge, which is
 already on the next-actions list.
 
 ## 2. Colours and icons for categories
+
+Status: built (migration 9, `categoryStyle.ts`, picker in the Categories tab,
+badge in the transaction list, dashboard and reports). Icons are bundled emoji
+glyphs keyed by name, colours a fixed 12 colour palette.
 
 Change: add `color` and `icon` columns to `categories` (migration), a picker
 in the Categories tab, and show them in the transaction list, reports and
@@ -45,6 +49,8 @@ from the edit form and as a bulk action in search. Budgets only: reports still
 show it, with a marker.
 
 ## 5. Monthly report sorted by category, descending
+
+Status: already true (sorted by total, largest first). Covered by a test.
 
 Today: the category report exists (note 07).
 Change: the monthly report lists categories by total, largest first, expenses

@@ -1,4 +1,5 @@
 import type Database from 'better-sqlite3'
+import { CATEGORY_COLORS, isCategoryColor, isCategoryIcon } from './categoryStyle'
 
 export type CategoryKind = 'expense' | 'income' | 'transfer'
 
@@ -9,6 +10,10 @@ export interface Category {
   kind: CategoryKind
   isSystem: boolean
   sortOrder: number
+  /** A key from `CATEGORY_COLORS`, or null. */
+  color: string | null
+  /** A key of `CATEGORY_ICONS`, or null. */
+  icon: string | null
 }
 
 interface CategoryRow {
@@ -18,6 +23,8 @@ interface CategoryRow {
   kind: CategoryKind
   is_system: number
   sort_order: number
+  color: string | null
+  icon: string | null
 }
 
 const toCategory = (r: CategoryRow): Category => ({
@@ -27,6 +34,8 @@ const toCategory = (r: CategoryRow): Category => ({
   kind: r.kind,
   isSystem: r.is_system === 1,
   sortOrder: r.sort_order,
+  color: r.color,
+  icon: r.icon,
 })
 
 export function listCategories(db: Database.Database): Category[] {
@@ -71,8 +80,13 @@ export function createCategory(
   ).n
   return Number(
     db
-      .prepare('INSERT INTO categories (name, kind, sort_order) VALUES (?, ?, ?)')
-      .run(name, input.kind ?? 'expense', sort).lastInsertRowid,
+      .prepare('INSERT INTO categories (name, kind, sort_order, color) VALUES (?, ?, ?, ?)')
+      .run(
+        name,
+        input.kind ?? 'expense',
+        sort,
+        CATEGORY_COLORS[(sort - 1) % CATEGORY_COLORS.length],
+      ).lastInsertRowid,
   )
 }
 
@@ -158,4 +172,18 @@ function moveReferences(db: Database.Database, from: number, to: number): void {
       db.prepare('UPDATE saved_searches SET query = ? WHERE id = ?').run(JSON.stringify(q), sv.id)
     }
   }
+}
+
+/** Set a category's colour and icon; pass null to clear one. Values must come from the fixed sets. */
+export function setCategoryStyle(
+  db: Database.Database,
+  id: number,
+  style: { color: string | null; icon: string | null },
+): void {
+  if (style.color !== null && !isCategoryColor(style.color)) throw new Error('Unknown colour')
+  if (style.icon !== null && !isCategoryIcon(style.icon)) throw new Error('Unknown icon')
+  const r = db
+    .prepare('UPDATE categories SET color = ?, icon = ? WHERE id = ?')
+    .run(style.color, style.icon, id)
+  if (r.changes === 0) throw new Error(`Category ${id} not found`)
 }

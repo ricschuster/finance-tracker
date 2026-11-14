@@ -12,6 +12,10 @@ import {
   createTransfer,
   deleteCategory,
   mergeCategory,
+  setCategoryStyle,
+  isCategoryColor,
+  isCategoryIcon,
+  CATEGORY_COLORS,
   deleteTransaction,
   getCategoryByName,
   getTransaction,
@@ -362,5 +366,28 @@ describe('listTransactions', () => {
   it('pages', () => {
     expect(listTransactions(db, { limit: 2 }).map((t) => t.amount)).toEqual([-400, -300])
     expect(listTransactions(db, { limit: 2, offset: 2 }).map((t) => t.amount)).toEqual([-200, -100])
+  })
+})
+
+describe('category style', () => {
+  it('every starter category has a palette colour and a known icon', () => {
+    for (const c of listCategories(db)) {
+      expect(isCategoryColor(c.color ?? '')).toBe(true)
+      expect(isCategoryIcon(c.icon ?? '')).toBe(true)
+    }
+  })
+
+  it('sets and clears a style, rejecting values outside the fixed sets', () => {
+    const id = createCategory(db, { name: 'Pets' })
+    setCategoryStyle(db, id, { color: CATEGORY_COLORS[2], icon: 'pet' })
+    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({
+      color: CATEGORY_COLORS[2],
+      icon: 'pet',
+    })
+    setCategoryStyle(db, id, { color: null, icon: null })
+    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({ color: null, icon: null })
+    expect(() => setCategoryStyle(db, id, { color: '#123456', icon: null })).toThrow(/colour/)
+    expect(() => setCategoryStyle(db, id, { color: null, icon: 'rocket' })).toThrow(/icon/)
+    expect(() => setCategoryStyle(db, 9999, { color: null, icon: null })).toThrow(/not found/)
   })
 })

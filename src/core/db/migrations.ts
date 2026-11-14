@@ -242,6 +242,30 @@ UPDATE saved_searches
 DELETE FROM categories WHERE parent_id IS NOT NULL;
 `
 
+/** Migration 9: category colour and icon. Keys are validated against `categoryStyle.ts`. */
+const CATEGORY_STYLE = `
+ALTER TABLE categories ADD COLUMN color TEXT;
+ALTER TABLE categories ADD COLUMN icon TEXT;
+UPDATE categories SET color = CASE (id - 1) % 12 WHEN 0 THEN '#4e79a7' WHEN 1 THEN '#f28e2b' WHEN 2 THEN '#e15759' WHEN 3 THEN '#76b7b2' WHEN 4 THEN '#59a14f' WHEN 5 THEN '#edc948' WHEN 6 THEN '#b07aa1' WHEN 7 THEN '#ff9da7' WHEN 8 THEN '#9c755f' WHEN 9 THEN '#8cd17d' WHEN 10 THEN '#86bcb6' WHEN 11 THEN '#bab0ac' END;
+UPDATE categories SET icon = 'car' WHERE name = 'Auto & Transport';
+UPDATE categories SET icon = 'bolt' WHERE name = 'Bills & Utilities';
+UPDATE categories SET icon = 'food' WHERE name = 'Food & Dining';
+UPDATE categories SET icon = 'cart' WHERE name = 'Groceries';
+UPDATE categories SET icon = 'heart' WHERE name = 'Health & Fitness';
+UPDATE categories SET icon = 'home' WHERE name = 'Home';
+UPDATE categories SET icon = 'cash' WHERE name = 'Income';
+UPDATE categories SET icon = 'bag' WHERE name = 'Shopping';
+UPDATE categories SET icon = 'plane' WHERE name = 'Travel';
+UPDATE categories SET icon = 'ticket' WHERE name = 'Entertainment';
+UPDATE categories SET icon = 'fee' WHERE name = 'Fees';
+UPDATE categories SET icon = 'gift' WHERE name = 'Gifts & Donations';
+UPDATE categories SET icon = 'kids' WHERE name = 'Kids';
+UPDATE categories SET icon = 'care' WHERE name = 'Personal Care';
+UPDATE categories SET icon = 'tax' WHERE name = 'Taxes';
+UPDATE categories SET icon = 'swap' WHERE name = 'Transfer';
+UPDATE categories SET icon = 'tag' WHERE name = 'Uncategorized';
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -259,6 +283,7 @@ export const migrations: readonly string[] = [
   SEARCH_SCHEMA,
   FILE_HASH_SCHEMA,
   FLAT_CATEGORIES,
+  CATEGORY_STYLE,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

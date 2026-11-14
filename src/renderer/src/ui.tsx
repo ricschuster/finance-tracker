@@ -213,3 +213,35 @@ export function PayeeAvatar({ name }: { name: string }) {
     </span>
   )
 }
+
+/** A headline figure with a label, optional icon and a note underneath. */
+export function StatTile({
+  label,
+  value,
+  tone,
+  icon,
+  iconTone,
+  note,
+}: {
+  label: string
+  value: ReactNode
+  tone?: 'pos' | 'neg'
+  icon?: ReactNode
+  iconTone?: 'pos' | 'neg' | 'accent'
+  note?: ReactNode
+}) {
+  return (
+    <div className="stat">
+      <div className="stat-head">
+        <span>{label}</span>
+        {icon && (
+          <span className={iconTone ? `stat-icon ${iconTone}` : 'stat-icon'} aria-hidden="true">
+            {icon}
+          </span>
+        )}
+      </div>
+      <strong className={tone}>{value}</strong>
+      {note && <span className="muted">{note}</span>}
+    </div>
+  )
+}

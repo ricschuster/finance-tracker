@@ -1152,9 +1152,6 @@ form.stack {
   padding: 8px 12px;
   margin-bottom: 12px;
 }
-.child-row td:nth-child(2) {
-  padding-left: 28px;
-}
 .dash-header {
   display: flex;
   align-items: center;
@@ -1715,4 +1712,71 @@ form.stack {
 }
 .split-footer .spacer {
   flex: 1;
+}
+
+/* ---------- Reports ---------- */
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 12px;
+  padding: 14px 18px;
+}
+.filter-bar .field select,
+.filter-bar .field input {
+  min-width: 130px;
+}
+.filter-bar .field input[type='number'] {
+  width: 96px;
+  min-width: 0;
+}
+.filter-bar .spacer {
+  flex: 1;
+}
+.filter-bar .range {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--control-h);
+}
+.category-report td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+.category-report td.name {
+  width: 36%;
+}
+.category-report td.bar-cell {
+  width: 40%;
+}
+.category-report .bar-track {
+  height: 8px;
+}
+.category-report td.strong {
+  font-weight: 600;
+}
+.category-report button.link {
+  color: var(--text);
+}
+.category-report button.link:hover {
+  text-decoration: none;
+  color: var(--accent-text);
+}
+.expander svg {
+  transition: transform 0.12s;
+}
+.expander[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+.expander-space {
+  display: inline-block;
+  width: 28px;
+  flex: none;
+}
+.category-report .child-row td.name {
+  padding-left: 76px;
+}
+.category-report .child-row button.link {
+  color: var(--text-2);
 }

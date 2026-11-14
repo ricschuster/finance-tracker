@@ -14,7 +14,7 @@ import { DASHBOARD_WIDGETS, type DashboardWidgetId } from '../../core/reports/wi
 import { Bar, percent, TrendChart } from './Bars'
 import { CategoryIcon, useCategoryLookup } from './CategoryBadge'
 import { PageActions } from './PageActions'
-import { Empty, PayeeAvatar } from './ui'
+import { Empty, PayeeAvatar, StatTile } from './ui'
 
 const todayIso = () => {
   const d = new Date()
@@ -113,50 +113,40 @@ export function Dashboard({
       {(show('income') || show('spending') || show('net')) && (
         <div className="stat-row">
           {show('income') && (
-            <div className="stat">
-              <div className="stat-head">
-                <span>Income</span>
-                <span className="stat-icon pos" aria-hidden="true">
-                  <ArrowDownLeft size={16} />
-                </span>
-              </div>
-              <strong>{formatCents(summary.income)}</strong>
-              <span className="muted">This month</span>
-            </div>
+            <StatTile
+              label="Income"
+              value={formatCents(summary.income)}
+              icon={<ArrowDownLeft size={16} />}
+              iconTone="pos"
+              note="This month"
+            />
           )}
           {show('spending') && (
-            <div className="stat">
-              <div className="stat-head">
-                <span>Spending</span>
-                <span className="stat-icon neg" aria-hidden="true">
-                  <ArrowUpRight size={16} />
-                </span>
-              </div>
-              <strong>{formatCents(summary.spending)}</strong>
-              <span className="muted">
-                {previousSpending === 0 && summary.spending === 0
+            <StatTile
+              label="Spending"
+              value={formatCents(summary.spending)}
+              icon={<ArrowUpRight size={16} />}
+              iconTone="neg"
+              note={
+                previousSpending === 0 && summary.spending === 0
                   ? 'Nothing yet'
-                  : `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${formatCents(Math.abs(delta))} vs last month so far`}
-              </span>
-            </div>
+                  : `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${formatCents(Math.abs(delta))} vs last month so far`
+              }
+            />
           )}
           {show('net') && (
-            <div className="stat">
-              <div className="stat-head">
-                <span>Net</span>
-                <span className="stat-icon accent" aria-hidden="true">
-                  <Scale size={16} />
-                </span>
-              </div>
-              <strong className={summary.net < 0 ? 'neg' : 'pos'}>
-                {formatCents(summary.net)}
-              </strong>
-              <span className="muted">
-                {summary.savingsRate === null
+            <StatTile
+              label="Net"
+              value={formatCents(summary.net)}
+              tone={summary.net < 0 ? 'neg' : 'pos'}
+              icon={<Scale size={16} />}
+              iconTone="accent"
+              note={
+                summary.savingsRate === null
                   ? 'No income yet'
-                  : `Savings rate ${percent(summary.savingsRate)}`}
-              </span>
-            </div>
+                  : `Savings rate ${percent(summary.savingsRate)}`
+              }
+            />
           )}
         </div>
       )}

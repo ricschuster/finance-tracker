@@ -1,5 +1,6 @@
+import { ArrowDownLeft, ArrowUpRight, CalendarRange, ChevronRight, Scale } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CategoryBadge } from './CategoryBadge'
+import { CategoryBadge, useCategoryLookup } from './CategoryBadge'
 import { formatCents } from '../../core/money'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { monthPeriod, quarterPeriod, yearPeriod, type Period } from '../../core/reports/period'
@@ -10,7 +11,9 @@ import type {
   PayeeTotal,
   TrendPoint,
 } from '../../core/reports/queries'
-import { Bar, percent } from './Bars'
+import { Bar, percent, TrendChart } from './Bars'
+import { displayDate } from './TransactionList'
+import { Empty, PayeeAvatar, StatTile } from './ui'
 
 type Kind = 'month' | 'quarter' | 'year' | 'custom'
 
@@ -86,12 +89,14 @@ export function Reports({
     }
   }, [from, to, accountId, version])
 
-  const maxTrend = Math.max(1, ...(data?.trend ?? []).flatMap((t) => [t.income, t.spending]))
+  const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? ''
+  const rangeLabel = period ? `${displayDate(period.from)} to ${displayDate(period.to)}` : ''
+  const maxCategory = Math.max(1, ...(data?.categories ?? []).map((c) => c.total))
 
   return (
     <section aria-label="Reports">
-      <div className="mapper">
-        <label>
+      <div className="card filter-bar">
+        <label className="field">
           Period
           <select value={kind} onChange={(e) => setKind(e.target.value as Kind)}>
             <option value="month">Month</option>
@@ -101,7 +106,7 @@ export function Reports({
           </select>
         </label>
         {kind !== 'custom' && (
-          <label>
+          <label className="field">
             Year
             <input
               type="number"
@@ -113,7 +118,7 @@ export function Reports({
           </label>
         )}
         {kind === 'month' && (
-          <label>
+          <label className="field">
             Month
             <select value={month} onChange={(e) => setMonth(Number(e.target.value))}>
               {Array.from({ length: 12 }, (_, i) => (
@@ -125,7 +130,7 @@ export function Reports({
           </label>
         )}
         {kind === 'quarter' && (
-          <label>
+          <label className="field">
             Quarter
             <select value={quarter} onChange={(e) => setQuarter(Number(e.target.value))}>
               {[1, 2, 3, 4].map((q) => (
@@ -138,7 +143,7 @@ export function Reports({
         )}
         {kind === 'custom' && (
           <>
-            <label>
+            <label className="field">
               From
               <input
                 type="date"
@@ -146,7 +151,7 @@ export function Reports({
                 onChange={(e) => setCustom({ ...custom, from: e.target.value })}
               />
             </label>
-            <label>
+            <label className="field">
               To
               <input
                 type="date"
@@ -156,7 +161,7 @@ export function Reports({
             </label>
           </>
         )}
-        <label>
+        <label className="field">
           Account
           <select value={accountId} onChange={(e) => setAccountId(Number(e.target.value))}>
             <option value={0}>All accounts</option>
@@ -167,101 +172,146 @@ export function Reports({
             ))}
           </select>
         </label>
+        <span className="spacer" />
+        {period && (
+          <span className="subtle range">
+            <CalendarRange size={14} aria-hidden="true" />
+            {rangeLabel} · transfers not counted
+          </span>
+        )}
       </div>
 
       {!period && <p className="error">Pick a start date that is not after the end date.</p>}
       {error && <p className="error">{error}</p>}
       {period && data && (
         <>
-          <p className="muted">
-            {period.from} to {period.to}. Transfers are not counted.
-          </p>
           <div className="stat-row">
-            <div className="stat">
-              <span className="muted">Income</span>
-              <strong className="pos">{formatCents(data.summary.income)}</strong>
-            </div>
-            <div className="stat">
-              <span className="muted">Spending</span>
-              <strong>{formatCents(data.summary.spending)}</strong>
-            </div>
-            <div className="stat">
-              <span className="muted">Net</span>
-              <strong className={data.summary.net < 0 ? 'neg' : 'pos'}>
-                {formatCents(data.summary.net)}
-              </strong>
-              <span className="muted">
-                {data.summary.savingsRate === null
+            <StatTile
+              label="Income"
+              value={formatCents(data.summary.income)}
+              icon={<ArrowDownLeft size={16} />}
+              iconTone="pos"
+            />
+            <StatTile
+              label="Spending"
+              value={formatCents(data.summary.spending)}
+              icon={<ArrowUpRight size={16} />}
+              iconTone="neg"
+            />
+            <StatTile
+              label="Net"
+              value={formatCents(data.summary.net)}
+              tone={data.summary.net < 0 ? 'neg' : 'pos'}
+              icon={<Scale size={16} />}
+              iconTone="accent"
+              note={
+                data.summary.savingsRate === null
                   ? 'No income'
-                  : `Savings rate ${percent(data.summary.savingsRate)}`}
-              </span>
-            </div>
+                  : `Savings rate ${percent(data.summary.savingsRate)}`
+              }
+            />
           </div>
 
-          <h3>Spending by category</h3>
-          {data.categories.length === 0 ? (
-            <p className="muted">No spending in this period.</p>
-          ) : (
+          <div className="card">
+            <div className="card-header">
+              <h3>Spending by category</h3>
+              <span className="subtle">Select a category to see its transactions</span>
+            </div>
+            {data.categories.length === 0 ? (
+              <Empty title="No spending in this period" />
+            ) : (
+              <table className="category-report">
+                <tbody>
+                  {data.categories.map((c) => (
+                    <CategoryRows
+                      key={c.categoryId}
+                      c={c}
+                      max={maxCategory}
+                      nested={data.categories.some((x) => x.children.length > 0)}
+                      expanded={open.has(c.categoryId)}
+                      onToggle={() =>
+                        setOpen((prev) => {
+                          const next = new Set(prev)
+                          if (!next.delete(c.categoryId)) next.add(c.categoryId)
+                          return next
+                        })
+                      }
+                      onOpen={(id) => onOpenCategory(id, period.from, period.to)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <h3>Income and spending by month</h3>
+            </div>
+            {data.trend.length > 1 && (
+              <div style={{ marginBottom: 20 }}>
+                <TrendChart
+                  data={data.trend.map((t) => ({
+                    key: t.month,
+                    label: new Date(`${t.month}-01T00:00:00`).toLocaleString('en-CA', {
+                      month: 'short',
+                      ...(data.trend.length > 12 ? { year: '2-digit' } : {}),
+                    }),
+                    ...t,
+                  }))}
+                />
+              </div>
+            )}
             <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th className="num">Income</th>
+                  <th className="num">Spending</th>
+                  <th className="num">Net</th>
+                </tr>
+              </thead>
               <tbody>
-                {data.categories.map((c) => (
-                  <CategoryRows
-                    key={c.categoryId}
-                    c={c}
-                    expanded={open.has(c.categoryId)}
-                    onToggle={() =>
-                      setOpen((prev) => {
-                        const next = new Set(prev)
-                        if (!next.delete(c.categoryId)) next.add(c.categoryId)
-                        return next
-                      })
-                    }
-                    onOpen={(id) => onOpenCategory(id, period.from, period.to)}
-                  />
+                {data.trend.map((t) => (
+                  <tr key={t.month}>
+                    <td>
+                      {new Date(`${t.month}-01T00:00:00`).toLocaleString('en-CA', {
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </td>
+                    <td className="num">{formatCents(t.income)}</td>
+                    <td className="num">{formatCents(t.spending)}</td>
+                    <td className={`num ${t.net < 0 ? 'neg' : 'pos'}`}>{formatCents(t.net)}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
-          )}
-
-          <h3>Income and spending by month</h3>
-          <table>
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th />
-                <th className="num">Income</th>
-                <th className="num">Spending</th>
-                <th className="num">Net</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.trend.map((t) => (
-                <tr key={t.month}>
-                  <td>{t.month}</td>
-                  <td>
-                    <Bar fraction={t.income / maxTrend} tone="pos" />
-                    <Bar fraction={t.spending / maxTrend} />
-                  </td>
-                  <td className="num">{formatCents(t.income)}</td>
-                  <td className="num">{formatCents(t.spending)}</td>
-                  <td className={`num ${t.net < 0 ? 'neg' : ''}`}>{formatCents(t.net)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          </div>
 
           <div className="dash-grid">
-            <div>
-              <h3>Top payees</h3>
+            <div className="card">
+              <div className="card-header">
+                <h3>Top payees</h3>
+              </div>
               {data.payees.length === 0 ? (
-                <p className="muted">None.</p>
+                <Empty title="No payees" />
               ) : (
                 <table>
                   <tbody>
                     {data.payees.map((p) => (
                       <tr key={p.payee}>
-                        <td>{p.payee}</td>
-                        <td className="num muted">{p.count}</td>
+                        <td>
+                          <div className="txn-cell">
+                            <PayeeAvatar name={p.payee} />
+                            <div>
+                              {p.payee}
+                              <span className="sub">
+                                {p.count} transaction{p.count === 1 ? '' : 's'}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
                         <td className="num">{formatCents(p.total)}</td>
                       </tr>
                     ))}
@@ -269,23 +319,28 @@ export function Reports({
                 </table>
               )}
             </div>
-            <div>
-              <h3>Biggest transactions</h3>
+            <div className="card">
+              <div className="card-header">
+                <h3>Biggest transactions</h3>
+              </div>
               {data.biggest.length === 0 ? (
-                <p className="muted">None.</p>
+                <Empty title="No transactions" />
               ) : (
                 <table>
                   <tbody>
                     {data.biggest.map((t) => (
                       <tr key={t.id}>
-                        <td>{t.date}</td>
                         <td>
-                          {t.payee || 'No payee'}
-                          {t.excludeFromBudgets && (
-                            <span className="tag" title="Hidden from budgets">
-                              not in budgets
-                            </span>
-                          )}
+                          <div className="txn-cell">
+                            <PayeeAvatar name={t.payee} />
+                            <div>
+                              {t.payee || 'No payee'}
+                              <span className="sub">
+                                {displayDate(t.date)} · {accountName(t.accountId)}
+                                {t.excludeFromBudgets && ' · not in budgets'}
+                              </span>
+                            </div>
+                          </div>
                         </td>
                         <td className="num">{formatCents(t.amount)}</td>
                       </tr>
@@ -303,47 +358,53 @@ export function Reports({
 
 function CategoryRows({
   c,
+  max,
+  nested,
   expanded,
   onToggle,
   onOpen,
 }: {
   c: CategorySpend
+  max: number
+  nested: boolean
   expanded: boolean
   onToggle: () => void
   onOpen: (categoryId: number) => void
 }) {
+  const category = useCategoryLookup()(c.categoryId)
   return (
     <>
       <tr>
-        <td>
-          {c.children.length > 0 && (
-            <button
-              type="button"
-              className="link"
-              aria-expanded={expanded}
-              aria-label={`${expanded ? 'Collapse' : 'Expand'} ${c.name}`}
-              onClick={onToggle}
-            >
-              {expanded ? '-' : '+'}
+        <td className="name">
+          <div className="txn-cell">
+            {c.children.length > 0 ? (
+              <button
+                type="button"
+                className="ghost icon small expander"
+                aria-expanded={expanded}
+                aria-label={`${expanded ? 'Collapse' : 'Expand'} ${c.name}`}
+                onClick={onToggle}
+              >
+                <ChevronRight size={15} />
+              </button>
+            ) : (
+              nested && <span className="expander-space" />
+            )}
+            <button type="button" className="link" onClick={() => onOpen(c.categoryId)}>
+              <CategoryBadge id={c.categoryId} showName />
             </button>
-          )}
+          </div>
         </td>
-        <td>
-          <button type="button" className="link" onClick={() => onOpen(c.categoryId)}>
-            <CategoryBadge id={c.categoryId} showName />
-          </button>
-        </td>
-        <td>
-          <Bar fraction={c.share} />
+        <td className="bar-cell">
+          <Bar fraction={c.total / max} color={category?.color} />
         </td>
         <td className="num muted">{percent(c.share)}</td>
-        <td className="num">{formatCents(c.total)}</td>
+        <td className="num strong">{formatCents(c.total)}</td>
       </tr>
       {expanded &&
         c.children.map((k) => (
           <tr key={k.categoryId} className="child-row">
-            <td />
-            <td>
+            <td className="name">
               <button type="button" className="link" onClick={() => onOpen(k.categoryId)}>
                 {k.name}
               </button>

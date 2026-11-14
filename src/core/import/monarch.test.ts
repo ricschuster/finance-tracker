@@ -88,6 +88,33 @@ describe('Monarch', () => {
     )
   })
 
+  it('classifies a new category by its net, so a stray negative row keeps income as income', () => {
+    const db = new Database(':memory:')
+    migrate(db)
+    const acct = createAccount(db, { name: 'Chequing', type: 'checking' })
+    const text = `${H}
+2026-01-09,Acme,Salary Co,Chequing,PAYROLL,,2000.00,,Me,FALSE,,,False,s1
+2026-02-09,Acme,Salary Co,Chequing,PAYROLL,,2000.00,,Me,FALSE,,,False,s2
+2026-02-10,Acme,Salary Co,Chequing,CLAWBACK,,-50.00,,Me,FALSE,,,False,s3
+2026-02-11,Shop,Gadgets,Chequing,SHOP,,-30.00,,Me,FALSE,,,False,s4
+2026-02-12,Shop,Gadgets,Chequing,REFUND,,5.00,,Me,FALSE,,,False,s5
+`
+    createImportHandlers(db).commitMint({
+      text,
+      accountMap: { Chequing: acct },
+      sourceName: 'm.csv',
+    })
+    const kinds = db
+      .prepare("SELECT name, kind FROM categories WHERE name IN ('Salary Co','Gadgets')")
+      .all()
+    expect(kinds).toEqual(
+      expect.arrayContaining([
+        { name: 'Salary Co', kind: 'income' },
+        { name: 'Gadgets', kind: 'expense' },
+      ]),
+    )
+  })
+
   it('replaces unused categories on a setup import, keeping used ones', () => {
     const db = new Database(':memory:')
     migrate(db)

@@ -283,17 +283,17 @@ function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResul
  * category they had in the old tool. A name only ever seen on money in becomes an income category.
  */
 function createMissingCategories(db: Database.Database, candidates: Candidate[]): void {
-  const seen = new Map<string, { name: string; income: boolean }>()
+  const seen = new Map<string, { name: string; total: number }>()
   for (const c of candidates) {
     const name = c.categoryName?.trim()
     if (!name || categoryIdByName(db, name) !== null) continue
     const key = name.toLowerCase()
-    const entry = seen.get(key) ?? { name, income: true }
-    if (c.amount <= 0) entry.income = false
+    const entry = seen.get(key) ?? { name, total: 0 }
+    entry.total += c.amount
     seen.set(key, entry)
   }
-  for (const { name, income } of seen.values())
-    createCategory(db, { name, kind: income ? 'income' : 'expense' })
+  for (const { name, total } of seen.values())
+    createCategory(db, { name, kind: total > 0 ? 'income' : 'expense' })
 }
 
 /**

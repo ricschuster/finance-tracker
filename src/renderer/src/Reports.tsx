@@ -279,7 +279,14 @@ export function Reports({
                     {data.biggest.map((t) => (
                       <tr key={t.id}>
                         <td>{t.date}</td>
-                        <td>{t.payee || 'No payee'}</td>
+                        <td>
+                          {t.payee || 'No payee'}
+                          {t.excludeFromBudgets && (
+                            <span className="tag" title="Hidden from budgets">
+                              not in budgets
+                            </span>
+                          )}
+                        </td>
                         <td className="num">{formatCents(t.amount)}</td>
                       </tr>
                     ))}

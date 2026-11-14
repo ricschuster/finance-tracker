@@ -30,6 +30,8 @@ export interface Transaction {
   notes: string
   status: TransactionStatus
   transferPeerId: number | null
+  /** Counted in reports but skipped by budgets. Never set by rules. */
+  excludeFromBudgets: boolean
   editedFields: EditableField[]
   lines: TransactionLine[]
   tags: string[]
@@ -218,6 +220,7 @@ export interface TransactionPatch {
   status?: TransactionStatus
   lines?: LineInput[]
   tags?: string[]
+  excludeFromBudgets?: boolean
 }
 
 /**
@@ -280,6 +283,13 @@ export function updateTransaction(
       writeTags(db, id, patch.tags)
       edited.push('tags')
     }
+    if (patch.excludeFromBudgets !== undefined) {
+      // A display flag for budgets only, so it is not a rule-locked field.
+      db.prepare('UPDATE transactions SET exclude_from_budgets = ? WHERE id = ?').run(
+        patch.excludeFromBudgets ? 1 : 0,
+        id,
+      )
+    }
     markEdited(db, id, edited)
 
     if (cur.transferPeerId !== null && (patch.date !== undefined || patch.amount !== undefined)) {
@@ -332,6 +342,7 @@ export interface TxnRow {
   notes: string
   status: TransactionStatus
   transfer_peer_id: number | null
+  exclude_from_budgets: number
   edited_fields: string
 }
 
@@ -387,6 +398,7 @@ export function hydrate(db: Database.Database, rows: TxnRow[]): Transaction[] {
     notes: r.notes,
     status: r.status,
     transferPeerId: r.transfer_peer_id,
+    excludeFromBudgets: r.exclude_from_budgets === 1,
     editedFields: JSON.parse(r.edited_fields) as EditableField[],
     lines: lines.get(r.id) ?? [],
     tags: tags.get(r.id) ?? [],

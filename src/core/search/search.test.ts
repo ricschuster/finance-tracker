@@ -148,6 +148,21 @@ describe('saved searches', () => {
 })
 
 describe('bulkUpdate', () => {
+  it('hides and restores transactions from budgets without locking rule fields', () => {
+    const a = txn({ desc: 'A' })
+    expect(getTransaction(db, a)!.excludeFromBudgets).toBe(false)
+    expect(bulkUpdate(db, [a], { type: 'setExcludeFromBudgets', exclude: true })).toEqual({
+      changed: 1,
+      skipped: 0,
+    })
+    const hidden = getTransaction(db, a)!
+    expect(hidden.excludeFromBudgets).toBe(true)
+    expect(hidden.editedFields).toEqual([])
+    expect(bulkUpdate(db, [a], { type: 'setExcludeFromBudgets', exclude: true }).skipped).toBe(1)
+    bulkUpdate(db, [a], { type: 'setExcludeFromBudgets', exclude: false })
+    expect(getTransaction(db, a)!.excludeFromBudgets).toBe(false)
+  })
+
   it('sets a category, skipping transfers and splits, and marks hand edits', () => {
     const a = txn({ desc: 'A' })
     const split = createTransaction(db, {

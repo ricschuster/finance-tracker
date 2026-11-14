@@ -50,6 +50,12 @@ should be flaggable as "not spending" (see item 4).
 
 ## 4. Hide a transaction from budgets
 
+Status: flag built (migration 11), budgets themselves not yet. Per row button
+and bulk buttons in search set it; transfers cannot be flagged (they are
+already outside spending). The flag is not a rule-locked field and rules never
+set it. Lists and the biggest-transactions report show a "not in budgets"
+marker. This also covers an unmatched card payment that is "not spending".
+
 Change: a per-transaction `exclude_from_budgets` flag (migration), settable
 from the edit form and as a bulk action in search. Budgets only: reports still
 show it, with a marker.

@@ -12,6 +12,7 @@ export type BulkAction =
   | { type: 'addTag'; tag: string }
   | { type: 'removeTag'; tag: string }
   | { type: 'setStatus'; status: TransactionStatus }
+  | { type: 'setExcludeFromBudgets'; exclude: boolean }
   | { type: 'delete' }
 
 export interface BulkResult {
@@ -62,6 +63,13 @@ export function bulkUpdate(db: Database.Database, ids: number[], action: BulkAct
             continue
           }
           updateTransaction(db, id, { status: action.status })
+          break
+        case 'setExcludeFromBudgets':
+          if (t.excludeFromBudgets === action.exclude) {
+            skipped++
+            continue
+          }
+          updateTransaction(db, id, { excludeFromBudgets: action.exclude })
           break
         case 'addTag': {
           const tag = action.tag.trim()

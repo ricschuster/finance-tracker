@@ -52,6 +52,8 @@ export interface BigTransaction {
   accountId: number
   /** Positive cents. */
   amount: number
+  /** Shown in reports, skipped by budgets. */
+  excludeFromBudgets: boolean
 }
 
 /**
@@ -69,6 +71,7 @@ function base(period: Period, f: ReportFilter): { from: string; params: unknown[
   const from = `
     (SELECT l.amount AS amount, l.transaction_id AS tid, c.id AS cid, c.name AS cname,
             c.parent_id AS pid, t.date AS date, t.account_id AS account_id,
+            t.exclude_from_budgets AS hidden,
             CASE WHEN t.payee <> '' THEN t.payee ELSE t.raw_description END AS payee,
             CASE WHEN c.name = 'Uncategorized' AND c.parent_id IS NULL
                  THEN CASE WHEN l.amount < 0 THEN 'expense' ELSE 'income' END
@@ -190,14 +193,22 @@ export function biggestTransactions(
   const { from, params } = base(period, f)
   return db
     .prepare(
-      `SELECT tid AS id, date, payee, account_id AS accountId, -SUM(amount) AS total
+      `SELECT tid AS id, date, payee, account_id AS accountId, hidden AS excludeFromBudgets,
+              -SUM(amount) AS total
        FROM ${from} WHERE kind = 'expense'
        GROUP BY tid HAVING total > 0
        ORDER BY total DESC, date DESC, tid LIMIT ?`,
     )
     .all(...params, limit)
     .map((r) => {
-      const { total, ...rest } = r as BigTransaction & { total: number }
-      return { ...rest, amount: total }
+      const { total, excludeFromBudgets, ...rest } = r as {
+        id: number
+        date: string
+        payee: string
+        accountId: number
+        total: number
+        excludeFromBudgets: number
+      }
+      return { ...rest, amount: total, excludeFromBudgets: excludeFromBudgets === 1 }
     })
 }

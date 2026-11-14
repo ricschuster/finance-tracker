@@ -140,7 +140,7 @@ export const MANUAL: ManualSection[] = [
     id: 'reports',
     title: 'Dashboard and reports',
     blocks: [
-      "The Dashboard is the home screen: this month's income, spending and net, your biggest categories, budget progress, the last six months and your largest transactions. Customize chooses which sections to show. If transactions need review, a reminder links straight to them.",
+      "The Dashboard is the home screen: this month's income, spending and net, your biggest categories, budget progress, the last six months and your largest transactions. Customize chooses which sections to show. If transactions need review, a reminder links straight to them. The Income, Spending and Net tiles, each category and each month in the six-month chart open the transactions behind that figure (transfers left out, as in the figures).",
       'Reports has a period picker (month, quarter, year or custom range) and an account filter. The reports are spending by category, income vs expenses with your savings rate, a monthly trend, top payees and biggest transactions.',
       'Click any category to jump to the matching transactions for that period.',
       'Transfers are never counted. Within the period, the lines of each category are added up: a category that nets negative counts as spending and one that nets positive counts as income. So a refund in Groceries reduces Groceries spending rather than counting as income, unless the refunds exceed the purchases in that period.',

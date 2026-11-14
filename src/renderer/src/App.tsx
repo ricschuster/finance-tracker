@@ -121,6 +121,9 @@ function Shell() {
     categoryId: number
     from: string
     to: string
+    direction?: 'expense' | 'income'
+    uncategorized?: boolean
+    noTransfers?: boolean
   } | null>(null)
   const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
   const [dialog, setDialog] = useState<
@@ -140,14 +143,18 @@ function Shell() {
     setPreset(null)
     setView(v)
   }
-  const openCategory = (categoryId: number, from: string, to: string) => {
-    setPreset({ key: Date.now(), categoryId, from, to })
+  // A drill-down always looks at every account, so a previously picked account cannot hide rows.
+  const drillDown = (p: Omit<NonNullable<typeof preset>, 'key'>) => {
+    setAccountId(null)
+    setPreset({ key: Date.now(), ...p })
     setView('ledger')
   }
-  const reviewUncategorized = () => {
-    const u = ledger.categories.find((c) => c.name === 'Uncategorized' && c.parentId === null)
-    if (u) openCategory(u.id, '', '')
-  }
+  const openCategory = (categoryId: number, from: string, to: string) =>
+    drillDown({ categoryId, from, to, noTransfers: true })
+  const openRange = (from: string, to: string, direction?: 'expense' | 'income') =>
+    drillDown({ categoryId: 0, from, to, ...(direction && { direction }), noTransfers: true })
+  const reviewUncategorized = () =>
+    drillDown({ categoryId: 0, from: '', to: '', uncategorized: true, noTransfers: true })
   const pickAccount = (id: number | null) => {
     setAccountId(id)
     go('ledger')
@@ -313,6 +320,7 @@ function Shell() {
                     version={ledger.version}
                     accounts={ledger.accounts}
                     onOpenCategory={openCategory}
+                    onOpenRange={openRange}
                     onReviewUncategorized={reviewUncategorized}
                     onOpenBudgets={() => go('budgets')}
                   />

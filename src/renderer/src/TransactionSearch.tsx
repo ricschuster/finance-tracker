@@ -23,6 +23,7 @@ interface Filters {
   min: string
   max: string
   uncategorized: boolean
+  noTransfers: boolean
 }
 
 const empty: Filters = {
@@ -36,6 +37,7 @@ const empty: Filters = {
   min: '',
   max: '',
   uncategorized: false,
+  noTransfers: false,
 }
 
 function toQuery(f: Filters): SearchQuery | string {
@@ -48,6 +50,7 @@ function toQuery(f: Filters): SearchQuery | string {
   if (f.to) q.to = f.to
   if (f.direction) q.direction = f.direction
   if (f.uncategorized) q.uncategorized = true
+  if (f.noTransfers) q.excludeTransfers = true
   try {
     if (f.min.trim()) q.minAmount = Math.abs(parseAmountToCents(f.min))
     if (f.max.trim()) q.maxAmount = Math.abs(parseAmountToCents(f.max))
@@ -70,6 +73,7 @@ function fromQuery(q: SearchQuery): Filters {
     min: q.minAmount === undefined ? '' : dollars(q.minAmount),
     max: q.maxAmount === undefined ? '' : dollars(q.maxAmount),
     uncategorized: q.uncategorized ?? false,
+    noTransfers: q.excludeTransfers ?? false,
   }
 }
 
@@ -93,7 +97,9 @@ export function TransactionSearch({
     categoryId: number
     from: string
     to: string
-    direction?: 'expense'
+    direction?: 'expense' | 'income'
+    uncategorized?: boolean
+    noTransfers?: boolean
   } | null
 }) {
   const [filters, setFilters] = useState<Filters>(empty)
@@ -118,11 +124,14 @@ export function TransactionSearch({
   const presetKey = preset?.key
   useEffect(() => {
     if (!preset) return
-    const next = {
+    const next: Filters = {
       ...empty,
       categoryId: preset.categoryId,
       from: preset.from,
       to: preset.to,
+      direction: preset.direction ?? '',
+      uncategorized: preset.uncategorized ?? false,
+      noTransfers: preset.noTransfers ?? false,
     }
     setFilters(next)
     setApplied(next)
@@ -452,6 +461,14 @@ export function TransactionSearch({
                 onChange={(e) => set('uncategorized', e.target.checked)}
               />
               Uncategorized only
+            </label>
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={filters.noTransfers}
+                onChange={(e) => set('noTransfers', e.target.checked)}
+              />
+              Hide transfers
             </label>
           </div>
         </div>

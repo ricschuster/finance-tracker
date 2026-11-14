@@ -7,6 +7,16 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Dashboard drill-down: click the Income, Spending or Net tile, or a month in the six-month chart,
+  to see the transactions behind the figure. Transactions has a Hide transfers filter for this.
+
+### Fixed
+
+- The dashboard's uncategorized Review button and category drill-downs now always search every
+  account; a previously chosen account could hide the rows.
+
+### Added (earlier)
+
 - Accounts tab: every account with type and balance, plus assets, owing and net worth, with
   an Edit account button on each row. The sidebar's "All accounts" entry is removed.
 - Find duplicates: "Keep first, delete rest" per group and "Keep one of each" for all groups, with

@@ -182,6 +182,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         payee: c.payee,
         notes: c.memo,
         status: c.status,
+        ...(c.tags && c.tags.length > 0 && { tags: c.tags }),
         ...(categoryId !== null && { lines: [{ categoryId, amount: c.amount }] }),
       })
       db.prepare('UPDATE transactions SET external_id = ?, import_batch_id = ? WHERE id = ?').run(

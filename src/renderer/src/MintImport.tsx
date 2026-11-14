@@ -165,9 +165,9 @@ export function MintImport({
             </table>
             <p className="subtle mint-note">
               New accounts are created as chequing; change the type later.
-              {inspection.source === 'Mint'
-                ? ' Categories are matched by name.'
-                : ' Rows in a currency other than CAD are skipped.'}
+              {inspection.source === 'Wealthsimple'
+                ? ' Rows in a currency other than CAD are skipped.'
+                : ' Categories are matched by name.'}
             </p>
             <div className="wizard-footer">
               <button type="button" onClick={onBack}>

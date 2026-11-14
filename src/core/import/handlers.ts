@@ -6,6 +6,7 @@ import {
   type ImportFormat,
 } from './commit'
 import { looksLikeMint, mapMint } from './mint'
+import { looksLikeMonarch, mapMonarch } from './monarch'
 import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
 import { looksLikeOfx, parseOfx } from './ofx'
 import { guessHeaderRow, parseCsv, type Delimiter } from './csv'
@@ -151,7 +152,7 @@ function buildPlan(db: Database.Database, req: PreviewRequest) {
   return { mapped, plan, currency }
 }
 
-export type MultiSource = 'Mint' | 'Wealthsimple'
+export type MultiSource = 'Mint' | 'Monarch' | 'Wealthsimple'
 
 export interface MintInspection {
   /** Which multi-account export this is; the name is kept for the existing API. */
@@ -259,9 +260,10 @@ function decide(
   })
 }
 
-/** Recognise a multi-account export (Mint or Wealthsimple) and map it; null for anything else. */
+/** Recognise a multi-account export (Mint, Monarch or Wealthsimple) and map it; null for anything else. */
 function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResult } | null {
   if (looksLikeMint(rows)) return { source: 'Mint', mapped: mapMint(rows) }
+  if (looksLikeMonarch(rows)) return { source: 'Monarch', mapped: mapMonarch(rows) }
   if (looksLikeWealthsimple(rows)) return { source: 'Wealthsimple', mapped: mapWealthsimple(rows) }
   return null
 }
@@ -270,7 +272,7 @@ function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResul
 function mintGroups(db: Database.Database, req: MintRequest) {
   const { rows } = parseCsv(req.text)
   const found = mapMulti(rows)
-  if (!found) throw new Error('This is not a Mint or Wealthsimple export')
+  if (!found) throw new Error('This is not a Mint, Monarch or Wealthsimple export')
   const all = found.mapped
   const existing = loadExistingForMatching(db)
   const names = [...new Set(all.candidates.map((c) => c.accountName ?? ''))]
@@ -402,7 +404,7 @@ export function createImportHandlers(db: Database.Database) {
           ...commitImport(db, {
             accountId: g.accountId,
             sourceName: req.sourceName,
-            // Wealthsimple batches are stored as csv; the batch format column has no such value.
+            // Only Mint has its own batch format value; Monarch and Wealthsimple are stored as csv.
             format: g.source === 'Mint' ? ('mint' as const) : ('csv' as const),
             fileHash: hashFileText(req.text),
             decisions: decide(db, g.accountId, g.plan, req.overrides),

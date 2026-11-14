@@ -2444,3 +2444,28 @@ details.card ul {
 .meter-share.neg {
   color: var(--neg);
 }
+
+/* In-app manual */
+.manual {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: var(--space-4, 1rem);
+  align-items: start;
+}
+.manual-toc {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  position: sticky;
+  top: 0;
+}
+.manual-body {
+  max-width: 46rem;
+}
+.manual-body p,
+.manual-body li {
+  line-height: 1.6;
+}
+.manual-body ul {
+  padding-left: 1.25rem;
+}

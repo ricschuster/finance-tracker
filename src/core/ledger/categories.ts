@@ -105,6 +105,16 @@ export function renameCategory(db: Database.Database, id: number, name: string):
   db.prepare('UPDATE categories SET name = ? WHERE id = ?').run(trimmed, id)
 }
 
+/** Change a category's kind (spending, income or transfer). Existing lines keep their amounts. */
+export function setCategoryKind(db: Database.Database, id: number, kind: CategoryKind): void {
+  if (!['expense', 'income', 'transfer'].includes(kind)) throw new Error('Unknown category kind')
+  const cat = db.prepare('SELECT is_system FROM categories WHERE id = ?').get(id) as
+    { is_system: number } | undefined
+  if (!cat) throw new Error(`Category ${id} not found`)
+  if (cat.is_system) throw new Error('System categories cannot be changed')
+  db.prepare('UPDATE categories SET kind = ? WHERE id = ?').run(kind, id)
+}
+
 /**
  * Delete a category. Its transaction lines move to `reassignTo` (default Uncategorized).
  * Rules and saved searches that point at it are repointed the same way.

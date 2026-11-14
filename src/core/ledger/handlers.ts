@@ -12,9 +12,11 @@ import {
   deleteCategories,
   deleteCategory,
   mergeCategory,
+  setCategoryKind,
   setCategoryStyle,
   listCategories,
   renameCategory,
+  type CategoryKind,
 } from './categories'
 import type { LedgerMethod } from './methods'
 import { listTags } from './tags'
@@ -44,6 +46,7 @@ export function createLedgerHandlers(db: Database.Database) {
     listCategories: () => listCategories(db),
     createCategory: (input: Parameters<typeof createCategory>[1]) => createCategory(db, input),
     renameCategory: (id: number, name: string) => renameCategory(db, id, name),
+    setCategoryKind: (id: number, kind: CategoryKind) => setCategoryKind(db, id, kind),
     deleteCategory: (id: number, reassignTo?: number) => deleteCategory(db, id, reassignTo),
     deleteCategories: (ids: number[], reassignTo?: number) => deleteCategories(db, ids, reassignTo),
     setCategoryStyle: (id: number, style: Parameters<typeof setCategoryStyle>[2]) =>

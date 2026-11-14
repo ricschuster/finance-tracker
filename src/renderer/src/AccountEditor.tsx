@@ -1,18 +1,22 @@
+import { Archive, ArchiveRestore, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { ACCOUNT_TYPES, type AccountImpact, type AccountType } from '../../core/ledger/accounts'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents, parseAmountToCents } from '../../core/money'
+import { accountTypeLabel } from './accountTypes'
 import type { LedgerState } from './useLedger'
 
-/** Edit, archive or delete the selected account. */
+/** Edit, archive or delete an account. Shown in the Edit account dialog. */
 export function AccountEditor({
   account,
   run,
   onDeleted,
+  onDone,
 }: {
   account: AccountWithBalance
   run: LedgerState['run']
   onDeleted: () => void
+  onDone?: () => void
 }) {
   const [name, setName] = useState(account.name)
   const [type, setType] = useState<AccountType>(account.type)
@@ -32,9 +36,8 @@ export function AccountEditor({
 
   return (
     <section className="account-editor" aria-label="Edit account">
-      <h3>Edit {account.name}</h3>
       <form
-        className="inline"
+        className="stack"
         onSubmit={(e) => {
           e.preventDefault()
           void run(() =>
@@ -43,44 +46,54 @@ export function AccountEditor({
               type,
               openingBalance: opening.trim() ? parseAmountToCents(opening) : 0,
             }),
-          )
+          ).then((ok) => {
+            if (ok) onDone?.()
+          })
         }}
       >
-        <label>
+        <label className="field">
           Name
           <input value={name} onChange={(e) => setName(e.target.value)} required />
         </label>
-        <label>
-          Type
-          <select value={type} onChange={(e) => setType(e.target.value as AccountType)}>
-            {ACCOUNT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Opening balance
-          <input value={opening} onChange={(e) => setOpening(e.target.value)} />
-        </label>
-        <button type="submit">Save</button>
+        <div className="form-grid">
+          <label className="field">
+            Type
+            <select value={type} onChange={(e) => setType(e.target.value as AccountType)}>
+              {ACCOUNT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {accountTypeLabel(t)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            Opening balance
+            <input value={opening} onChange={(e) => setOpening(e.target.value)} />
+          </label>
+        </div>
+        <div className="dialog-actions split">
+          <div className="account-actions">
+            <button
+              type="button"
+              onClick={() =>
+                void run(() =>
+                  window.api.ledger.updateAccount(account.id, { archived: !account.archived }),
+                ).then((ok) => {
+                  if (ok) onDone?.()
+                })
+              }
+            >
+              {account.archived ? <ArchiveRestore size={15} /> : <Archive size={15} />}
+              {account.archived ? 'Unarchive' : 'Archive'}
+            </button>
+            <button type="button" className="danger" onClick={startDelete}>
+              <Trash2 size={15} />
+              Delete
+            </button>
+          </div>
+          <button type="submit">Save</button>
+        </div>
       </form>
-      <div className="account-actions">
-        <button
-          type="button"
-          onClick={() =>
-            void run(() =>
-              window.api.ledger.updateAccount(account.id, { archived: !account.archived }),
-            )
-          }
-        >
-          {account.archived ? 'Unarchive' : 'Archive'}
-        </button>
-        <button type="button" onClick={startDelete}>
-          Delete
-        </button>
-      </div>
       {impact && (
         <div className="category-delete" role="alert">
           <p>
@@ -94,6 +107,7 @@ export function AccountEditor({
           </p>
           <button
             type="button"
+            className="danger solid"
             onClick={() =>
               void run(() =>
                 window.api.ledger.deleteAccount(account.id, { deleteTransactions: true }),

@@ -1,9 +1,20 @@
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Check,
+  Scale,
+  SlidersHorizontal,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { CategoryBadge } from './CategoryBadge'
+import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents } from '../../core/money'
 import type { Dashboard as DashboardData } from '../../core/reports/dashboard'
 import { DASHBOARD_WIDGETS, type DashboardWidgetId } from '../../core/reports/widgets'
-import { Bar, percent } from './Bars'
+import { Bar, percent, TrendChart } from './Bars'
+import { CategoryIcon, useCategoryLookup } from './CategoryBadge'
+import { PageActions } from './PageActions'
+import { Empty, PayeeAvatar } from './ui'
 
 const todayIso = () => {
   const d = new Date()
@@ -13,18 +24,24 @@ const todayIso = () => {
 const monthName = (ym: string) =>
   new Date(`${ym}-01T00:00:00`).toLocaleString('en-CA', { month: 'short' })
 
+const shortDate = (iso: string) =>
+  new Date(`${iso}T00:00:00`).toLocaleString('en-CA', { month: 'short', day: 'numeric' })
+
 export function Dashboard({
   version,
+  accounts,
   onOpenCategory,
   onReviewUncategorized,
 }: {
   version: number
+  accounts: AccountWithBalance[]
   onOpenCategory: (categoryId: number, from: string, to: string) => void
   onReviewUncategorized: () => void
 }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [shown, setShown] = useState<DashboardWidgetId[] | null>(null)
   const [customizing, setCustomizing] = useState(false)
+  const category = useCategoryLookup()
 
   useEffect(() => {
     void window.api.reports.getDashboardWidgets().then(setShown)
@@ -51,26 +68,23 @@ export function Dashboard({
   const show = (id: DashboardWidgetId) => shown.includes(id)
   const { summary, previousSpending, period } = data
   const delta = summary.spending - previousSpending
-  const maxTrend = Math.max(1, ...data.trend.flatMap((t) => [t.income, t.spending]))
-  const monthLabel = new Date(`${period.from}T00:00:00`).toLocaleString('en-CA', {
-    month: 'long',
-    year: 'numeric',
-  })
+  const maxCategory = Math.max(1, ...data.topCategories.map((c) => c.total))
+  const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? ''
 
   return (
     <section aria-label="Dashboard" className="dashboard">
-      <div className="dash-header">
-        <h2>{monthLabel}</h2>
+      <PageActions>
         <button
           type="button"
           aria-expanded={customizing}
           onClick={() => setCustomizing(!customizing)}
         >
-          Customize
+          {customizing ? <Check size={15} /> : <SlidersHorizontal size={15} />}
+          {customizing ? 'Done' : 'Customize'}
         </button>
-      </div>
+      </PageActions>
       {customizing && (
-        <fieldset className="dash-customize">
+        <fieldset className="dash-customize card">
           <legend>Show on the dashboard</legend>
           {DASHBOARD_WIDGETS.map((w) => (
             <label key={w.id}>
@@ -79,71 +93,142 @@ export function Dashboard({
           ))}
         </fieldset>
       )}
-      <div className="stat-row">
-        {show('income') && (
-          <div className="stat">
-            <span className="muted">Income</span>
-            <strong className="pos">{formatCents(summary.income)}</strong>
-          </div>
-        )}
-        {show('spending') && (
-          <div className="stat">
-            <span className="muted">Spending</span>
-            <strong>{formatCents(summary.spending)}</strong>
-            <span className="muted">
-              {previousSpending === 0 && summary.spending === 0
-                ? 'Nothing yet'
-                : `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${formatCents(Math.abs(delta))} vs last month so far`}
-            </span>
-          </div>
-        )}
-        {show('net') && (
-          <div className="stat">
-            <span className="muted">Net</span>
-            <strong className={summary.net < 0 ? 'neg' : 'pos'}>{formatCents(summary.net)}</strong>
-            <span className="muted">
-              {summary.savingsRate === null
-                ? 'No income yet'
-                : `Savings rate ${percent(summary.savingsRate)}`}
-            </span>
-          </div>
-        )}
-      </div>
 
       {show('review') && data.uncategorizedCount > 0 && (
-        <p className="notice">
-          {data.uncategorizedCount} uncategorized transaction
-          {data.uncategorizedCount === 1 ? '' : 's'}.{' '}
-          <button type="button" onClick={onReviewUncategorized}>
+        <div className="banner" role="status">
+          <AlertCircle size={18} />
+          <span className="grow">
+            <strong>
+              {data.uncategorizedCount} uncategorized transaction
+              {data.uncategorizedCount === 1 ? '' : 's'}
+            </strong>{' '}
+            <span className="muted">need a category.</span>
+          </span>
+          <button type="button" className="small" onClick={onReviewUncategorized}>
             Review
           </button>
-        </p>
+        </div>
+      )}
+
+      {(show('income') || show('spending') || show('net')) && (
+        <div className="stat-row">
+          {show('income') && (
+            <div className="stat">
+              <div className="stat-head">
+                <span>Income</span>
+                <span className="stat-icon pos" aria-hidden="true">
+                  <ArrowDownLeft size={16} />
+                </span>
+              </div>
+              <strong>{formatCents(summary.income)}</strong>
+              <span className="muted">This month</span>
+            </div>
+          )}
+          {show('spending') && (
+            <div className="stat">
+              <div className="stat-head">
+                <span>Spending</span>
+                <span className="stat-icon neg" aria-hidden="true">
+                  <ArrowUpRight size={16} />
+                </span>
+              </div>
+              <strong>{formatCents(summary.spending)}</strong>
+              <span className="muted">
+                {previousSpending === 0 && summary.spending === 0
+                  ? 'Nothing yet'
+                  : `${delta > 0 ? '+' : delta < 0 ? '-' : ''}${formatCents(Math.abs(delta))} vs last month so far`}
+              </span>
+            </div>
+          )}
+          {show('net') && (
+            <div className="stat">
+              <div className="stat-head">
+                <span>Net</span>
+                <span className="stat-icon accent" aria-hidden="true">
+                  <Scale size={16} />
+                </span>
+              </div>
+              <strong className={summary.net < 0 ? 'neg' : 'pos'}>
+                {formatCents(summary.net)}
+              </strong>
+              <span className="muted">
+                {summary.savingsRate === null
+                  ? 'No income yet'
+                  : `Savings rate ${percent(summary.savingsRate)}`}
+              </span>
+            </div>
+          )}
+        </div>
       )}
 
       <div className="dash-grid">
         {show('topCategories') && (
-          <div>
-            <h3>Top categories</h3>
+          <div className="card">
+            <div className="card-header">
+              <h3>Top categories</h3>
+              <span className="subtle">{formatCents(summary.spending)} spent</span>
+            </div>
             {data.topCategories.length === 0 ? (
-              <p className="muted">No spending this month.</p>
+              <Empty title="No spending this month" />
+            ) : (
+              <ul className="meter-list">
+                {data.topCategories.map((c) => {
+                  const cat = category(c.categoryId)
+                  return (
+                    <li key={c.categoryId}>
+                      <button
+                        type="button"
+                        className="meter"
+                        onClick={() => onOpenCategory(c.categoryId, period.from, period.to)}
+                      >
+                        <CategoryIcon color={cat?.color} icon={cat?.icon} />
+                        <span className="meter-name">{c.name}</span>
+                        <span className="meter-value">{formatCents(c.total)}</span>
+                        <Bar fraction={c.total / maxCategory} color={cat?.color} />
+                        <span className="meter-share">{percent(c.share)}</span>
+                      </button>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+        {show('trend') && (
+          <div className="card">
+            <div className="card-header">
+              <h3>Last six months</h3>
+            </div>
+            <TrendChart
+              data={data.trend.map((t) => ({ key: t.month, label: monthName(t.month), ...t }))}
+            />
+          </div>
+        )}
+        {show('biggest') && (
+          <div className="card">
+            <div className="card-header">
+              <h3>Biggest this month</h3>
+            </div>
+            {data.biggest.length === 0 ? (
+              <Empty title="No transactions yet" />
             ) : (
               <table>
                 <tbody>
-                  {data.topCategories.map((c) => (
-                    <tr key={c.categoryId}>
+                  {data.biggest.map((t) => (
+                    <tr key={t.id}>
                       <td>
-                        <button
-                          type="button"
-                          className="link"
-                          onClick={() => onOpenCategory(c.categoryId, period.from, period.to)}
-                        >
-                          <CategoryBadge id={c.categoryId} showName />
-                        </button>
+                        <div className="txn-cell">
+                          <PayeeAvatar name={t.payee} />
+                          <div>
+                            {t.payee || 'No payee'}
+                            <span className="sub">
+                              {shortDate(t.date)} · {accountName(t.accountId)}
+                              {t.excludeFromBudgets ? ' · hidden from budgets' : ''}
+                            </span>
+                          </div>
+                        </div>
                       </td>
-                      <td>
-                        <Bar fraction={c.share} />
-                      </td>
-                      <td className="num">{formatCents(c.total)}</td>
+                      <td className="num">{formatCents(t.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -151,49 +236,9 @@ export function Dashboard({
             )}
           </div>
         )}
-        {show('trend') && (
-          <div>
-            <h3>Last six months</h3>
-            <table>
-              <tbody>
-                {data.trend.map((t) => (
-                  <tr key={t.month}>
-                    <td>{monthName(t.month)}</td>
-                    <td>
-                      <Bar fraction={t.income / maxTrend} tone="pos" />
-                      <Bar fraction={t.spending / maxTrend} />
-                    </td>
-                    <td className={`num ${t.net < 0 ? 'neg' : ''}`}>{formatCents(t.net)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
-
-      {show('biggest') && (
-        <>
-          <h3>Biggest this month</h3>
-          {data.biggest.length === 0 ? (
-            <p className="muted">None yet.</p>
-          ) : (
-            <table>
-              <tbody>
-                {data.biggest.map((t) => (
-                  <tr key={t.id}>
-                    <td>{t.date}</td>
-                    <td>{t.payee || 'No payee'}</td>
-                    <td className="num">{formatCents(t.amount)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </>
-      )}
       {shown.length === 0 && (
-        <p className="muted">Nothing selected. Use Customize to choose what to show.</p>
+        <Empty title="Your dashboard is empty">Use Customize to choose what to show.</Empty>
       )}
     </section>
   )

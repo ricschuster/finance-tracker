@@ -1,16 +1,18 @@
 import { useState } from 'react'
 import { ACCOUNT_TYPES, type AccountType } from '../../core/ledger/accounts'
 import { parseAmountToCents } from '../../core/money'
+import { accountTypeLabel } from './accountTypes'
 import type { LedgerState } from './useLedger'
 
-export function AccountForm({ run }: Pick<LedgerState, 'run'>) {
+/** New account form, shown in the Add account dialog. */
+export function AccountForm({ run, onDone }: Pick<LedgerState, 'run'> & { onDone?: () => void }) {
   const [name, setName] = useState('')
   const [type, setType] = useState<AccountType>('checking')
   const [opening, setOpening] = useState('')
 
   return (
     <form
-      className="inline"
+      className="stack"
       onSubmit={(e) => {
         e.preventDefault()
         void run(async () => {
@@ -21,28 +23,45 @@ export function AccountForm({ run }: Pick<LedgerState, 'run'>) {
           })
           setName('')
           setOpening('')
+        }).then((ok) => {
+          if (ok) onDone?.()
         })
       }}
     >
-      <label>
-        New account
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Name" required />
+      <label className="field">
+        Account name
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="e.g. Everyday chequing"
+          required
+          autoFocus
+        />
       </label>
-      <label>
-        Type
-        <select value={type} onChange={(e) => setType(e.target.value as AccountType)}>
-          {ACCOUNT_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {t.replace('_', ' ')}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Opening balance
-        <input value={opening} onChange={(e) => setOpening(e.target.value)} placeholder="0.00" />
-      </label>
-      <button type="submit">Add</button>
+      <div className="form-grid">
+        <label className="field">
+          Type
+          <select value={type} onChange={(e) => setType(e.target.value as AccountType)}>
+            {ACCOUNT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {accountTypeLabel(t)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="field">
+          Opening balance
+          <input
+            value={opening}
+            onChange={(e) => setOpening(e.target.value)}
+            placeholder="0.00"
+            inputMode="decimal"
+          />
+        </label>
+      </div>
+      <div className="dialog-actions">
+        <button type="submit">Add account</button>
+      </div>
     </form>
   )
 }

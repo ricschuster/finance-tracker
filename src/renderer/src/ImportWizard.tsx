@@ -232,7 +232,10 @@ export function ImportWizard({
   const confirm = useConfirm()
   const toast = useToast()
 
-  const account = accounts.find((a) => a.id === (accountId ?? accounts[0]?.id))
+  // With several accounts the user must choose, unless the profile or file name says which.
+  const [accountWhy, setAccountWhy] = useState<string | null>(null)
+  const account =
+    accounts.find((a) => a.id === accountId) ?? (accounts.length === 1 ? accounts[0] : undefined)
   const profile = useMemo(() => (info && map ? toProfile(info, map) : null), [info, map])
 
   const fail = (e: unknown) =>
@@ -274,12 +277,28 @@ export function ImportWizard({
     }
   }
 
+  /** Preselect an account when the file name mentions exactly one account name. */
+  function guessAccountFromName(fileName: string) {
+    const lower = fileName.toLowerCase()
+    const hits = accounts.filter(
+      (a) => a.name.trim().length >= 3 && lower.includes(a.name.trim().toLowerCase()),
+    )
+    if (hits.length === 1) {
+      setAccountId(hits[0]!.id)
+      setAccountWhy(`Preselected because the file name mentions "${hits[0]!.name}".`)
+    } else {
+      setAccountId(null)
+      setAccountWhy(null)
+    }
+  }
+
   async function openFile(f: { name: string; text: string }) {
     try {
       const ofx = await window.api.importer.inspectOfx(f.text)
       if (ofx) {
         setFile(f)
         setFormat('ofx')
+        guessAccountFromName(f.name)
         setInfo(null)
         setMap(null)
         setProfileId(null)
@@ -311,7 +330,11 @@ export function ImportWizard({
         setSource('saved')
         setGuess(null)
         setProfileId(i.matchedProfile.id)
-        if (i.matchedProfile.accountId) setAccountId(i.matchedProfile.accountId)
+        const linked = accounts.find((a) => a.id === i.matchedProfile?.accountId)
+        if (linked) {
+          setAccountId(linked.id)
+          setAccountWhy(`Preselected because the saved profile "${i.matchedProfile.name}" uses it.`)
+        } else guessAccountFromName(f.name)
         setStep('map')
       } else {
         // A known bank header wins over the heuristic guess.
@@ -326,6 +349,7 @@ export function ImportWizard({
           setSource('guess')
         }
         setProfileId(null)
+        guessAccountFromName(f.name)
         setStep('map')
       }
       setError(null)
@@ -459,6 +483,8 @@ export function ImportWizard({
     setFormat('csv')
     setMint(null)
     setForeign('skip')
+    setAccountId(null)
+    setAccountWhy(null)
     setError(null)
   }
 
@@ -495,13 +521,25 @@ export function ImportWizard({
   const accountSelect = (
     <label className="field">
       Import into
-      <select value={account?.id} onChange={(e) => setAccountId(num(e))}>
+      <select
+        value={account?.id ?? ''}
+        onChange={(e) => {
+          setAccountId(num(e))
+          setAccountWhy(null)
+        }}
+      >
+        {!account && (
+          <option value="" disabled>
+            Choose an account
+          </option>
+        )}
         {accounts.map((a: AccountWithBalance) => (
           <option key={a.id} value={a.id}>
             {a.name}
           </option>
         ))}
       </select>
+      {accountWhy && <span className="field-hint">{accountWhy}</span>}
     </label>
   )
   const fileCard = (extra?: React.ReactNode) => (
@@ -529,6 +567,8 @@ export function ImportWizard({
       : [],
   )
   const counts = preview?.summary.counts
+  /** Lines after the header row (and header itself) that could hold a transaction. */
+  const noRows = !!info && !!map && info.totalRows - map.headerRow - (map.hasHeader ? 1 : 0) <= 0
   /** A confidence pill next to a field label while the mapping is still the guess. */
   const conf = (field: 'date' | 'format' | 'desc' | 'amount') => {
     if (source !== 'guess' || !guess) return null
@@ -612,7 +652,12 @@ export function ImportWizard({
             <button type="button" onClick={reset}>
               Back
             </button>
-            <button type="button" className="primary" onClick={() => setStep('preview')}>
+            <button
+              type="button"
+              className="primary"
+              disabled={!account}
+              onClick={() => setStep('preview')}
+            >
               Preview
             </button>
           </div>
@@ -636,6 +681,12 @@ export function ImportWizard({
               setSource('guess')
             }}
           />
+          {noRows && (
+            <div className="error" role="alert">
+              <strong>This file has no transactions.</strong> It has no rows below the header, so
+              there is nothing to import. Choose another file.
+            </div>
+          )}
           <div className="card">
             {fileCard(
               <>
@@ -913,7 +964,7 @@ export function ImportWizard({
             <button
               type="button"
               className="primary"
-              disabled={!!livePreview?.error}
+              disabled={!!livePreview?.error || !account || noRows}
               onClick={() => setStep('preview')}
             >
               Preview
@@ -1116,7 +1167,11 @@ export function ImportWizard({
                 preview.errors.length === 0 &&
                 preview.skippedForeign.length === 0
                   ? 'Every row was imported before.'
-                  : 'No row in this file can be imported as it stands; see the notes above.'}
+                  : preview.errors.length > 0
+                    ? 'No row could be read; the rows that failed are listed below.'
+                    : preview.skippedForeign.length > 0
+                      ? 'Every row was in another currency and was skipped.'
+                      : 'This file has no transactions that can be imported.'}
               </Empty>
             )}
           </div>

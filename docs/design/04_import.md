@@ -259,7 +259,10 @@ IPC handlers follow the existing pattern in `core/ledger/handlers.ts`:
 
 ## UI
 
-A wizard in the renderer: choose file, choose account, map columns (skipped
+A wizard in the renderer: choose file, choose account (with more than one account there
+is no default: the picker reads "Choose an account" and Preview stays disabled until one is
+chosen; a saved profile's account, or exactly one account name appearing in the file name,
+preselects it with a small hint saying why; with a single account it is used as is), map columns (skipped
 when a profile matches), preview, import, summary with an Undo button.
 Keyboard friendly throughout. The preview groups rows by outcome and lets the
 user change the choice for possible matches in bulk or one by one.
@@ -378,3 +381,16 @@ a rule (description contains the `suggestPattern` phrase, set category) directly
 the preview and its picks. Rows already categorized by a rule do not offer one. The pattern
 helper moved to `core/rules/pattern.ts` so the renderer can use it without importing the
 database layer; `suggest.ts` re-exports it.
+
+## Empty files and first run
+
+A CSV with no rows below the header shows "This file has no transactions" at the mapping step
+and Preview is disabled. At the preview, the "Nothing to import" message names the real
+reason (every row a duplicate, no row readable, or every row in another currency) and never
+points to notes that are not there.
+
+On a database with no accounts the Dashboard shows a "Get started" checklist (add an account,
+import or add a transaction, optionally rules and budgets). It is derived from the data and
+disappears once there is an account and a transaction; there is no dismiss flag. The
+Transactions tab says "No transactions yet" with Add transaction and Import buttons when
+nothing exists, and guides to adding an account first when there are none.

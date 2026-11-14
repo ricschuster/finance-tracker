@@ -200,6 +200,7 @@ describe('reports', () => {
     expect(d.trend).toHaveLength(6)
     expect(d.trend[0]!.month).toBe('2026-06')
     expect(d.uncategorizedCount).toBe(1)
+    expect(d.transactionCount).toBeGreaterThan(0)
     expect(d.topCategories[0]!.name).toBe('Groceries')
   })
 

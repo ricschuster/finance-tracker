@@ -330,6 +330,10 @@ function Shell() {
                     onOpenRange={openRange}
                     onReviewUncategorized={() => go('review')}
                     onOpenBudgets={() => go('budgets')}
+                    onAddAccount={() => setDialog('account')}
+                    onAddTransaction={() => setDialog('transaction')}
+                    onImport={() => go('import')}
+                    onOpenRules={() => go('rules')}
                   />
                 )}
                 {view === 'reports' && (
@@ -388,6 +392,9 @@ function Shell() {
                     version={ledger.version}
                     accountId={accountId}
                     onAccountChange={setAccountId}
+                    onAddAccount={() => setDialog('account')}
+                    onAddTransaction={() => setDialog('transaction')}
+                    onImport={() => go('import')}
                     preset={preset}
                     onSuggestRule={(id) =>
                       void ledger.run(async () => {

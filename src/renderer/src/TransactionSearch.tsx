@@ -84,12 +84,18 @@ export function TransactionSearch({
   version,
   accountId,
   onAccountChange,
+  onAddAccount,
+  onAddTransaction,
+  onImport,
   onSuggestRule,
   preset,
 }: Pick<LedgerState, 'accounts' | 'categories' | 'run' | 'version'> & {
   accountId: number | null
   /** Picking an account in the filters scopes the list; null means all accounts. */
   onAccountChange: (accountId: number | null) => void
+  onAddAccount: () => void
+  onAddTransaction: () => void
+  onImport: () => void
   onSuggestRule: (id: number) => void
   /** A drill-down from reports; a new `key` replaces the filters with this category and range. */
   preset?: {
@@ -188,6 +194,7 @@ export function TransactionSearch({
     setFilters((f) => ({ ...f, [key]: value }))
 
   const shown = result?.transactions ?? []
+  const filtering = JSON.stringify(applied) !== JSON.stringify(empty)
   const toggle = (id: number) =>
     setSelected((prev) => {
       const next = new Set(prev)
@@ -638,6 +645,16 @@ export function TransactionSearch({
         categories={categories}
         run={run}
         showAccount={accountId === null}
+        emptyKind={
+          accounts.length === 0
+            ? 'noAccounts'
+            : result && !filtering && result.total === 0
+              ? 'noTransactions'
+              : 'noMatches'
+        }
+        onAddAccount={onAddAccount}
+        onAddTransaction={onAddTransaction}
+        onImport={onImport}
         onSuggestRule={onSuggestRule}
         selected={selected}
         onToggle={toggle}

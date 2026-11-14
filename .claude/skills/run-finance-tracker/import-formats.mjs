@@ -1,6 +1,6 @@
 // Click through OFX, QFX (fitid duplicate detection) and Mint import using test-data/import.
 import path from 'node:path'
-import { launch } from './lib.mjs'
+import { launch, chooseImportAccount } from './lib.mjs'
 
 const ROOT = path.resolve(import.meta.dirname, '../../..')
 const sample = (f) => path.join(ROOT, 'test-data/import', f)
@@ -12,6 +12,7 @@ async function start(file) {
   const another = page.getByRole('button', { name: 'Import another file' })
   if (await another.count()) await another.click()
   await page.getByRole('button', { name: /Choose file/ }).click()
+  await chooseImportAccount(page)
 }
 const text = async () => (await page.locator('section[aria-label="Import"]').innerText()).replace(/\n+/g, ' | ')
 

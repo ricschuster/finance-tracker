@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- First run: the Dashboard shows a Get started checklist (add an account, import or add a transaction, optional rules and budgets) until there is an account and a transaction. Transactions says "No transactions yet" with Add transaction and Import buttons, and asks for an account first when there are none.
+- Import: with more than one account the wizard asks you to choose one ("Choose an account") instead of silently using the first; a saved profile or a file name that mentions an account preselects it and says why. A file with no data rows shows "This file has no transactions" and cannot be previewed; the "Nothing to import" message no longer points to missing notes.
 - Add transaction and Transfer warn, without blocking, about a zero amount, an amount over $1,000,000 and a date more than a year ahead or 20 years back; Save anyway continues.
 - Invalid amounts now say what is wrong ("abc" is not an amount. Enter an amount like 12.50 (up to 2 decimals).) instead of only "Amount".
 - Review queue: the dashboard's uncategorized banner now opens a screen that steps through uncategorized transactions one at a time with the guessed category. Enter applies, R applies and saves a rule, S skips.

@@ -3,6 +3,8 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Check,
+  CircleCheck,
+  Circle,
   Scale,
   SlidersHorizontal,
   Target,
@@ -36,6 +38,10 @@ export function Dashboard({
   onOpenRange,
   onReviewUncategorized,
   onOpenBudgets,
+  onAddAccount,
+  onAddTransaction,
+  onImport,
+  onOpenRules,
 }: {
   version: number
   accounts: AccountWithBalance[]
@@ -43,6 +49,10 @@ export function Dashboard({
   onOpenRange: (from: string, to: string, direction?: 'expense' | 'income') => void
   onReviewUncategorized: () => void
   onOpenBudgets: () => void
+  onAddAccount: () => void
+  onAddTransaction: () => void
+  onImport: () => void
+  onOpenRules: () => void
 }) {
   const [data, setData] = useState<DashboardData | null>(null)
   const [shown, setShown] = useState<DashboardWidgetId[] | null>(null)
@@ -90,6 +100,10 @@ export function Dashboard({
   const delta = summary.spending - previousSpending
   const maxCategory = Math.max(1, ...data.topCategories.map((c) => c.total))
   const accountName = (id: number) => accounts.find((a) => a.id === id)?.name ?? ''
+  const hasAccount = accounts.length > 0
+  const hasTransactions = data.transactionCount > 0
+  // Until there is an account and a transaction the widgets would all be empty, so guide instead.
+  const gettingStarted = !hasAccount || !hasTransactions
 
   return (
     <section aria-label="Dashboard" className="dashboard">
@@ -114,7 +128,19 @@ export function Dashboard({
         </fieldset>
       )}
 
-      {show('review') && data.uncategorizedCount > 0 && (
+      {gettingStarted && (
+        <GetStarted
+          hasAccount={hasAccount}
+          hasTransactions={hasTransactions}
+          onAddAccount={onAddAccount}
+          onAddTransaction={onAddTransaction}
+          onImport={onImport}
+          onOpenRules={onOpenRules}
+          onOpenBudgets={onOpenBudgets}
+        />
+      )}
+
+      {!gettingStarted && show('review') && data.uncategorizedCount > 0 && (
         <div className="banner" role="status">
           <AlertCircle size={18} />
           <span className="grow">
@@ -130,7 +156,7 @@ export function Dashboard({
         </div>
       )}
 
-      {(show('income') || show('spending') || show('net')) && (
+      {!gettingStarted && (show('income') || show('spending') || show('net')) && (
         <div className="stat-row">
           {show('income') && (
             <StatTile
@@ -174,92 +200,170 @@ export function Dashboard({
         </div>
       )}
 
-      <div className="dash-grid">
-        {show('topCategories') && (
-          <div className="card">
-            <div className="card-header">
-              <h3>Top categories</h3>
-              <span className="subtle">{formatCents(summary.spending)} spent</span>
+      {!gettingStarted && (
+        <div className="dash-grid">
+          {show('topCategories') && (
+            <div className="card">
+              <div className="card-header">
+                <h3>Top categories</h3>
+                <span className="subtle">{formatCents(summary.spending)} spent</span>
+              </div>
+              {data.topCategories.length === 0 ? (
+                <Empty title="No spending this month" />
+              ) : (
+                <ul className="meter-list">
+                  {data.topCategories.map((c) => {
+                    const cat = category(c.categoryId)
+                    return (
+                      <li key={c.categoryId}>
+                        <button
+                          type="button"
+                          className="meter"
+                          onClick={() => onOpenCategory(c.categoryId, period.from, period.to)}
+                        >
+                          <CategoryIcon color={cat?.color} icon={cat?.icon} />
+                          <span className="meter-name">{c.name}</span>
+                          <span className="meter-value">{formatCents(c.total)}</span>
+                          <Bar fraction={c.total / maxCategory} color={cat?.color} />
+                          <span className="meter-share">{percent(c.share)}</span>
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
-            {data.topCategories.length === 0 ? (
-              <Empty title="No spending this month" />
-            ) : (
-              <ul className="meter-list">
-                {data.topCategories.map((c) => {
-                  const cat = category(c.categoryId)
-                  return (
-                    <li key={c.categoryId}>
-                      <button
-                        type="button"
-                        className="meter"
-                        onClick={() => onOpenCategory(c.categoryId, period.from, period.to)}
-                      >
-                        <CategoryIcon color={cat?.color} icon={cat?.icon} />
-                        <span className="meter-name">{c.name}</span>
-                        <span className="meter-value">{formatCents(c.total)}</span>
-                        <Bar fraction={c.total / maxCategory} color={cat?.color} />
-                        <span className="meter-share">{percent(c.share)}</span>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-          </div>
-        )}
-        {show('budgets') && budgets && <BudgetsWidget data={budgets} onOpen={onOpenBudgets} />}
-        {show('trend') && (
-          <div className="card">
-            <div className="card-header">
-              <h3>Last six months</h3>
+          )}
+          {show('budgets') && budgets && <BudgetsWidget data={budgets} onOpen={onOpenBudgets} />}
+          {show('trend') && (
+            <div className="card">
+              <div className="card-header">
+                <h3>Last six months</h3>
+              </div>
+              <TrendChart
+                data={data.trend.map((t) => ({ key: t.month, label: monthName(t.month), ...t }))}
+                onSelect={(month) => {
+                  const [y, m] = month.split('-').map(Number) as [number, number]
+                  const last = new Date(y, m, 0).getDate()
+                  onOpenRange(`${month}-01`, `${month}-${String(last).padStart(2, '0')}`)
+                }}
+              />
             </div>
-            <TrendChart
-              data={data.trend.map((t) => ({ key: t.month, label: monthName(t.month), ...t }))}
-              onSelect={(month) => {
-                const [y, m] = month.split('-').map(Number) as [number, number]
-                const last = new Date(y, m, 0).getDate()
-                onOpenRange(`${month}-01`, `${month}-${String(last).padStart(2, '0')}`)
-              }}
-            />
-          </div>
-        )}
-        {show('biggest') && (
-          <div className="card">
-            <div className="card-header">
-              <h3>Biggest this month</h3>
-            </div>
-            {data.biggest.length === 0 ? (
-              <Empty title="No transactions yet" />
-            ) : (
-              <table>
-                <tbody>
-                  {data.biggest.map((t) => (
-                    <tr key={t.id}>
-                      <td>
-                        <div className="txn-cell">
-                          <PayeeAvatar name={t.payee} />
-                          <div title={t.payee || undefined}>
-                            {t.payee || 'No payee'}
-                            <span className="sub">
-                              {shortDate(t.date)} · {accountName(t.accountId)}
-                              {t.excludeFromBudgets ? ' · hidden from budgets' : ''}
-                            </span>
+          )}
+          {show('biggest') && (
+            <div className="card">
+              <div className="card-header">
+                <h3>Biggest this month</h3>
+              </div>
+              {data.biggest.length === 0 ? (
+                <Empty title="No transactions yet" />
+              ) : (
+                <table>
+                  <tbody>
+                    {data.biggest.map((t) => (
+                      <tr key={t.id}>
+                        <td>
+                          <div className="txn-cell">
+                            <PayeeAvatar name={t.payee} />
+                            <div title={t.payee || undefined}>
+                              {t.payee || 'No payee'}
+                              <span className="sub">
+                                {shortDate(t.date)} · {accountName(t.accountId)}
+                                {t.excludeFromBudgets ? ' · hidden from budgets' : ''}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </td>
-                      <td className="num">{formatCents(t.amount)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        )}
-      </div>
-      {shown.length === 0 && (
+                        </td>
+                        <td className="num">{formatCents(t.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+      {!gettingStarted && shown.length === 0 && (
         <Empty title="Your dashboard is empty">Use Customize to choose what to show.</Empty>
       )}
     </section>
+  )
+}
+
+/** First-run checklist, derived from the data: it goes away once there is an account and a transaction. */
+function GetStarted(props: {
+  hasAccount: boolean
+  hasTransactions: boolean
+  onAddAccount: () => void
+  onAddTransaction: () => void
+  onImport: () => void
+  onOpenRules: () => void
+  onOpenBudgets: () => void
+}) {
+  const mark = (done: boolean) =>
+    done ? (
+      <CircleCheck size={20} className="pos" aria-label="Done" />
+    ) : (
+      <Circle size={20} className="subtle" aria-hidden="true" />
+    )
+  return (
+    <div className="card get-started" aria-label="Get started">
+      <div className="card-header">
+        <h3>Get started</h3>
+        <span className="subtle">Three short steps</span>
+      </div>
+      <ol className="checklist">
+        <li>
+          {mark(props.hasAccount)}
+          <div className="grow">
+            <strong>1. Add an account</strong>
+            <span className="subtle">A bank account, credit card, loan or cash.</span>
+          </div>
+          <button
+            type="button"
+            className={props.hasAccount ? undefined : 'primary'}
+            onClick={props.onAddAccount}
+          >
+            Add account
+          </button>
+        </li>
+        <li>
+          {mark(props.hasTransactions)}
+          <div className="grow">
+            <strong>2. Import a file or add a transaction</strong>
+            <span className="subtle">
+              Bring in a bank export, or type in a first transaction by hand.
+            </span>
+          </div>
+          <button
+            type="button"
+            className={props.hasAccount ? 'primary' : undefined}
+            onClick={props.onImport}
+          >
+            Import a file
+          </button>
+          <button type="button" disabled={!props.hasAccount} onClick={props.onAddTransaction}>
+            Add transaction
+          </button>
+        </li>
+        <li>
+          <Circle size={20} className="subtle" aria-hidden="true" />
+          <div className="grow">
+            <strong>3. Optional: set up rules and budgets</strong>
+            <span className="subtle">
+              Rules categorize new transactions for you; budgets track a monthly target.
+            </span>
+          </div>
+          <button type="button" onClick={props.onOpenRules}>
+            Rules
+          </button>
+          <button type="button" onClick={props.onOpenBudgets}>
+            Budgets
+          </button>
+        </li>
+      </ol>
+    </div>
   )
 }
 

@@ -17,6 +17,7 @@ export const MANUAL: ManualSection[] = [
     title: 'Getting started',
     blocks: [
       'This app keeps your finances in one place on your own computer. You add transactions by hand or import them from a file, the app sorts them into categories using rules you control, and reports show where your money goes. Nothing is sent anywhere: your data is a single database file on this machine.',
+      'On a fresh database the Dashboard shows a Get started checklist with buttons for each step. It disappears once you have an account and a transaction.',
       'A good first session:',
       {
         list: [
@@ -80,10 +81,11 @@ export const MANUAL: ManualSection[] = [
     title: 'Importing transactions',
     blocks: [
       'Import accepts CSV and Excel (.xlsx) files, OFX and QFX files, and exports from Mint, Monarch and Wealthsimple. Nothing is saved until you confirm the preview, and every import can be undone.',
-      'Single-account files (CSV, OFX, QFX): choose the account the file belongs to, the app guesses the columns from the header names and the values (dates and their order, amounts, text), or uses its RBC and Tangerine presets when it recognises the header, and labels the result as a guess with a confidence for each field. A table shows how the first rows will be read and updates as you change the header row, date column and format, amount columns or mode, description columns or sign; rows that cannot be read are highlighted with the reason. Mappings you save as profiles are remembered. Then review the preview.',
+      'Single-account files (CSV, OFX, QFX): choose the account the file belongs to (with more than one account you must pick one; it is preselected only when a saved profile or the file name points to it), the app guesses the columns from the header names and the values (dates and their order, amounts, text), or uses its RBC and Tangerine presets when it recognises the header, and labels the result as a guess with a confidence for each field. A table shows how the first rows will be read and updates as you change the header row, date column and format, amount columns or mode, description columns or sign; rows that cannot be read are highlighted with the reason. Mappings you save as profiles are remembered. Then review the preview.',
       'Multi-account files (Monarch, Mint, Wealthsimple): the file holds several accounts. For each one you choose an existing account or "Create a new account". Categories are matched by name; ones you do not have are created, or you can map them to one of yours.',
       'First-time setup: when moving over from another tool, tick "Setup import: replace my categories with the ones in this file". Your unused stock categories are then removed so the file\'s set takes over. Categories that already have transactions, rules or budgets are always kept. The preview lists what will go.',
       'In the preview each row is marked new, duplicate or possible duplicate. Duplicates are skipped. For possible duplicates you choose to merge into the existing transaction, add anyway or skip. Rows that look like the other half of a transfer can be linked. Card and loan payments are linked by default.',
+      'A file with a header but no rows shows "This file has no transactions" and cannot be previewed.',
       'Import history lists every batch. Undo removes what the batch added; if you edited any of those transactions, the app asks before deleting them.',
       'The Import folder option watches a folder (for example your Downloads) and offers new bank files from it.',
       {

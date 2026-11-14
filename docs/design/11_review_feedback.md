@@ -154,4 +154,3 @@ preview each unknown category has a selector that saves an alias and refreshes
 the preview. Merging a category keeps its old name as an alias of the survivor,
 so later imports that still use that name land in the right place. Deleting a
 category removes its aliases.
-

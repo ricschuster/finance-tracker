@@ -21,7 +21,7 @@ export const MANUAL: ManualSection[] = [
       {
         list: [
           'Import your history. If you are coming from Monarch, Mint or Wealthsimple, go to Import and choose the export file. The file creates your accounts, so you do not need to add any first.',
-          'Otherwise add an account with the + next to Accounts in the sidebar, then import a bank file into it, or add transactions by hand.',
+          'Otherwise add an account with Add account on the Accounts tab, then import a bank file into it, or add transactions by hand.',
           'Check the Categories tab and tidy it to match how you think about spending.',
           'Create rules for payees that come up again and again, then apply them to your past transactions.',
           'Open Dashboard and Reports to see the result, and set up Budgets for the categories you want to watch.',
@@ -46,11 +46,11 @@ export const MANUAL: ManualSection[] = [
     id: 'accounts',
     title: 'Accounts',
     blocks: [
-      'Accounts live in the sidebar, grouped by type (chequing, savings, credit card, cash, loan, other). Click one to see only its transactions; click Transactions to see everything.',
+      'Accounts are listed on the Accounts tab, grouped by type (chequing, savings, credit card, cash, loan, other). Click one to see only its transactions. On the Transactions tab, which shows everything, use Filters then Account to look at a single account.',
       {
         list: [
-          'Add an account with the + next to Accounts. Give it a name, a type and an opening balance.',
-          'Edit, archive or delete an account from its page. Archiving hides it from the sidebar but keeps its history in reports.',
+          'Add an account with Add account on the Accounts tab. Give it a name, a type and an opening balance.',
+          'Edit, archive or delete an account with Edit account on its row. Archiving moves it to the Archived card on the Accounts tab but keeps its history in reports.',
           'The balance shown is the opening balance plus every transaction. If it does not match your bank, you have a missing or duplicated transaction, or the opening balance is off.',
         ],
       },
@@ -124,7 +124,7 @@ export const MANUAL: ManualSection[] = [
     id: 'accounts',
     title: 'Accounts',
     blocks: [
-      'The Accounts tab (also opened by All accounts in the sidebar) lists every account with its type and balance, grouped as Cash, Credit cards, Loans and Other, with assets, owing and net worth on top. Cards and loans read Owing, and the owing amount is already included in net worth. Click an account to see its transactions. The Transactions tab always shows every account.',
+      'The Accounts tab lists every account with its type and balance, grouped as Cash, Credit cards, Loans and Other, with assets, owing and net worth on top. Cards and loans read Owing, and the owing amount is already included in net worth. Click an account to see its transactions, or use Edit account on its row to rename, archive or delete it. The Transactions tab always shows every account.',
     ],
   },
   {

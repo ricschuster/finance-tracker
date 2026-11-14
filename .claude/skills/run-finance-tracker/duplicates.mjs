@@ -21,16 +21,9 @@ console.log('accounts', ids)
 await page.reload()
 await page.getByRole('tab', { name: 'Dashboard' }).waitFor()
 
-// Sidebar: names only
-const sidebar = await page.getByRole('navigation', { name: 'Accounts' }).innerText()
-console.log('SIDEBAR:\n' + sidebar)
-console.log('has $ in sidebar accounts:', /\$/.test(sidebar.replace(/Net worth[\s\S]*?\n\n?/, '').split('All accounts')[1] ?? ''))
-
-// Transactions tab shows all accounts even after picking one
-await page.getByRole('navigation', { name: 'Accounts' }).getByRole('button', { name: 'Savings' }).click()
-console.log('title after account:', await page.locator('.page-header h2').innerText())
+// Transactions tab shows all accounts; the Account filter scopes to one
 await page.getByRole('tab', { name: 'Transactions' }).click()
-console.log('title after tab:', await page.locator('.page-header h2').innerText())
+console.log('title:', await page.locator('.page-header h2').innerText())
 console.log('subtitle:', await page.locator('.subtitle').innerText())
 
 // Duplicates

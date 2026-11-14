@@ -79,10 +79,13 @@ export function TransactionSearch({
   run,
   version,
   accountId,
+  onAccountChange,
   onSuggestRule,
   preset,
 }: Pick<LedgerState, 'accounts' | 'categories' | 'run' | 'version'> & {
   accountId: number | null
+  /** Picking an account in the filters scopes the list; null means all accounts. */
+  onAccountChange: (accountId: number | null) => void
   onSuggestRule: (id: number) => void
   /** A drill-down from reports; a new `key` replaces the filters with this category and range. */
   preset?: {
@@ -226,9 +229,9 @@ export function TransactionSearch({
   const hasSelection = selected.size > 0
   const total = result?.total ?? 0
 
-  const activeFilters = (Object.keys(empty) as (keyof Filters)[]).filter(
-    (k) => k !== 'text' && filters[k] !== empty[k],
-  ).length
+  const activeFilters =
+    (Object.keys(empty) as (keyof Filters)[]).filter((k) => k !== 'text' && filters[k] !== empty[k])
+      .length + (accountId !== null ? 1 : 0)
 
   return (
     <section aria-label="Search">
@@ -254,7 +257,14 @@ export function TransactionSearch({
           {activeFilters > 0 && <span className="count">{activeFilters}</span>}
         </button>
         {(activeFilters > 0 || filters.text) && (
-          <button type="button" className="ghost" onClick={() => setFilters(empty)}>
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => {
+              setFilters(empty)
+              onAccountChange(null)
+            }}
+          >
             <X size={15} />
             Clear
           </button>
@@ -365,6 +375,22 @@ export function TransactionSearch({
             <label>
               To
               <input type="date" value={filters.to} onChange={(e) => set('to', e.target.value)} />
+            </label>
+            <label>
+              Account
+              <select
+                aria-label="Account filter"
+                value={accountId ?? 0}
+                onChange={(e) => onAccountChange(Number(e.target.value) || null)}
+              >
+                <option value={0}>All accounts</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name}
+                    {a.archived ? ' (archived)' : ''}
+                  </option>
+                ))}
+              </select>
             </label>
             <label>
               Category

@@ -7,14 +7,17 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
-- Accounts tab: every account with type and balance, plus assets, owing and net worth; opened by
-  All accounts in the sidebar.
+- Accounts tab: every account with type and balance, plus assets, owing and net worth, with
+  an Edit account button on each row. The sidebar's "All accounts" entry is removed.
 - Find duplicates: "Keep first, delete rest" per group and "Keep one of each" for all groups, with
   one Undo; a group always keeps one row.
 - Find duplicates can match across accounts (on by default).
 
 ### Changed
 
+- The sidebar no longer lists accounts; use the Accounts tab, or the new Account filter on
+  Transactions.
+- Add account moved from the sidebar to the Accounts tab; the sidebar no longer shows net worth.
 - Sidebar account rows show names only; the "Owing" summary line is gone.
 - The Transactions tab always shows all accounts.
 

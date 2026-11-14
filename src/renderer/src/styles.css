@@ -645,9 +645,6 @@ td select {
 .nav-item .amount.neg {
   color: #ff9a8e;
 }
-.account-row {
-  position: relative;
-}
 .account-row .nav-item {
   padding-right: 10px;
 }

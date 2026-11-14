@@ -20,18 +20,11 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import type { RuleInput } from '../../core/rules/types'
-import { formatCents } from '../../core/money'
 import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import {
-  ACCOUNT_GROUPS,
-  ACCOUNT_ICONS,
-  accountTypeLabel,
-  balanceText,
-  isLiability,
-} from './accountTypes'
+import { accountTypeLabel, balanceText, isLiability } from './accountTypes'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { CategoryAliasProvider } from './CategorySelect'
@@ -120,6 +113,7 @@ export function App() {
 
 function Shell() {
   const [accountId, setAccountId] = useState<number | null>(null)
+  const [editId, setEditId] = useState<number | null>(null)
   const [info, setInfo] = useState<{ version: string; schemaVersion: number } | null>(null)
   const [view, setView] = useState<View>('dashboard')
   const [preset, setPreset] = useState<{
@@ -170,7 +164,10 @@ function Shell() {
       ? undefined
       : (ledger.accounts.find((a) => a.id === accountId) ??
         archived.find((a) => a.id === accountId))
-  const total = ledger.accounts.reduce((sum, a) => sum + a.balance, 0)
+  const editTarget =
+    editId === null
+      ? undefined
+      : (ledger.accounts.find((a) => a.id === editId) ?? archived.find((a) => a.id === editId))
 
   const navView: View = view === 'history' ? 'import' : view
   const title =
@@ -185,23 +182,6 @@ function Shell() {
           ? `${accountTypeLabel(selected.type)}${selected.archived ? ' (archived)' : ''} · ${isLiability(selected.type) ? '' : 'Balance '}${balanceText(selected.type, selected.balance)}`
           : `All accounts · ${ledger.accounts.length} account${ledger.accounts.length === 1 ? '' : 's'}`
         : SUBTITLES[view]
-
-  const accountButton = (a: AccountWithBalance) => {
-    const Icon = ACCOUNT_ICONS[a.type]
-    return (
-      <li key={a.id} className="account-row">
-        <button
-          type="button"
-          className="nav-item"
-          aria-current={accountId === a.id}
-          onClick={() => pickAccount(a.id)}
-        >
-          <Icon size={16} aria-hidden="true" />
-          <span className="grow">{a.name}</span>
-        </button>
-      </li>
-    )
-  }
 
   return (
     <CategoryStyleProvider value={ledger.categories}>
@@ -242,54 +222,6 @@ function Shell() {
                     </div>
                   ))}
                 </nav>
-                <nav aria-label="Accounts" className="nav-group">
-                  <div className="nav-heading">
-                    Accounts
-                    <button
-                      type="button"
-                      aria-label="Add account"
-                      title="Add account"
-                      onClick={() => setDialog('account')}
-                    >
-                      <Plus size={15} />
-                    </button>
-                  </div>
-                  <div className="net-worth">
-                    <span>Net worth</span>
-                    <strong className={total < 0 ? 'neg' : ''}>{formatCents(total)}</strong>
-                  </div>
-                  <ul>
-                    <li>
-                      <button
-                        type="button"
-                        className="nav-item"
-                        aria-current={view === 'accounts'}
-                        onClick={() => {
-                          setAccountId(null)
-                          go('accounts')
-                        }}
-                      >
-                        <span className="grow">All accounts</span>
-                      </button>
-                    </li>
-                  </ul>
-                  {ACCOUNT_GROUPS.map((g) => {
-                    const list = ledger.accounts.filter((a) => g.types.includes(a.type))
-                    if (list.length === 0) return null
-                    return (
-                      <div key={g.label}>
-                        <div className="account-type">{g.label}</div>
-                        <ul>{list.map(accountButton)}</ul>
-                      </div>
-                    )
-                  })}
-                  {archived.length > 0 && (
-                    <details>
-                      <summary>Archived ({archived.length})</summary>
-                      <ul>{archived.map(accountButton)}</ul>
-                    </details>
-                  )}
-                </nav>
               </div>
               <footer className="sidebar-footer">
                 <span title={info ? `Schema ${info.schemaVersion}` : undefined}>
@@ -308,7 +240,13 @@ function Shell() {
                   {view === 'ledger' && (
                     <>
                       {selected && (
-                        <button type="button" onClick={() => setDialog('editAccount')}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditId(accountId)
+                            setDialog('editAccount')
+                          }}
+                        >
                           <Pencil size={15} />
                           Edit account
                         </button>
@@ -387,7 +325,16 @@ function Shell() {
                   />
                 )}
                 {view === 'accounts' && (
-                  <Accounts accounts={ledger.accounts} archived={archived} onOpen={pickAccount} />
+                  <Accounts
+                    accounts={ledger.accounts}
+                    archived={archived}
+                    onOpen={pickAccount}
+                    onAdd={() => setDialog('account')}
+                    onEdit={(id) => {
+                      setEditId(id)
+                      setDialog('editAccount')
+                    }}
+                  />
                 )}
                 {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
                 {view === 'import' && (
@@ -412,11 +359,12 @@ function Shell() {
                 {view === 'history' && <ImportHistory run={ledger.run} />}
                 {view === 'ledger' && (
                   <TransactionSearch
-                    accounts={ledger.accounts}
+                    accounts={[...ledger.accounts, ...archived]}
                     categories={ledger.categories}
                     run={ledger.run}
                     version={ledger.version}
                     accountId={accountId}
+                    onAccountChange={setAccountId}
                     preset={preset}
                     onSuggestRule={(id) =>
                       void ledger.run(async () => {
@@ -447,18 +395,18 @@ function Shell() {
             <AccountForm run={ledger.run} onDone={() => setDialog(null)} />
           </Dialog>
           <Dialog
-            open={dialog === 'editAccount' && selected !== undefined}
+            open={dialog === 'editAccount' && editTarget !== undefined}
             onOpenChange={(o) => setDialog(o ? 'editAccount' : null)}
-            title={selected ? `Edit ${selected.name}` : 'Edit account'}
+            title={editTarget ? `Edit ${editTarget.name}` : 'Edit account'}
           >
-            {selected && (
+            {editTarget && (
               <AccountEditor
-                account={selected}
+                account={editTarget}
                 run={ledger.run}
                 onDone={() => setDialog(null)}
                 onDeleted={() => {
                   setDialog(null)
-                  setAccountId(null)
+                  if (accountId === editId) setAccountId(null)
                 }}
               />
             )}

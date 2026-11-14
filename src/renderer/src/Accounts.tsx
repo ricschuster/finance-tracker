@@ -1,5 +1,7 @@
+import { Pencil, Plus } from 'lucide-react'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents } from '../../core/money'
+import { PageActions } from './PageActions'
 import {
   ACCOUNT_GROUPS,
   ACCOUNT_ICONS,
@@ -12,10 +14,12 @@ interface Props {
   accounts: AccountWithBalance[]
   archived: AccountWithBalance[]
   onOpen: (accountId: number) => void
+  onEdit: (accountId: number) => void
+  onAdd: () => void
 }
 
 /** Every account with its type and balance, grouped like the sidebar; a row opens its transactions. */
-export function Accounts({ accounts, archived, onOpen }: Props) {
+export function Accounts({ accounts, archived, onOpen, onEdit, onAdd }: Props) {
   const assets = accounts.filter((a) => !isLiability(a.type)).reduce((s, a) => s + a.balance, 0)
   const owing = accounts
     .filter((a) => isLiability(a.type) && a.balance < 0)
@@ -39,9 +43,22 @@ export function Accounts({ accounts, archived, onOpen }: Props) {
               {a.name}
             </button>
           </td>
-          <td className="subtle">{accountTypeLabel(a.type)}</td>
+          <td className="subtle" style={{ width: 180 }}>
+            {accountTypeLabel(a.type)}
+          </td>
           <td className={a.balance < 0 && !isLiability(a.type) ? 'num neg' : 'num'}>
             {balanceText(a.type, a.balance)}
+          </td>
+          <td className="actions" style={{ width: 150, textAlign: 'right' }}>
+            <button
+              type="button"
+              className="small"
+              aria-label={`Edit account ${a.name}`}
+              onClick={() => onEdit(a.id)}
+            >
+              <Pencil size={14} />
+              Edit account
+            </button>
           </td>
         </tr>
       )
@@ -49,6 +66,12 @@ export function Accounts({ accounts, archived, onOpen }: Props) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+      <PageActions>
+        <button type="button" className="primary" onClick={onAdd}>
+          <Plus size={16} />
+          Add account
+        </button>
+      </PageActions>
       <div className="card">
         <table>
           <tbody>

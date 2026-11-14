@@ -49,7 +49,7 @@ All notable changes to this project are documented here. The format is based on
   one Undo; a group always keeps one row.
 - Find duplicates can match across accounts (on by default).
 
-### Changed
+### Changed (earlier)
 
 - The sidebar no longer lists accounts; use the Accounts tab, or the new Account filter on
   Transactions.

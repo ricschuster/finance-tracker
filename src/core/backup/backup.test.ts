@@ -31,13 +31,20 @@ import {
 } from './index'
 
 let dir: string
+// Windows cannot delete an open database file, so every handle a test opens is closed before cleanup.
+let handles: Database.Database[] = []
+const track = (db: Database.Database) => (handles.push(db), db)
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'ft-backup-'))
 })
-afterEach(() => rmSync(dir, { recursive: true, force: true }))
+afterEach(() => {
+  for (const h of handles) if (h.open) h.close()
+  handles = []
+  rmSync(dir, { recursive: true, force: true })
+})
 
 function seeded(path = join(dir, 'live.sqlite')) {
-  const db = openDatabase(path)
+  const db = track(openDatabase(path))
   const a = createAccount(db, { name: 'Chequing', type: 'checking' })
   createTransaction(db, { accountId: a, date: '2026-03-01', amount: -1234, payee: 'Safeway' })
   return { db, a, path }
@@ -53,7 +60,7 @@ describe('snapshot and validate', () => {
       ok: true,
       version: migrations.length,
     })
-    const copy = new Database(out, { readonly: true })
+    const copy = track(new Database(out, { readonly: true }))
     expect(copy.prepare('SELECT COUNT(*) AS n FROM transactions').get()).toEqual({ n: 1 })
   })
 
@@ -166,9 +173,9 @@ describe('restore', () => {
     const kept = applyPendingRestore(path, join(dir, 'keep'), new Date(2026, 10, 13, 1, 2, 3))
     expect(kept).toBe(join(dir, 'keep', 'pre-restore-20261113-010203.sqlite'))
 
-    const restored = openDatabase(path)
+    const restored = track(openDatabase(path))
     expect(restored.prepare('SELECT COUNT(*) AS n FROM transactions').get()).toEqual({ n: 1 })
-    const old = new Database(kept!, { readonly: true })
+    const old = track(new Database(kept!, { readonly: true }))
     expect(old.prepare('SELECT COUNT(*) AS n FROM transactions').get()).toEqual({ n: 2 })
     expect(applyPendingRestore(path, join(dir, 'keep'), new Date())).toBeNull()
   })

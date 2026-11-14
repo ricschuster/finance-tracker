@@ -98,7 +98,7 @@ export function SplitEditor(props: {
             ? remaining === 0
               ? 'Balanced'
               : `${formatCents(Math.abs(remaining))} ${remaining > 0 ? 'left to assign' : 'over'}`
-            : 'Invalid amount'}
+            : 'Amounts like 12.50'}
         </span>
         <span className="spacer" />
         <button type="button" className="ghost small" onClick={onClose}>

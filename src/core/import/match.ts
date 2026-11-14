@@ -139,11 +139,19 @@ export function planImport(
   return plan
 }
 
-export function summarisePlan(plan: PlanItem[]) {
+/**
+ * Totals for the preview. `skippedLines` are candidate lines a "skip on import" rule drops: they
+ * are counted under `skipped`, not under `new` and not in the money totals.
+ */
+export function summarisePlan(plan: PlanItem[], skippedLines: ReadonlySet<number> = new Set()) {
   let inflow = 0
   let outflow = 0
-  const counts = { new: 0, duplicate: 0, possible: 0 }
+  const counts = { new: 0, duplicate: 0, possible: 0, skipped: 0 }
   for (const p of plan) {
+    if (p.outcome === 'new' && skippedLines.has(p.candidate.line)) {
+      counts.skipped++
+      continue
+    }
     counts[p.outcome]++
     const adds = p.outcome === 'new' || (p.outcome === 'possible' && p.choice === 'new')
     if (adds) {

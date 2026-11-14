@@ -1,7 +1,7 @@
 // Example flow: search, rule, CSV import, undo. Writes screenshots to $SCREENSHOT_DIR.
 import fs from 'node:fs'
 import path from 'node:path'
-import { launch, pickCategory } from './lib.mjs'
+import { launch, pickCategory, chooseImportAccount } from './lib.mjs'
 
 const outDir = process.env.SCREENSHOT_DIR || '/tmp/ft-shots'
 const { app, page, errors, shot, stubOpenDialog } = await launch({ outDir })
@@ -26,6 +26,7 @@ await shot('rule-saved')
 await stubOpenDialog(csv)
 await page.getByRole('tab', { name: 'Import', exact: true }).click()
 await page.getByRole('button', { name: /Choose file/ }).click()
+await chooseImportAccount(page)
 await page.getByRole('button', { name: 'Preview', exact: true }).click()
 await shot('import-preview')
 await page.getByRole('button', { name: 'Import', exact: true }).last().click()

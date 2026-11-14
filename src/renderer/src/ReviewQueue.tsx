@@ -120,7 +120,7 @@ export function ReviewQueue({
         />
         {picked === null && item.guess && (
           <span className="subtle" title="Guessed from earlier transactions">
-            guess {item.guess.agree}/{item.guess.of}
+            {item.guess.similar ? 'similar guess' : 'guess'} {item.guess.agree}/{item.guess.of}
           </span>
         )}
       </div>

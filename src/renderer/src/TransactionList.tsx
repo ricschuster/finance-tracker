@@ -79,6 +79,10 @@ export function TransactionList({
   categories,
   run,
   showAccount,
+  emptyKind,
+  onAddAccount,
+  onAddTransaction,
+  onImport,
   onSuggestRule,
   selected,
   onToggle,
@@ -88,6 +92,11 @@ export function TransactionList({
   onSort,
 }: Pick<LedgerState, 'transactions' | 'accounts' | 'categories' | 'run'> & {
   showAccount: boolean
+  /** Why the list may be empty: nothing exists yet, or the filters match nothing. */
+  emptyKind: 'noAccounts' | 'noTransactions' | 'noMatches'
+  onAddAccount: () => void
+  onAddTransaction: () => void
+  onImport: () => void
   onSuggestRule: (transactionId: number) => void
   selected: ReadonlySet<number>
   onToggle: (id: number) => void
@@ -115,9 +124,33 @@ export function TransactionList({
   if (transactions.length === 0)
     return (
       <div className="card">
-        <Empty icon={<Receipt size={28} />} title="No matching transactions">
-          Try clearing the search or filters.
-        </Empty>
+        {emptyKind === 'noAccounts' ? (
+          <Empty icon={<Receipt size={28} />} title="No accounts yet">
+            Add an account first, then add or import transactions into it.
+            <div className="empty-actions">
+              <button type="button" className="primary" onClick={onAddAccount}>
+                Add account
+              </button>
+            </div>
+          </Empty>
+        ) : emptyKind === 'noTransactions' ? (
+          <Empty icon={<Receipt size={28} />} title="No transactions yet">
+            Add one by hand, or import a bank file.
+            <div className="empty-actions">
+              <button type="button" className="primary" onClick={onAddTransaction}>
+                Add transaction
+              </button>
+              <button type="button" onClick={onImport}>
+                Import
+              </button>
+            </div>
+          </Empty>
+        ) : (
+          <Empty icon={<Receipt size={28} />} title="No matching transactions">
+            Try clearing the search or filters. Search matches words inside payee, description,
+            notes, tags and categories; quotes group a phrase and punctuation is ignored.
+          </Empty>
+        )}
       </div>
     )
   return (
@@ -136,7 +169,7 @@ export function TransactionList({
             {head('date', 'Date')}
             {head('payee', 'Payee')}
             {head('category', 'Category')}
-            {head('status', 'Status')}
+            {head('status', 'Status', 'col-status')}
             {head('amount', 'Amount', 'num')}
             <th />
           </tr>
@@ -160,7 +193,13 @@ export function TransactionList({
                   <td className="nowrap muted">{displayDate(t.date)}</td>
                   <td className="payee">
                     <div className="payee-name">
-                      {t.payee || t.rawDescription || <span className="muted">(none)</span>}
+                      {t.payee || t.rawDescription ? (
+                        <span className="payee-text" title={t.payee || t.rawDescription}>
+                          {t.payee || t.rawDescription}
+                        </span>
+                      ) : (
+                        <span className="muted">(none)</span>
+                      )}
                       {t.notes && (
                         <button
                           type="button"
@@ -225,7 +264,7 @@ export function TransactionList({
                       </span>
                     )}
                   </td>
-                  <td className="nowrap">
+                  <td className="nowrap col-status">
                     <span className={STATUS_PILL[t.status] ?? 'pill'}>{t.status}</span>
                     {t.excludeFromBudgets && (
                       <span

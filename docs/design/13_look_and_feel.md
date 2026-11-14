@@ -103,3 +103,13 @@ avoid a flash. System is the default.
 - Toast: changing a category in the list no longer opens a dialog. A bottom toast offers
   Create rule, dismisses itself after 8 seconds, pauses while hovered or focused, and is
   replaced by the next one. `ToastProvider` and `useToast` live in `ui.tsx`.
+
+## Narrow windows and long text
+
+- Below 1000px the page header wraps, content padding shrinks and the Transactions Status column is hidden.
+  Below 900px the sidebar is an icon rail (56px); nav tabs carry `aria-label` and `title` so
+  role and name lookups still work.
+- Long text never widens a table: a cell that should take the leftover width uses `width: 100%` with
+  `max-width: 0` and an ellipsis, with the full text in a `title`. Grid children that hold such text use
+  `minmax(0, 1fr)`. Stat tiles are buttons when clickable, so `.stat.clickable` resets the global button
+  height, alignment and nowrap.

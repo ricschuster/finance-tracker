@@ -304,7 +304,7 @@ export function Reports({
                         <td>
                           <div className="txn-cell">
                             <PayeeAvatar name={p.payee} />
-                            <div>
+                            <div title={p.payee}>
                               {p.payee}
                               <span className="sub">
                                 {p.count} transaction{p.count === 1 ? '' : 's'}
@@ -333,7 +333,7 @@ export function Reports({
                         <td>
                           <div className="txn-cell">
                             <PayeeAvatar name={t.payee} />
-                            <div>
+                            <div title={t.payee || undefined}>
                               {t.payee || 'No payee'}
                               <span className="sub">
                                 {displayDate(t.date)} · {accountName(t.accountId)}

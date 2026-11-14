@@ -6,7 +6,13 @@ import type { Transaction } from '../ledger/transactions'
 export interface ReviewItem {
   transaction: Transaction
   /** What the same description was filed under before, when earlier rows mostly agree. */
-  guess: { categoryId: number; categoryName: string; agree: number; of: number } | null
+  guess: {
+    categoryId: number
+    categoryName: string
+    agree: number
+    of: number
+    similar: boolean
+  } | null
 }
 
 /**
@@ -33,7 +39,13 @@ export function reviewQueue(db: Database.Database, limit = 500): ReviewItem[] {
       return {
         transaction: t,
         guess: g
-          ? { categoryId: g.id, categoryName: names.get(g.id) ?? '', agree: g.agree, of: g.of }
+          ? {
+              categoryId: g.id,
+              categoryName: names.get(g.id) ?? '',
+              agree: g.agree,
+              of: g.of,
+              similar: g.similar,
+            }
           : null,
       }
     })

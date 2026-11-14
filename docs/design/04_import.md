@@ -80,8 +80,10 @@ A profile says how columns become fields. It is stored per bank and reused.
   expenses negative and income positive. Credit card exports often show
   purchases as positive, so flipping is per profile.
 - **Decimal separator**: `.` or `,`, with thousands separators and currency
-  symbols ignored. Quebec exports use `1 234,56`. This extends
-  `parseAmountToCents`, which today assumes a dot.
+  symbols ignored. Quebec exports use `1 234,56`. `parseAmountToCents`
+  (used by the entry forms) now reads a decimal comma too: `5,5` is 5.50, `1.234,56`
+  is 1234.56, and an ambiguous lone `1,234` stays 1234.00. Entry forms also warn,
+  without blocking, on zero or over-$1,000,000 amounts and far-off dates.
 - Optional fields: payee, memo, status, balance (unused except for a
   sanity check), category and tags (Mint only).
 - `rawDescription` may join several columns with a space (some banks split
@@ -257,7 +259,10 @@ IPC handlers follow the existing pattern in `core/ledger/handlers.ts`:
 
 ## UI
 
-A wizard in the renderer: choose file, choose account, map columns (skipped
+A wizard in the renderer: choose file, choose account (with more than one account there
+is no default: the picker reads "Choose an account" and Preview stays disabled until one is
+chosen; a saved profile's account, or exactly one account name appearing in the file name,
+preselects it with a small hint saying why; with a single account it is used as is), map columns (skipped
 when a profile matches), preview, import, summary with an Undo button.
 Keyboard friendly throughout. The preview groups rows by outcome and lets the
 user change the choice for possible matches in bulk or one by one.
@@ -367,6 +372,25 @@ common category is used when at least 60% of those transactions agree (for examp
 confirming; a pick beats rules and is applied after them. Nothing is learned silently: there
 is no model, only the user's own filing history.
 
+### Similar descriptions in the history guess
+
+When the exact `suggestPattern` key was never seen, `guessFromHistory` pools the earlier rows
+whose pattern is similar (same direction, same number of words, same order) and applies the same
+60% agreement threshold to the pooled counts. "SAFWAY STORE 9" then shares guesses with
+"SAFEWAY #4412". An exact match always wins, even if it is a single row, and similar spellings are
+never pooled into it. To avoid over-matching, a word may differ only when both words have at
+least 6 letters (one typo up to 8 letters, two beyond, as in `fuzzy.ts`); shorter words must be
+identical, so "shall" and "shell", or "tim" and "tom", stay apart. The preview and the review
+queue label such a guess "similar guess n/m" instead of "guess n/m". Answers are memoised per
+pattern within one preview. Measured on `test-data/import/large/generic-large.csv` (2000 rows)
+against 3000 synthetic history patterns: about 220 ms before, about 250 ms after; the worst case
+(every row a distinct unseen description) is about 1.8 s.
+
+### Skipped rows in the summary
+
+The summary tiles leave out rows a skip rule drops: they count under "Skipped by rule" (shown
+only when there are any), not under New, Money in or Money out. Import anyway moves a row back.
+
 ### Learning from a correction
 
 Picking a category in the preview that differs from the current one (guess, file category or
@@ -376,3 +400,16 @@ a rule (description contains the `suggestPattern` phrase, set category) directly
 the preview and its picks. Rows already categorized by a rule do not offer one. The pattern
 helper moved to `core/rules/pattern.ts` so the renderer can use it without importing the
 database layer; `suggest.ts` re-exports it.
+
+## Empty files and first run
+
+A CSV with no rows below the header shows "This file has no transactions" at the mapping step
+and Preview is disabled. At the preview, the "Nothing to import" message names the real
+reason (every row a duplicate, no row readable, or every row in another currency) and never
+points to notes that are not there.
+
+On a database with no accounts the Dashboard shows a "Get started" checklist (add an account,
+import or add a transaction, optionally rules and budgets). It is derived from the data and
+disappears once there is an account and a transaction; there is no dismiss flag. The
+Transactions tab says "No transactions yet" with Add transaction and Import buttons when
+nothing exists, and guides to adding an account first when there are none.

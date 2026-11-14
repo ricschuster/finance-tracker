@@ -1,7 +1,7 @@
 // Import preview: category guessed from history, a "skip on import" rule, picking a category, Import anyway.
 import fs from 'node:fs'
 import path from 'node:path'
-import { launch } from './lib.mjs'
+import { launch, chooseImportAccount } from './lib.mjs'
 const outDir = process.env.SCREENSHOT_DIR ?? '/tmp/ft-shots'
 const { page, errors, shot, stubOpenDialog } = await launch({ outDir })
 const past = await page.evaluate(async () => {
@@ -26,6 +26,7 @@ console.log('rule chips:', (await page.locator('.chip').allInnerTexts()).join(' 
 await stubOpenDialog(csv)
 await page.getByRole('tab', { name: 'Import', exact: true }).click()
 await page.getByRole('button', { name: /Choose file/ }).click()
+await chooseImportAccount(page)
 await page.getByRole('button', { name: 'Preview', exact: true }).click()
 await page.waitForTimeout(500)
 await shot('import-guess')

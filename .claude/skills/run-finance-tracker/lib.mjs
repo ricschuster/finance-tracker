@@ -43,3 +43,10 @@ export async function pickCategory(scope, label, name, { exact = false, nth = 0 
   await scope.getByLabel('Filter categories').fill(name)
   await scope.getByRole('option', { name, exact: true }).first().click()
 }
+
+/** Choose the account in the import wizard when it asks (several accounts); a no-op otherwise. */
+export async function chooseImportAccount(page, label = 'Chequing') {
+  const select = page.getByLabel('Import into')
+  await select.waitFor({ timeout: 3000 }).catch(() => {})
+  if (await select.count()) await select.selectOption({ label })
+}

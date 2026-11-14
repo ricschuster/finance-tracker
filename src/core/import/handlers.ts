@@ -227,7 +227,10 @@ function makePreview(
         : []),
       ...sanityWarnings(plan, account.type, today()),
     ],
-    summary: summarisePlan(plan),
+    summary: summarisePlan(
+      plan,
+      new Set([...enriched].filter(([, e]) => e.skippedByRule).map(([line]) => line)),
+    ),
   }
 }
 

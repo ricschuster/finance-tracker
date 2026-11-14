@@ -23,6 +23,8 @@ export interface Dashboard {
   biggest: BigTransaction[]
   /** Transactions still in Uncategorized, all time, transfers excluded. */
   uncategorizedCount: number
+  /** Every transaction in the database, so the app can tell a fresh start from an empty month. */
+  transactionCount: number
 }
 
 /** `today` is an ISO date, passed in so the result is deterministic in tests. */
@@ -56,5 +58,7 @@ export function dashboard(db: Database.Database, today: string, f: ReportFilter 
     trend: monthlyTrend(db, trendPeriod, f),
     biggest: biggestTransactions(db, period, 5, f),
     uncategorizedCount: uncategorized.n,
+    transactionCount: (db.prepare('SELECT COUNT(*) AS n FROM transactions').get() as { n: number })
+      .n,
   }
 }

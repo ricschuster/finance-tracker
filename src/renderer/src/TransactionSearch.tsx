@@ -1,4 +1,13 @@
-import { Bookmark, Eye, EyeOff, Search, SlidersHorizontal, Trash2, X } from 'lucide-react'
+import {
+  Bookmark,
+  CircleHelp,
+  Eye,
+  EyeOff,
+  Search,
+  SlidersHorizontal,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatCents, parseAmountToCents } from '../../core/money'
 import type { TransactionStatus } from '../../core/ledger/transactions'
@@ -6,7 +15,8 @@ import type { SavedSearch } from '../../core/search/saved'
 import type { SearchQuery, SearchResult, SortKey } from '../../core/search/query'
 import { CategorySelect } from './CategorySelect'
 import { TransactionList } from './TransactionList'
-import { ActionMenu, useAlert, useConfirm } from './ui'
+import { ActionMenu, Dialog, useAlert, useConfirm } from './ui'
+import { SearchHelpBody } from './Shortcuts'
 import type { LedgerState } from './useLedger'
 
 const PAGE = 500
@@ -84,12 +94,18 @@ export function TransactionSearch({
   version,
   accountId,
   onAccountChange,
+  onAddAccount,
+  onAddTransaction,
+  onImport,
   onSuggestRule,
   preset,
 }: Pick<LedgerState, 'accounts' | 'categories' | 'run' | 'version'> & {
   accountId: number | null
   /** Picking an account in the filters scopes the list; null means all accounts. */
   onAccountChange: (accountId: number | null) => void
+  onAddAccount: () => void
+  onAddTransaction: () => void
+  onImport: () => void
   onSuggestRule: (id: number) => void
   /** A drill-down from reports; a new `key` replaces the filters with this category and range. */
   preset?: {
@@ -105,6 +121,7 @@ export function TransactionSearch({
   const [filters, setFilters] = useState<Filters>(empty)
   const [showMore, setShowMore] = useState(false)
   const [applied, setApplied] = useState<Filters>(empty)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [result, setResult] = useState<SearchResult | null>(null)
   const [badInput, setBadInput] = useState<string | null>(null)
   const [selected, setSelected] = useState<ReadonlySet<number>>(new Set())
@@ -188,6 +205,7 @@ export function TransactionSearch({
     setFilters((f) => ({ ...f, [key]: value }))
 
   const shown = result?.transactions ?? []
+  const filtering = JSON.stringify(applied) !== JSON.stringify(empty)
   const toggle = (id: number) =>
     setSelected((prev) => {
       const next = new Set(prev)
@@ -255,6 +273,18 @@ export function TransactionSearch({
             onChange={(e) => set('text', e.target.value)}
           />
         </div>
+        <button
+          type="button"
+          className="ghost icon small"
+          aria-label="How search works"
+          title="How search works"
+          onClick={() => setHelpOpen(true)}
+        >
+          <CircleHelp size={16} />
+        </button>
+        <Dialog open={helpOpen} onOpenChange={setHelpOpen} title="How search works">
+          <SearchHelpBody />
+        </Dialog>
         <button
           type="button"
           aria-expanded={showMore}
@@ -638,6 +668,16 @@ export function TransactionSearch({
         categories={categories}
         run={run}
         showAccount={accountId === null}
+        emptyKind={
+          accounts.length === 0
+            ? 'noAccounts'
+            : result && !filtering && result.total === 0
+              ? 'noTransactions'
+              : 'noMatches'
+        }
+        onAddAccount={onAddAccount}
+        onAddTransaction={onAddTransaction}
+        onImport={onImport}
         onSuggestRule={onSuggestRule}
         selected={selected}
         onToggle={toggle}

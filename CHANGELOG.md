@@ -7,6 +7,14 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- The category guess in the import preview and review queue now also works for misspelt or varied descriptions ("SAFWAY STORE 9" with "SAFEWAY #4412"), labelled "similar guess"; short words must still match exactly.
+- Design notes for payee cleanup suggestions and recurring payment detection (not built yet).
+- Keyboard shortcuts: `/` focuses the Transactions search, `n` opens Add transaction, `g` then `d`, `t`, `b`, `r`, `a` or `i` goes to Dashboard, Transactions, Budgets, Reports, Accounts or Import, and `?` lists them. A keyboard button in the sidebar footer opens the same list. Shortcuts are ignored while typing or in a dialog.
+- Search hint: a "How search works" popover next to the search box, and the empty result explains how terms are matched.
+- First run: the Dashboard shows a Get started checklist (add an account, import or add a transaction, optional rules and budgets) until there is an account and a transaction. Transactions says "No transactions yet" with Add transaction and Import buttons, and asks for an account first when there are none.
+- Import: with more than one account the wizard asks you to choose one ("Choose an account") instead of silently using the first; a saved profile or a file name that mentions an account preselects it and says why. A file with no data rows shows "This file has no transactions" and cannot be previewed; the "Nothing to import" message no longer points to missing notes.
+- Add transaction and Transfer warn, without blocking, about a zero amount, an amount over $1,000,000 and a date more than a year ahead or 20 years back; Save anyway continues.
+- Invalid amounts now say what is wrong ("abc" is not an amount. Enter an amount like 12.50 (up to 2 decimals).) instead of only "Amount".
 - Review queue: the dashboard's uncategorized banner now opens a screen that steps through uncategorized transactions one at a time with the guessed category. Enter applies, R applies and saves a rule, S skips.
 - Rule operator "is similar to": fuzzy text matching that ignores store numbers and tolerates typos, so one rule covers SAFEWAY #4412 and SAFWAY STORE 9.
 - Changing a category in the import preview offers a toast to create a rule for that description, so the next import needs no pick. It saves straight away without leaving the wizard.
@@ -18,8 +26,18 @@ All notable changes to this project are documented here. The format is based on
 - Dashboard drill-down: click the Income, Spending or Net tile, or a month in the six-month chart,
   to see the transactions behind the figure. Transactions has a Hide transfers filter for this.
 
+### Changed
+
+- The import preview's New, Money in and Money out tiles no longer count rows a skip rule drops; a Skipped by rule tile appears when there are any.
+- Search is predictable: a typed word prefix finds the word, `sho*` works like `sho`, quotes group a phrase, AND/OR/NOT/NEAR are plain words, stray quotes, parentheses and colons no longer return nothing, punctuation-only input (a lone `-`) is ignored, and apostrophes are optional (`mcdonalds` finds McDonald's).
+- Below 900px wide the sidebar collapses to icons only; tabs keep their names for screen readers and show them as tooltips.
+
 ### Fixed
 
+- Dashboard Income, Spending and Net tiles were squashed and their captions clipped under the next card; the tiles now show in full in light and dark. The empty six-month chart axis shows $0 to $100 instead of "$1 $1 $1 $0".
+- A very long payee, description or rule name no longer pushes columns off screen: Transactions, Reports, the dashboard, Rules and the import preview truncate it with an ellipsis and show the full text on hover.
+- At narrow window widths the page header buttons wrap and the Transactions page no longer scrolls sideways (the Status column is hidden below 1000px).
+- Typing 5,5 or 1,50 as an amount recorded $55.00 or $150.00. A single comma before one or two final digits is now a decimal comma (1.234,56 and 1 234,56 work too); other commas stay thousands separators.
 - The dashboard's uncategorized Review button and category drill-downs now always search every
   account; a previously chosen account could hide the rows.
 
@@ -31,7 +49,7 @@ All notable changes to this project are documented here. The format is based on
   one Undo; a group always keeps one row.
 - Find duplicates can match across accounts (on by default).
 
-### Changed
+### Changed (earlier)
 
 - The sidebar no longer lists accounts; use the Accounts tab, or the new Account filter on
   Transactions.

@@ -33,7 +33,7 @@ const axisMoney = (cents: number) => {
 
 /** A tidy axis maximum and step for 4 gridlines. */
 function niceScale(max: number): { top: number; step: number } {
-  const raw = Math.max(max, 100) / 4
+  const raw = Math.max(max, 10000) / 4
   const mag = 10 ** Math.floor(Math.log10(raw))
   const step = ([1, 2, 2.5, 5, 10].find((m) => m * mag >= raw) ?? 10) * mag
   return { top: step * 4, step }

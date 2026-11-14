@@ -7,7 +7,7 @@ the transaction list.
 
 One `SearchQuery` object drives everything and is what a saved search stores:
 
-- `text`: split on whitespace; every word must appear, case insensitively, in
+- `text`: split into terms by `searchTerms()` (see "Typed text"); every term must appear, case insensitively, in
   the payee, raw description, notes, tag names or category names (parent or
   child). Substring match, not whole words, because bank descriptions run
   words together.
@@ -18,6 +18,17 @@ One `SearchQuery` object drives everything and is what a saved search stores:
 - `limit` and `offset`. The result carries the page of transactions plus the
   total count and the signed sum of all matches, so the UI can show
   "212 matches, -$4,310.55".
+
+### Typed text
+
+Terms are split on whitespace. Double quotes group a phrase ("cafe latte"). `AND`, `OR`, `NOT`
+and `NEAR` are ordinary words, not operators (there is no FTS syntax to trip over). `*`,
+parentheses, colons and unbalanced quotes are dropped, so `sho*` is the same as `sho`. A term with
+no letter or digit (a lone `-` or `'`) is ignored instead of matching every hyphenated row.
+Apostrophes, straight or curly, are ignored on both sides, so `mcdonalds` finds `McDonald's`.
+Matching is substring, so a typed prefix finds the word, but a short word such as `or` also
+matches inside longer ones (it is in "Uncategorized"); that is why an earlier test of `OR` returned
+most of the demo data. Amounts are not searched as text; use the amount filters.
 
 Decision: plain SQL `LIKE` with escaping, not FTS5. A personal ledger is tens
 of thousands of rows, so a scan is instant, and FTS5 token matching is worse

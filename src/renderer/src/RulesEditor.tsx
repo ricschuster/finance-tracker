@@ -374,14 +374,16 @@ export function RulesEditor({
                 <span className="rule-order">{i + 1}</span>
                 <div className="rule-body">
                   <div className="rule-title">
-                    <strong>{r.name || <span className="muted">Unnamed rule</span>}</strong>
+                    <strong className="rule-name" title={r.name || undefined}>
+                      {r.name || <span className="muted">Unnamed rule</span>}
+                    </strong>
                     {!r.enabled && <span className="pill">Off</span>}
                   </div>
                   <div className="chips">
                     <span className="chip-label">When</span>
                     {r.conditions.length === 0 && <span className="chip">any transaction</span>}
                     {r.conditions.map((c, k) => (
-                      <span key={k} className="chip">
+                      <span key={k} className="chip" title={describeCondition(c, accounts)}>
                         {describeCondition(c, accounts)}
                       </span>
                     ))}
@@ -396,7 +398,7 @@ export function RulesEditor({
                           )}
                         </span>
                       ) : (
-                        <span key={k} className="chip">
+                        <span key={k} className="chip" title={describeAction(a, categories)}>
                           {describeAction(a, categories)}
                         </span>
                       ),

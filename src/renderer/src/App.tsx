@@ -4,6 +4,7 @@ import {
   BookOpen,
   Copy,
   Database,
+  Keyboard,
   LayoutDashboard,
   Leaf,
   Monitor,
@@ -18,7 +19,7 @@ import {
   Wand2,
   type LucideIcon,
 } from 'lucide-react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { RuleInput } from '../../core/rules/types'
 import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
@@ -45,6 +46,7 @@ import { TransactionForm } from './TransactionForm'
 import { TransactionSearch } from './TransactionSearch'
 import { useTheme, type ThemePref } from './theme'
 import { ReviewQueue } from './ReviewQueue'
+import { ShortcutsDialog, useShortcuts } from './Shortcuts'
 import { ConfirmProvider, Dialog, ToastProvider, useAlert } from './ui'
 import { useLedger } from './useLedger'
 import './styles.css'
@@ -132,6 +134,9 @@ function Shell() {
   const [dialog, setDialog] = useState<
     'account' | 'editAccount' | 'transaction' | 'transfer' | 'linkPayments' | 'duplicates' | null
   >(null)
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  const focusSearch = useRef(false)
+  const [focusTick, setFocusTick] = useState(0)
   const [theme, setTheme] = useTheme()
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
   const alert = useAlert()
@@ -162,6 +167,40 @@ function Shell() {
     setAccountId(id)
     go('ledger')
   }
+
+  const goKeys: Record<string, View> = {
+    d: 'dashboard',
+    t: 'ledger',
+    b: 'budgets',
+    r: 'reports',
+    a: 'accounts',
+    i: 'import',
+  }
+  useShortcuts({
+    search: () => {
+      if (view !== 'ledger') go('ledger')
+      focusSearch.current = true
+      setFocusTick((n) => n + 1)
+    },
+    add: () => setDialog('transaction'),
+    help: () => setShowShortcuts(true),
+    go: (k) => {
+      const v = goKeys[k]
+      if (!v) return false
+      if (v === 'ledger') pickAccount(null)
+      else go(v)
+      return true
+    },
+  })
+  useEffect(() => {
+    if (!focusSearch.current || view !== 'ledger') return
+    const el = document.querySelector<HTMLInputElement>('input[aria-label="Search transactions"]')
+    if (el) {
+      focusSearch.current = false
+      el.focus()
+      el.select()
+    }
+  }, [view, focusTick])
 
   const [archived, setArchived] = useState<AccountWithBalance[]>([])
   useEffect(() => {
@@ -223,6 +262,8 @@ function Shell() {
                             type="button"
                             role="tab"
                             className="nav-item"
+                            aria-label={label}
+                            title={label}
                             aria-selected={navView === v}
                             onClick={() => (v === 'ledger' ? pickAccount(null) : go(v))}
                           >
@@ -239,7 +280,18 @@ function Shell() {
                 <span title={info ? `Schema ${info.schemaVersion}` : undefined}>
                   {info ? `v${info.version}` : ''}
                 </span>
-                <ThemeSwitch value={theme} onChange={setTheme} />
+                <div className="sidebar-tools">
+                  <button
+                    type="button"
+                    className="ghost icon small"
+                    aria-label="Keyboard shortcuts"
+                    title="Keyboard shortcuts (?)"
+                    onClick={() => setShowShortcuts(true)}
+                  >
+                    <Keyboard size={15} />
+                  </button>
+                  <ThemeSwitch value={theme} onChange={setTheme} />
+                </div>
               </footer>
             </aside>
             <div className="main">
@@ -328,6 +380,10 @@ function Shell() {
                     onOpenRange={openRange}
                     onReviewUncategorized={() => go('review')}
                     onOpenBudgets={() => go('budgets')}
+                    onAddAccount={() => setDialog('account')}
+                    onAddTransaction={() => setDialog('transaction')}
+                    onImport={() => go('import')}
+                    onOpenRules={() => go('rules')}
                   />
                 )}
                 {view === 'reports' && (
@@ -386,6 +442,9 @@ function Shell() {
                     version={ledger.version}
                     accountId={accountId}
                     onAccountChange={setAccountId}
+                    onAddAccount={() => setDialog('account')}
+                    onAddTransaction={() => setDialog('transaction')}
+                    onImport={() => go('import')}
                     preset={preset}
                     onSuggestRule={(id) =>
                       void ledger.run(async () => {
@@ -476,6 +535,7 @@ function Shell() {
               <LinkPaymentsForm run={ledger.run} onDone={() => setDialog(null)} />
             )}
           </Dialog>
+          <ShortcutsDialog open={showShortcuts} onOpenChange={setShowShortcuts} />
         </PageActionsContext.Provider>
       </CategoryAliasProvider>
     </CategoryStyleProvider>

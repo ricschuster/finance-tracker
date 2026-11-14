@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Add transaction and Transfer warn, without blocking, about a zero amount, an amount over $1,000,000 and a date more than a year ahead or 20 years back; Save anyway continues.
+- Invalid amounts now say what is wrong ("abc" is not an amount. Enter an amount like 12.50 (up to 2 decimals).) instead of only "Amount".
 - Review queue: the dashboard's uncategorized banner now opens a screen that steps through uncategorized transactions one at a time with the guessed category. Enter applies, R applies and saves a rule, S skips.
 - Rule operator "is similar to": fuzzy text matching that ignores store numbers and tolerates typos, so one rule covers SAFEWAY #4412 and SAFWAY STORE 9.
 - Changing a category in the import preview offers a toast to create a rule for that description, so the next import needs no pick. It saves straight away without leaving the wizard.
@@ -20,6 +22,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Fixed
 
+- Typing 5,5 or 1,50 as an amount recorded $55.00 or $150.00. A single comma before one or two final digits is now a decimal comma (1.234,56 and 1 234,56 work too); other commas stay thousands separators.
 - The dashboard's uncategorized Review button and category drill-downs now always search every
   account; a previously chosen account could hide the rows.
 

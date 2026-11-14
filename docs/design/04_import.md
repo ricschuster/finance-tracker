@@ -80,8 +80,10 @@ A profile says how columns become fields. It is stored per bank and reused.
   expenses negative and income positive. Credit card exports often show
   purchases as positive, so flipping is per profile.
 - **Decimal separator**: `.` or `,`, with thousands separators and currency
-  symbols ignored. Quebec exports use `1 234,56`. This extends
-  `parseAmountToCents`, which today assumes a dot.
+  symbols ignored. Quebec exports use `1 234,56`. `parseAmountToCents`
+  (used by the entry forms) now reads a decimal comma too: `5,5` is 5.50, `1.234,56`
+  is 1234.56, and an ambiguous lone `1,234` stays 1234.00. Entry forms also warn,
+  without blocking, on zero or over-$1,000,000 amounts and far-off dates.
 - Optional fields: payee, memo, status, balance (unused except for a
   sanity check), category and tags (Mint only).
 - `rawDescription` may join several columns with a space (some banks split

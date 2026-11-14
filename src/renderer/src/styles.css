@@ -511,6 +511,10 @@ td select {
   border-radius: var(--radius);
   margin-bottom: 16px;
 }
+.form-problem {
+  margin: 0;
+  color: var(--neg);
+}
 .notice {
   background: var(--warn-soft);
   color: var(--warn);

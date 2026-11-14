@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { parseAmountToCents } from '../../core/money'
+import { amountProblem, parseAmountToCents, sanityWarnings } from '../../core/money'
+import { SanityNotice, safeCents } from './SanityNotice'
 import type { LedgerState } from './useLedger'
 
 const today = () => new Date().toLocaleDateString('en-CA')
@@ -14,6 +15,8 @@ export function TransferForm({
   const [to, setTo] = useState<number | null>(null)
   const [date, setDate] = useState(today())
   const [amount, setAmount] = useState('')
+  const [problem, setProblem] = useState<string | null>(null)
+  const [warned, setWarned] = useState<string | null>(null)
 
   if (accounts.length < 2) return <p className="muted">Add a second account to make transfers.</p>
   const fromId = from ?? accounts[0]!.id
@@ -24,6 +27,14 @@ export function TransferForm({
       className="stack"
       onSubmit={(e) => {
         e.preventDefault()
+        const bad = amountProblem(amount)
+        setProblem(bad)
+        if (bad) return
+        const key = `${amount}|${date}`
+        if (warned !== key && sanityWarnings(Math.abs(parseAmountToCents(amount)), date).length) {
+          setWarned(key)
+          return
+        }
         void run(async () => {
           await window.api.ledger.createTransfer({
             fromAccountId: fromId,
@@ -32,6 +43,7 @@ export function TransferForm({
             amount: Math.abs(parseAmountToCents(amount)),
           })
           setAmount('')
+          setWarned(null)
         }).then((ok) => {
           if (ok) onDone?.()
         })
@@ -66,15 +78,29 @@ export function TransferForm({
           Amount
           <input
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              setAmount(e.target.value)
+              setProblem(null)
+            }}
             placeholder="0.00"
             inputMode="decimal"
+            aria-invalid={problem !== null}
             required
           />
         </label>
       </div>
+      {problem && (
+        <p className="form-problem" role="alert">
+          {problem}
+        </p>
+      )}
+      {warned === `${amount}|${date}` && (
+        <SanityNotice cents={Math.abs(safeCents(amount))} date={date} />
+      )}
       <div className="dialog-actions">
-        <button type="submit">Add transfer</button>
+        <button type="submit">
+          {warned === `${amount}|${date}` ? 'Save anyway' : 'Add transfer'}
+        </button>
       </div>
     </form>
   )

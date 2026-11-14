@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { parseAmountToCents } from '../../core/money'
+import { amountProblem, parseAmountToCents, sanityWarnings } from '../../core/money'
 import { CategorySelect } from './CategorySelect'
+import { SanityNotice, safeCents } from './SanityNotice'
 import type { LedgerState } from './useLedger'
 
 const today = () => new Date().toLocaleDateString('en-CA')
@@ -21,6 +22,9 @@ export function TransactionForm(
   const [categoryPick, setCategoryPick] = useState<number | null>(null)
   const [tags, setTags] = useState('')
   const [notes, setNotes] = useState('')
+  const [problem, setProblem] = useState<string | null>(null)
+  // Warnings the user has already seen for this amount and date; saving again goes through.
+  const [warned, setWarned] = useState<string | null>(null)
 
   const accountId = accountPick ?? accounts[0]?.id
   const uncategorized = categories.find((c) => c.name === 'Uncategorized' && c.parentId === null)
@@ -35,6 +39,14 @@ export function TransactionForm(
       onSubmit={(e) => {
         e.preventDefault()
         if (accountId === undefined || categoryId === undefined) return
+        const bad = amountProblem(amount)
+        setProblem(bad)
+        if (bad) return
+        const key = `${amount}|${date}`
+        if (warned !== key && sanityWarnings(Math.abs(parseAmountToCents(amount)), date).length) {
+          setWarned(key)
+          return
+        }
         void run(async () => {
           const cents = Math.abs(parseAmountToCents(amount))
           const signed = direction === 'expense' ? -cents : cents
@@ -55,6 +67,7 @@ export function TransactionForm(
           setAmount('')
           setTags('')
           setNotes('')
+          setWarned(null)
         }).then((ok) => {
           if (ok) props.onDone?.()
         })
@@ -96,9 +109,13 @@ export function TransactionForm(
           Amount
           <input
             value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            onChange={(e) => {
+              setAmount(e.target.value)
+              setProblem(null)
+            }}
             placeholder="0.00"
             inputMode="decimal"
+            aria-invalid={problem !== null}
             required
           />
         </label>
@@ -121,8 +138,18 @@ export function TransactionForm(
           <input value={notes} onChange={(e) => setNotes(e.target.value)} />
         </label>
       </div>
+      {problem && (
+        <p className="form-problem" role="alert">
+          {problem}
+        </p>
+      )}
+      {warned === `${amount}|${date}` && (
+        <SanityNotice cents={Math.abs(safeCents(amount))} date={date} />
+      )}
       <div className="dialog-actions">
-        <button type="submit">Add transaction</button>
+        <button type="submit">
+          {warned === `${amount}|${date}` ? 'Save anyway' : 'Add transaction'}
+        </button>
       </div>
     </form>
   )

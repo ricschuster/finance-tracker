@@ -366,3 +366,13 @@ common category is used when at least 60% of those transactions agree (for examp
 2 of 3). The preview shows "guess n/m" next to a picker so the row can be corrected before
 confirming; a pick beats rules and is applied after them. Nothing is learned silently: there
 is no model, only the user's own filing history.
+
+### Learning from a correction
+
+Picking a category in the preview that differs from the current one (guess, file category or
+none) raises a toast, "Always file <pattern> under this category?", with Create rule. It saves
+a rule (description contains the `suggestPattern` phrase, set category) directly through
+`rules.createRule` instead of opening the rules editor, because leaving the wizard would lose
+the preview and its picks. Rows already categorized by a rule do not offer one. The pattern
+helper moved to `core/rules/pattern.ts` so the renderer can use it without importing the
+database layer; `suggest.ts` re-exports it.

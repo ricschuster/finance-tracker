@@ -15,9 +15,15 @@ All in PR #27.
   positive". One stray negative row (a clawback) used to turn a paycheck category into spending.
   Tests added for both changes.
 
+- Dependabot: merged #4 (better-sqlite3 12 to 13; 234 tests pass and `package:dir` builds the
+  native module for Electron). Closed #3 (nine dev-dependency bumps): `npm ci` fails because
+  typescript-eslint does not support TypeScript 7, and it bundles majors for Electron 39 to 45,
+  Vite 7 to 8 and ESLint 9 to 10 that should go one at a time.
+
 ## Current state
 
-- PR #27 merged into `main`. Version is still 0.2.0.
+- PR #27 and #4 merged into `main`; no PRs open. Version is still 0.2.0.
+- better-sqlite3 13 has not been launched in the real app yet: run `npm run dev` once to confirm.
 - The report symptom is a hypothesis: it fits the old classification rule, but it was not
   checked against real data (working rule: never read it).
 - Categories already imported keep their old, possibly wrong, kind.
@@ -32,7 +38,9 @@ All in PR #27.
    figures and look at transfer-like categories (for example credit card payments).
 4. Optional idea from the user: suggest rules from import history (merchant to category).
    Needs a design note first.
-5. Real Monarch and Wealthsimple import checks, budget rollover decision and a v0.3.0 release
+5. Optionally take the safe dev-dependency bumps (for example @types/node, @vitejs/plugin-react)
+   one at a time; wait on TypeScript 7 until typescript-eslint supports it.
+6. Real Monarch and Wealthsimple import checks, budget rollover decision and a v0.3.0 release
    are still open (see the previous handoff).
 
 ## Risks or decisions needed

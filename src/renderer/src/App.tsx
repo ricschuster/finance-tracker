@@ -13,6 +13,7 @@ import {
   Sun,
   Tags,
   Target,
+  Wallet,
   Upload,
   Wand2,
   type LucideIcon,
@@ -34,6 +35,7 @@ import {
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { CategoryAliasProvider } from './CategorySelect'
+import { Accounts } from './Accounts'
 import { Budgets } from './Budgets'
 import { Dashboard } from './Dashboard'
 import { Manual } from './Manual'
@@ -56,6 +58,7 @@ import './styles.css'
 type View =
   | 'dashboard'
   | 'ledger'
+  | 'accounts'
   | 'budgets'
   | 'reports'
   | 'import'
@@ -77,6 +80,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
   {
     heading: 'Manage',
     items: [
+      { view: 'accounts', label: 'Accounts', icon: Wallet },
       { view: 'import', label: 'Import', icon: Upload },
       { view: 'rules', label: 'Rules', icon: Wand2 },
       { view: 'categories', label: 'Categories', icon: Tags },
@@ -87,6 +91,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
 ]
 
 const SUBTITLES: Partial<Record<View, string>> = {
+  accounts: 'Balances across every account',
   reports: 'Where your money comes from and goes',
   budgets: 'Monthly spending targets by category',
   import: 'Bring in transactions from your bank',
@@ -258,8 +263,11 @@ function Shell() {
                       <button
                         type="button"
                         className="nav-item"
-                        aria-current={view === 'ledger' && accountId === null}
-                        onClick={() => pickAccount(null)}
+                        aria-current={view === 'accounts'}
+                        onClick={() => {
+                          setAccountId(null)
+                          go('accounts')
+                        }}
                       >
                         <span className="grow">All accounts</span>
                       </button>
@@ -377,6 +385,9 @@ function Shell() {
                     version={ledger.version}
                     onOpenCategory={openCategory}
                   />
+                )}
+                {view === 'accounts' && (
+                  <Accounts accounts={ledger.accounts} archived={archived} onOpen={pickAccount} />
                 )}
                 {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
                 {view === 'import' && (

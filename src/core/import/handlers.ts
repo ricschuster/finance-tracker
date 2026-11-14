@@ -8,6 +8,7 @@ import {
 import { looksLikeMint, mapMint } from './mint'
 import { looksLikeOfx, parseOfx } from './ofx'
 import { guessHeaderRow, parseCsv, type Delimiter } from './csv'
+import { alreadyImportedWarning, findBatchByHash, hashFileText } from './filehash'
 import { getBatchRows, listBatches, previewUndo, undoBatch } from './history'
 import {
   headerFingerprint,
@@ -172,10 +173,13 @@ function makePreview(
   mapped: Mapped,
   plan: PlanItem[],
   currency: string | null,
+  fileText?: string,
 ): ImportPreview {
   const account = db.prepare('SELECT type FROM accounts WHERE id = ?').get(accountId) as
     { type: 'checking' | 'savings' | 'credit_card' | 'cash' | 'loan' | 'other' } | undefined
   if (!account) throw new Error(`Account ${accountId} not found`)
+  const known =
+    fileText === undefined ? null : findBatchByHash(db, accountId, hashFileText(fileText))
   return {
     items: plan.map((p) => ({
       ...p,
@@ -185,6 +189,7 @@ function makePreview(
     errors: mapped.errors,
     skippedForeign: mapped.skippedForeign,
     warnings: [
+      ...(known ? [alreadyImportedWarning(known)] : []),
       ...(currency && currency !== 'CAD'
         ? [`This file is in ${currency}, not CAD. Amounts would be imported as CAD.`]
         : []),
@@ -272,7 +277,7 @@ export function createImportHandlers(db: Database.Database) {
 
     previewImport: (req: PreviewRequest): ImportPreview => {
       const { mapped, plan, currency } = buildPlan(db, req)
-      return makePreview(db, req.accountId, mapped, plan, currency)
+      return makePreview(db, req.accountId, mapped, plan, currency, req.text)
     },
 
     /** Re-plans from the raw file so the renderer's view is never trusted, then applies the user's overrides. */
@@ -283,6 +288,7 @@ export function createImportHandlers(db: Database.Database) {
         sourceName: req.sourceName,
         format: req.format ?? 'csv',
         profileId: req.profileId ?? null,
+        fileHash: hashFileText(req.text),
         decisions: decide(plan, req.overrides),
         rowsError: mapped.errors.length + mapped.skippedForeign.length,
         rowsTotal: mapped.candidates.length + mapped.errors.length + mapped.skippedForeign.length,
@@ -314,7 +320,7 @@ export function createImportHandlers(db: Database.Database) {
         accounts: groups.map((g) => ({
           mintName: g.mintName,
           accountId: g.accountId,
-          preview: makePreview(db, g.accountId, g.mapped, g.plan, null),
+          preview: makePreview(db, g.accountId, g.mapped, g.plan, null, req.text),
         })),
         unknownCategories: [...unknown].sort(),
       }
@@ -328,6 +334,7 @@ export function createImportHandlers(db: Database.Database) {
             accountId: g.accountId,
             sourceName: req.sourceName,
             format: 'mint',
+            fileHash: hashFileText(req.text),
             decisions: decide(g.plan, req.overrides),
             rowsError: g.mapped.errors.length,
             rowsTotal: g.mapped.candidates.length + g.mapped.errors.length,

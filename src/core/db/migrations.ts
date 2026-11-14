@@ -207,6 +207,12 @@ CREATE TABLE saved_searches (
 );
 `
 
+/** Migration 7: file hash per import batch, to spot the same file imported twice. See docs/design/11_review_feedback.md. */
+const FILE_HASH_SCHEMA = `
+ALTER TABLE import_batches ADD COLUMN file_hash TEXT;
+CREATE INDEX import_batches_hash ON import_batches (account_id, file_hash);
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -222,6 +228,7 @@ export const migrations: readonly string[] = [
   IMPORT_SCHEMA,
   RULES_SCHEMA,
   SEARCH_SCHEMA,
+  FILE_HASH_SCHEMA,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

@@ -68,6 +68,8 @@ live (file system events) is optional and later.
 
 ## 9. Duplicate files must be exact, joint accounts included
 
+Status: built (file hash warning, id collision fix, joint account tests).
+
 Today: duplicates are detected per row (external id, then date, amount and
 payee, note 04). There is no file-level check.
 Change:

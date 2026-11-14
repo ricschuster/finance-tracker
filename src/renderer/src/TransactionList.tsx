@@ -80,7 +80,16 @@ export function TransactionList({
                             window.api.ledger.updateTransaction(t.id, {
                               lines: [{ categoryId, amount: t.amount, memo: single.memo }],
                             }),
-                          )
+                          ).then((ok) => {
+                            if (
+                              ok &&
+                              window.confirm(
+                                'Category changed. Make this a rule for similar transactions?',
+                              )
+                            ) {
+                              onSuggestRule(t.id)
+                            }
+                          })
                         }
                       />
                     </>
@@ -97,7 +106,14 @@ export function TransactionList({
                     </span>
                   ))}
                 </td>
-                <td>{t.status}</td>
+                <td>
+                  {t.status}
+                  {t.excludeFromBudgets && (
+                    <span className="tag" title="Counted in reports, skipped by budgets">
+                      not in budgets
+                    </span>
+                  )}
+                </td>
                 <td className={`num ${t.amount < 0 ? 'neg' : 'pos'}`}>{formatCents(t.amount)}</td>
                 <td className="actions">
                   {!isTransfer && (
@@ -116,6 +132,21 @@ export function TransactionList({
                       onClick={() => onSuggestRule(t.id)}
                     >
                       Rule
+                    </button>
+                  )}{' '}
+                  {!isTransfer && (
+                    <button
+                      type="button"
+                      aria-label={`${t.excludeFromBudgets ? 'Include in' : 'Hide from'} budgets for transaction ${t.id}`}
+                      onClick={() =>
+                        void run(() =>
+                          window.api.ledger.updateTransaction(t.id, {
+                            excludeFromBudgets: !t.excludeFromBudgets,
+                          }),
+                        )
+                      }
+                    >
+                      {t.excludeFromBudgets ? 'Include in budgets' : 'Hide from budgets'}
                     </button>
                   )}{' '}
                   <button

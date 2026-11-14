@@ -469,6 +469,22 @@ export function TransactionSearch({
           </button>{' '}
           <button
             type="button"
+            onClick={() =>
+              void bulk({ type: 'setExcludeFromBudgets', exclude: true }, [...selected])
+            }
+          >
+            Hide from budgets
+          </button>{' '}
+          <button
+            type="button"
+            onClick={() =>
+              void bulk({ type: 'setExcludeFromBudgets', exclude: false }, [...selected])
+            }
+          >
+            Include in budgets
+          </button>{' '}
+          <button
+            type="button"
             onClick={() => {
               if (
                 window.confirm(`Delete ${selected.size} transaction(s)? Transfers lose both sides.`)

@@ -7,6 +7,7 @@ import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
+import { Budgets } from './Budgets'
 import { Dashboard } from './Dashboard'
 import { DataPanel } from './DataPanel'
 import { ImportHistory } from './ImportHistory'
@@ -22,6 +23,7 @@ import './styles.css'
 const VIEW_LABELS = {
   dashboard: 'Dashboard',
   reports: 'Reports',
+  budgets: 'Budgets',
   ledger: 'Transactions',
   import: 'Import',
   history: 'Import history',
@@ -173,6 +175,7 @@ export function App() {
               onOpenCategory={openCategory}
             />
           )}
+          {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
           {view === 'import' && (
             <ImportWizard
               accounts={ledger.accounts}

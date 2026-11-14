@@ -103,4 +103,40 @@ describe('import handlers', () => {
     expect(again.warnings[0]).toContain('already imported as "jan.csv"')
     expect(again.items.every((i) => i.outcome === 'duplicate')).toBe(true)
   })
+  it('links a card payment to its other side by default, and respects a cleared box', () => {
+    const { db, accountId, api } = setup()
+    const card = createAccount(db, { name: 'Visa', type: 'credit_card' })
+    // The card side already exists: a payment of +200.00 on the card.
+    createTransaction(db, { accountId: card, date: '2026-02-03', amount: 20000, payee: 'Payment' })
+    const text = 'Date,Desc,Amount\n2026-02-03,VISA PAYMENT,-200.00\n2026-02-03,SHELL,-200.00\n'
+    const prev = api.previewImport({ text, profile, accountId })
+    expect(prev.items.map((i) => i.suggestLink)).toEqual([true, false])
+
+    const linked = () =>
+      db
+        .prepare('SELECT COUNT(*) AS n FROM transactions WHERE transfer_peer_id IS NOT NULL')
+        .get() as {
+        n: number
+      }
+    api.commitImport({ text, profile, accountId, sourceName: 'a.csv', overrides: [] })
+    expect(linked().n).toBe(2)
+  })
+
+  it('does not link when the box is cleared', () => {
+    const { db, accountId, api } = setup()
+    const card = createAccount(db, { name: 'Visa', type: 'credit_card' })
+    createTransaction(db, { accountId: card, date: '2026-02-03', amount: 20000, payee: 'Payment' })
+    const text = 'Date,Desc,Amount\n2026-02-03,VISA PAYMENT,-200.00\n'
+    api.commitImport({
+      text,
+      profile,
+      accountId,
+      sourceName: 'a.csv',
+      overrides: [{ line: 2, choice: 'new', linkTransfer: false }],
+    })
+    const n = db
+      .prepare('SELECT COUNT(*) AS n FROM transactions WHERE transfer_peer_id IS NOT NULL')
+      .get() as { n: number }
+    expect(n.n).toBe(0)
+  })
 })

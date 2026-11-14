@@ -56,6 +56,10 @@ first three words kept, plus `setPayee` and `setCategory` actions from the edit.
 It also reports how many existing unlocked transactions the draft would change.
 The user reviews and saves it; nothing is created silently.
 
+Changing the category of a single-line transaction in the list asks "Make this
+a rule for similar transactions?". Yes opens the draft in the rules editor,
+the same path as the Suggest rule button; No leaves the edit as it was.
+
 ## Known gaps
 
 - Rows imported with a category (Mint) can have it replaced by a matching

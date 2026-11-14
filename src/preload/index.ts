@@ -2,11 +2,14 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type { BackupSettings, CsvExportFilter } from '../core/backup'
 import type { DataStatus } from '../main/data-ipc'
 import type { LedgerApi } from '../core/ledger/handlers'
+import type { FolderScan } from '../core/import/folder'
 import type { ImportApi } from '../core/import/handlers'
 import { IMPORT_METHODS } from '../core/import/methods'
 import { LEDGER_METHODS } from '../core/ledger/methods'
 import type { RulesApi } from '../core/rules/handlers'
 import { RULES_METHODS } from '../core/rules/methods'
+import type { BudgetsApi } from '../core/budgets/handlers'
+import { BUDGETS_METHODS } from '../core/budgets/methods'
 import type { ReportsApi } from '../core/reports/handlers'
 import { REPORTS_METHODS } from '../core/reports/methods'
 import type { SearchApi } from '../core/search/handlers'
@@ -40,6 +43,13 @@ const reports = Object.fromEntries(
   ]),
 ) as unknown as ReportsApi
 
+const budgets = Object.fromEntries(
+  BUDGETS_METHODS.map((name) => [
+    name,
+    (...args: unknown[]) => ipcRenderer.invoke(`budgets:${name}`, ...args),
+  ]),
+) as unknown as BudgetsApi
+
 const importer = {
   ...(Object.fromEntries(
     IMPORT_METHODS.map((name) => [
@@ -49,6 +59,12 @@ const importer = {
   ) as unknown as ImportApi),
   pickFile: (): Promise<{ name: string; text: string } | null> =>
     ipcRenderer.invoke('import:pickFile'),
+  getFolder: (): Promise<string> => ipcRenderer.invoke('import:getFolder'),
+  chooseFolder: (): Promise<string> => ipcRenderer.invoke('import:chooseFolder'),
+  clearFolder: (): Promise<string> => ipcRenderer.invoke('import:clearFolder'),
+  scanFolder: (): Promise<FolderScan> => ipcRenderer.invoke('import:scanFolder'),
+  readFolderFile: (name: string): Promise<{ name: string; text: string }> =>
+    ipcRenderer.invoke('import:readFolderFile', name),
 }
 
 const data = {
@@ -73,6 +89,7 @@ const api = {
   rules,
   search,
   reports,
+  budgets,
   data,
 }
 

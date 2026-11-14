@@ -77,11 +77,18 @@ interface TransferBefore {
   newLines: Array<{ id: number; category_id: number }>
 }
 
-/** Category ids are matched by name (unique across the tree, case-insensitive); unknown names give null. */
+/**
+ * Category ids are matched by name (unique, case-insensitive), then by saved alias, so an outside
+ * name such as a Mint subcategory can point at one of our categories. Unknown names give null.
+ */
 export function categoryIdByName(db: Database.Database, name: string): number | null {
+  const key = name.trim()
   const r = db
-    .prepare('SELECT id FROM categories WHERE name = ? COLLATE NOCASE')
-    .get(name.trim()) as { id: number } | undefined
+    .prepare(
+      `SELECT id FROM categories WHERE name = ? COLLATE NOCASE
+       UNION ALL SELECT category_id FROM category_aliases WHERE alias = ? COLLATE NOCASE LIMIT 1`,
+    )
+    .get(key, key) as { id: number } | undefined
   return r?.id ?? null
 }
 

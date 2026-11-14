@@ -137,7 +137,31 @@ export function mergeCategory(db: Database.Database, fromId: number, intoId: num
     if (from.is_system) throw new Error('System categories cannot be merged')
     if (from.kind !== into.kind) throw new Error('Categories of different kinds cannot be merged')
     moveReferences(db, fromId, intoId)
+    const fromBudget = db
+      .prepare('SELECT amount FROM budgets WHERE category_id = ?')
+      .get(fromId) as { amount: number } | undefined
+    if (fromBudget) {
+      db.prepare(
+        `INSERT INTO budgets (category_id, amount) VALUES (?, ?)
+         ON CONFLICT(category_id) DO UPDATE SET amount = amount + excluded.amount`,
+      ).run(intoId, fromBudget.amount)
+    }
+    const name = (
+      db.prepare('SELECT name FROM categories WHERE id = ?').get(fromId) as {
+        name: string
+      }
+    ).name
+    // Aliases that pointed at the merged category follow it, and its own name becomes an alias so
+    // later imports that still use the old name land in the surviving category.
+    db.prepare('UPDATE category_aliases SET category_id = ? WHERE category_id = ?').run(
+      intoId,
+      fromId,
+    )
     db.prepare('DELETE FROM categories WHERE id = ?').run(fromId)
+    db.prepare(
+      `INSERT INTO category_aliases (alias, category_id) VALUES (?, ?)
+       ON CONFLICT(alias) DO UPDATE SET category_id = excluded.category_id`,
+    ).run(name, intoId)
   })()
 }
 

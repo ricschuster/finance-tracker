@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { Category } from '../../core/ledger/categories'
 import type { MintInspection, MintPreview } from '../../core/import/handlers'
 import { formatCents } from '../../core/money'
 import type { LedgerState } from './useLedger'
@@ -19,6 +20,11 @@ export function MintImport({
   onBack: () => void
   onFinished: () => void
 }) {
+  const [categories, setCategories] = useState<Category[]>([])
+  useEffect(() => {
+    void window.api.ledger.listCategories().then(setCategories)
+  }, [])
+
   // Default each Mint account to a ledger account with the same name, otherwise "create".
   const [choice, setChoice] = useState<Record<string, number>>(() =>
     Object.fromEntries(
@@ -58,6 +64,16 @@ export function MintImport({
       setChoice(accountMap)
       setPreview(await window.api.importer.previewMint({ text: file.text, accountMap }))
       setError(null)
+    } catch (e) {
+      fail(e)
+    }
+  }
+
+  async function mapCategory(name: string, categoryId: number) {
+    if (categoryId === 0) return
+    try {
+      await window.api.importer.setCategoryAlias(name, categoryId)
+      setPreview(await window.api.importer.previewMint({ text: file.text, accountMap: map }))
     } catch (e) {
       fail(e)
     }
@@ -150,8 +166,29 @@ export function MintImport({
         <>
           {preview.unknownCategories.length > 0 && (
             <div className="error" role="alert">
-              Categories we do not have, so those rows go to Uncategorized:{' '}
-              {preview.unknownCategories.join(', ')}
+              <p>
+                Categories we do not have. Rows with these go to Uncategorized unless you map them
+                to one of yours (remembered for later imports):
+              </p>
+              {preview.unknownCategories.map((name) => (
+                <p key={name}>
+                  {name} {'->'}{' '}
+                  <select
+                    aria-label={`Map ${name} to`}
+                    value={0}
+                    onChange={(e) => void mapCategory(name, Number(e.target.value))}
+                  >
+                    <option value={0}>Uncategorized</option>
+                    {categories
+                      .filter((c) => !c.isSystem)
+                      .map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                  </select>
+                </p>
+              ))}
             </div>
           )}
           <table>

@@ -35,6 +35,12 @@ a fixed palette that passes contrast in light and dark.
 
 ## 3. Transfers and card payments stay out of spending and budgets
 
+Status: import prompt built. A new row with a transfer candidate is linked by
+default when either account is a credit card or loan and the bank text says
+payment (payment, pmt, paiement, autopay, bill pay). The checkbox in the
+preview starts ticked and can be cleared; other candidates stay opt-in.
+Flagging an unmatched payment as "not spending" waits for item 4.
+
 Today: reports already skip transfer-linked transactions and kind `transfer`
 categories (note 07). Credit card payments are only excluded if they are
 linked as a transfer.
@@ -43,6 +49,12 @@ prompt to link a card payment to its other side, and an unmatched payment
 should be flaggable as "not spending" (see item 4).
 
 ## 4. Hide a transaction from budgets
+
+Status: flag built (migration 11), budgets themselves not yet. Per row button
+and bulk buttons in search set it; transfers cannot be flagged (they are
+already outside spending). The flag is not a rule-locked field and rules never
+set it. Lists and the biggest-transactions report show a "not in budgets"
+marker. This also covers an unmatched card payment that is "not spending".
 
 Change: a per-transaction `exclude_from_budgets` flag (migration), settable
 from the edit form and as a bulk action in search. Budgets only: reports still
@@ -78,6 +90,13 @@ credit columns, OFX, Mint) and show refunds as a positive amount in an expense
 category without treating it as income.
 
 ## 8. Import from one watched folder
+
+Status: built (folder setting, scan, review through the wizard). The folder is
+checked when the import screen opens and on "Check folder"; live file system
+watching is not built. The folder is set only through the native picker and
+files are read by bare name. OFX, QFX and Mint files count as ready; a CSV is
+ready only when its header matches a saved profile. Already imported files
+(by hash) are hidden unless asked for.
 
 Change: a setting `import_folder`. On startup and on demand ("Check folder"),
 list new files, run each through its saved mapping profile, and put the
@@ -126,3 +145,12 @@ Change:
 2. Flat categories, merge, colours and icons (items 1 and 2).
 3. Watched folder (item 8).
 4. Exclude-from-budgets flag with budgets (items 3 and 4), then report and search checks (items 5 and 6).
+
+## Category aliases (follow-up to item 3 of the open list)
+
+Status: built. Migration 10 adds `category_aliases` (alias, category id, case
+insensitive). Imports match a category name first, then an alias. In the Mint
+preview each unknown category has a selector that saves an alias and refreshes
+the preview. Merging a category keeps its old name as an alias of the survivor,
+so later imports that still use that name land in the right place. Deleting a
+category removes its aliases.

@@ -152,8 +152,7 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
             onCancel={close}
             onSave={(name, kind, style) =>
               runAndClose(async () => {
-                const id = await window.api.ledger.createCategory({ name, kind })
-                await window.api.ledger.setCategoryStyle(id, style)
+                await window.api.ledger.createCategory({ name, kind, ...style })
               })
             }
           />

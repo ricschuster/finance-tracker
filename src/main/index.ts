@@ -24,6 +24,10 @@ function createWindow(): void {
       sandbox: true,
     },
   })
+  // The app is a single page. A file dropped outside the import drop area would otherwise
+  // navigate the window to that file; block any navigation and new windows.
+  win.webContents.on('will-navigate', (e) => e.preventDefault())
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
   if (process.env['ELECTRON_RENDERER_URL']) {
     void win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {

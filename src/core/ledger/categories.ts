@@ -69,10 +69,12 @@ export function getCategoryByName(
 /** Create a category. Categories are flat: there are no subcategories. */
 export function createCategory(
   db: Database.Database,
-  input: { name: string; kind?: CategoryKind },
+  input: { name: string; kind?: CategoryKind; color?: string | null; icon?: string | null },
 ): number {
   const name = input.name.trim()
   if (!name) throw new Error('Category name is required')
+  if (input.color != null && !isCategoryColor(input.color)) throw new Error('Unknown colour')
+  if (input.icon != null && !isCategoryIcon(input.icon)) throw new Error('Unknown icon')
   const sort = (
     db.prepare('SELECT COALESCE(MAX(sort_order), 0) + 1 AS n FROM categories').get() as {
       n: number
@@ -80,12 +82,15 @@ export function createCategory(
   ).n
   return Number(
     db
-      .prepare('INSERT INTO categories (name, kind, sort_order, color) VALUES (?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO categories (name, kind, sort_order, color, icon) VALUES (?, ?, ?, ?, ?)',
+      )
       .run(
         name,
         input.kind ?? 'expense',
         sort,
-        CATEGORY_COLORS[(sort - 1) % CATEGORY_COLORS.length],
+        input.color ?? CATEGORY_COLORS[(sort - 1) % CATEGORY_COLORS.length],
+        input.icon ?? null,
       ).lastInsertRowid,
   )
 }

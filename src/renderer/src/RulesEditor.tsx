@@ -449,6 +449,7 @@ export function RulesEditor({
         open={editing !== null}
         onOpenChange={(o) => !o && setEditing(null)}
         wide
+        persistent
         title={
           editing?.id != null
             ? 'Edit rule'

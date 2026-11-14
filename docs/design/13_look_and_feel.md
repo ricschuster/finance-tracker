@@ -57,6 +57,10 @@ avoid a flash. System is the default.
   from the main process just before the app relaunches.
 - Forms for one item (add or edit a budget, a category, a rule) open in a
   `Dialog` from a header button or the row menu, not inline in the list.
+  Long forms (the rule editor) are `persistent`: outside clicks and Escape do
+  not close them, only Cancel, Save or the close button.
+- Files are dropped only on the import drop area. Drops elsewhere are ignored,
+  and the main window refuses navigation, so a stray drop cannot replace the app.
 - Empty lists use `Empty` with a short title and hint.
 - Charts: `TrendChart` for income against spending by month (legend, gridlines,
   per-month tooltip); meter lists in the category colour for shares. No donuts.

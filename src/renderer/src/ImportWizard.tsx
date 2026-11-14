@@ -835,7 +835,13 @@ export function ImportWizard({
               </table>
             </div>
             {counts.new + counts.possible === 0 && (
-              <Empty title="Nothing new in this file">Every row was imported before.</Empty>
+              <Empty title="Nothing to import">
+                {counts.duplicate > 0 &&
+                preview.errors.length === 0 &&
+                preview.skippedForeign.length === 0
+                  ? 'Every row was imported before.'
+                  : 'No row in this file can be imported as it stands; see the notes above.'}
+              </Empty>
             )}
           </div>
           {preview.errors.length > 0 && (

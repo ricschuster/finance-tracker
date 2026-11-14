@@ -60,10 +60,10 @@ export function DataPanel({ run }: Pick<LedgerState, 'run'>) {
 
   const on = Boolean(status?.settings.folder)
   const dirty =
-    status !== null &&
-    (folder !== status.settings.folder ||
-      intervalDays !== String(status.settings.intervalDays) ||
-      keep !== String(status.settings.keep))
+    status === null ||
+    folder !== status.settings.folder ||
+    intervalDays !== String(status.settings.intervalDays) ||
+    keep !== String(status.settings.keep)
 
   return (
     <section aria-label="Data">
@@ -236,10 +236,15 @@ export function DataPanel({ run }: Pick<LedgerState, 'run'>) {
             void save()
           }}
         >
-          <label className="field folder-field">
-            Folder
+          <div className="field folder-field">
+            <label htmlFor="backup-folder">Folder</label>
             <span className="input-with-button">
-              <input value={folder} onChange={(e) => setFolder(e.target.value)} placeholder="Off" />
+              <input
+                id="backup-folder"
+                value={folder}
+                onChange={(e) => setFolder(e.target.value)}
+                placeholder="Off"
+              />
               <button
                 type="button"
                 onClick={() =>
@@ -253,7 +258,7 @@ export function DataPanel({ run }: Pick<LedgerState, 'run'>) {
                 Choose...
               </button>
             </span>
-          </label>
+          </div>
           <label className="field">
             Every (days)
             <input

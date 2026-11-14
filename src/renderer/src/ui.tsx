@@ -11,6 +11,7 @@ export function Dialog({
   title,
   description,
   wide,
+  persistent,
   children,
 }: {
   open: boolean
@@ -18,6 +19,8 @@ export function Dialog({
   title: string
   description?: ReactNode
   wide?: boolean
+  /** Ignore outside clicks and Escape, for forms that would lose typed input. */
+  persistent?: boolean
   children: ReactNode
 }) {
   return (
@@ -26,6 +29,10 @@ export function Dialog({
         <RDialog.Overlay className="dialog-overlay" />
         <RDialog.Content
           className={wide ? 'dialog wide' : 'dialog'}
+          {...(persistent && {
+            onInteractOutside: (e: Event) => e.preventDefault(),
+            onEscapeKeyDown: (e: KeyboardEvent) => e.preventDefault(),
+          })}
           {...(description ? {} : { 'aria-describedby': undefined })}
         >
           <RDialog.Title className="dialog-title">{title}</RDialog.Title>

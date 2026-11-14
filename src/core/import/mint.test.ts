@@ -53,7 +53,11 @@ describe('Mint', () => {
     const manual = createTransaction(db, { accountId: chq, date: '2026-01-06', amount: -4500 })
     const api = createImportHandlers(db)
 
-    expect(api.inspectMint(csv)).toEqual({ accountNames: ['Chequing', 'Visa'], count: 4 })
+    expect(api.inspectMint(csv)).toEqual({
+      source: 'Mint',
+      accountNames: ['Chequing', 'Visa'],
+      count: 4,
+    })
     expect(api.inspectMint('a,b\n1,2')).toBeNull()
     expect(() => api.previewMint({ text: csv, accountMap: { Chequing: chq } })).toThrow(/Visa/)
 

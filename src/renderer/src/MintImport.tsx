@@ -57,7 +57,7 @@ export function MintImport({
           id !== CREATE
             ? id
             : await window.api.ledger.createAccount({
-                name: name || 'Mint account',
+                name: name || `${inspection.source} account`,
                 type: 'checking',
               })
       }
@@ -119,8 +119,8 @@ export function MintImport({
           <div className="grow">
             <strong>{file.name}</strong>
             <span className="subtle">
-              Mint export with {inspection.count} rows across {inspection.accountNames.length}{' '}
-              accounts
+              {inspection.source} export with {inspection.count} rows across{' '}
+              {inspection.accountNames.length} accounts
             </span>
           </div>
           <button type="button" className="ghost small" onClick={onBack}>
@@ -137,7 +137,7 @@ export function MintImport({
             <table>
               <thead>
                 <tr>
-                  <th>Mint account</th>
+                  <th>{inspection.source} account</th>
                   <th>Import into</th>
                 </tr>
               </thead>
@@ -164,8 +164,10 @@ export function MintImport({
               </tbody>
             </table>
             <p className="subtle mint-note">
-              New accounts are created as chequing; change the type later. Categories are matched by
-              name.
+              New accounts are created as chequing; change the type later.
+              {inspection.source === 'Mint'
+                ? ' Categories are matched by name.'
+                : ' Rows in a currency other than CAD are skipped.'}
             </p>
             <div className="wizard-footer">
               <button type="button" onClick={onBack}>

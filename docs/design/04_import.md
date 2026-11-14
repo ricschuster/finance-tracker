@@ -250,5 +250,5 @@ Each step is usable on its own and goes through the session PR.
 
 Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
 the per-account mapping step, and RBC, TD and Tangerine presets (all three
-checked against real exports on 2026-11-13: header row and date format). Not built:
+checked against real exports on 2026-11-13: header row and date format). Wealthsimple (added later) is a multi-account export like Mint: header `transaction_date, ..., account_number, account_type, ..., amount, currency, notes`, ISO dates, signed amounts, each row's account is "type number" and is mapped to a ledger account in the Mint-style step; non-CAD rows are skipped; batches are stored as `csv`. The layout comes from the user's header only, not yet checked against real rows. Not built:
 presets for other banks, and Mint label-to-tag import.

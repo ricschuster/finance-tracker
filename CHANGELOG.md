@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-14
+
 ### Added
 
 - The category guess in the import preview and review queue now also works for misspelt or varied descriptions ("SAFWAY STORE 9" with "SAFEWAY #4412"), labelled "similar guess"; short words must still match exactly.

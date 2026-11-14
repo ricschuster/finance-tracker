@@ -19,3 +19,7 @@ two identical Safeway lines in `generic.csv`) to exercise duplicate detection.
 give identical files). Use them to check import speed, preview paging and
 duplicate detection at volume. `mint-large.csv` splits rows across two
 accounts; `statement-large.*` use fitids `LARGE-000001` onward.
+
+- `rbc-mastercard.csv`: RBC card export with a BOM, M/D/YYYY dates, quoted
+  account numbers, a USD$ row and data rows that drop the trailing empty USD$
+  cell (so they are narrower than the header), plus a trailing blank line.

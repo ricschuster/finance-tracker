@@ -1,0 +1,6 @@
+﻿Account Type,Account Number,Transaction Date,Cheque Number,Description 1,Description 2,CAD$,USD$
+MasterCard,'1234567890123456',1/15/2026,,"COFFEE SHOP","TORONTO ON",-4.50
+MasterCard,'1234567890123456',1/16/2026,,"GROCERY, DOWNTOWN",,-62.10
+MasterCard,'1234567890123456',2/3/2026,,"HOTEL NYC","NEW YORK NY",,-120.00
+MasterCard,'1234567890123456',2/20/2026,,"PAYMENT - THANK YOU",,250.00
+

@@ -42,4 +42,13 @@ describe('guessHeaderRow', () => {
   it('skips a preamble narrower than the data', () => {
     expect(guessHeaderRow([['Account: 123'], ['Date', 'Desc', 'Amt'], ['1', '2', '3']])).toBe(1)
   })
+  it('keeps a header wider than data rows that dropped trailing empty cells', () => {
+    expect(
+      guessHeaderRow([
+        ['a', 'b', 'c', 'd'],
+        ['1', '2', '3'],
+        ['4', '5', '6'],
+      ]),
+    ).toBe(0)
+  })
 })

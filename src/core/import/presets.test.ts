@@ -55,3 +55,32 @@ describe('presets', () => {
     })
   })
 })
+
+describe('RBC card export file', () => {
+  it('finds the header row and maps through the preset despite short data rows', async () => {
+    const { readFileSync } = await import('node:fs')
+    const { decodeBytes, guessHeaderRow, parseCsv } = await import('./csv')
+    const { rows } = parseCsv(decodeBytes(readFileSync('test-data/import/rbc-mastercard.csv')))
+    expect(guessHeaderRow(rows)).toBe(0)
+    const r = mapRows(rows, preset('rbc').config)
+    expect(r.errors).toEqual([])
+    expect(r.candidates.map((c) => [c.date, c.amount, c.rawDescription])).toEqual([
+      ['2026-01-15', -450, 'COFFEE SHOP TORONTO ON'],
+      ['2026-01-16', -6210, 'GROCERY, DOWNTOWN'],
+      ['2026-02-20', 25000, 'PAYMENT - THANK YOU'],
+    ])
+    expect(r.skippedForeign).toHaveLength(1)
+  })
+
+  it('names the missing column and the header it found', () => {
+    expect(() =>
+      mapRows(
+        [
+          ['A', 'B'],
+          ['1', '2'],
+        ],
+        preset('rbc').config,
+      ),
+    ).toThrow(/Column "Transaction Date" not found in the header row \(found: A, B\)/)
+  })
+})

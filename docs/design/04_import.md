@@ -52,7 +52,12 @@ changes, so main keeps no wizard state.
   bytes are not valid UTF-8 (older bank exports).
 - Sniff the delimiter among comma, semicolon and tab from the first lines.
 - Skip blank lines. Allow a preamble: the user picks the header row, with the
-  first plausible row preselected. Trailing summary rows (totals, balances)
+  first plausible row preselected: the first row at least as wide as the most
+  common row width. (At least, not exactly: RBC drops the empty trailing USD$
+  cell from most data rows, so the header is wider than the data and an exact
+  match picked the first data row as the header, failing the import. Fixed;
+  see `test-data/import/rbc-mastercard.csv`.) A missing column error names the
+  column and lists the headers found. Trailing summary rows (totals, balances)
   fail mapping and are reported, not imported.
 - Limits: 20 MB and 100,000 rows per file, with a clear error beyond that.
 

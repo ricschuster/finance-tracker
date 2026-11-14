@@ -71,7 +71,11 @@ export function parseCsv(text: string, delimiter?: Delimiter): ParsedCsv {
   return { delimiter: d, rows }
 }
 
-/** Index of the first row that looks like a header or data row: the first with the modal width. */
+/**
+ * Index of the first row that looks like a header or data row: the first at least as wide as the
+ * modal width. "At least" matters because some banks (RBC) drop trailing empty cells from data
+ * rows, so the header is wider than every row below it and would never match the modal width.
+ */
 export function guessHeaderRow(rows: string[][]): number {
   if (rows.length === 0) return 0
   const widths = new Map<number, number>()
@@ -84,6 +88,6 @@ export function guessHeaderRow(rows: string[][]): number {
       modalCount = c
     }
   }
-  const idx = rows.findIndex((r) => r.length === modal)
+  const idx = rows.findIndex((r) => r.length >= modal)
   return idx < 0 ? 0 : idx
 }

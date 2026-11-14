@@ -2509,3 +2509,26 @@ details.card ul {
 th.num .sort-head {
   flex-direction: row-reverse;
 }
+
+.note-indicator {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 6px;
+  padding: 2px;
+  height: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-3);
+}
+.note-indicator:hover {
+  color: var(--accent);
+}
+.note-editor {
+  display: flex;
+  gap: 8px;
+  padding: 6px 0;
+}
+.note-editor input {
+  flex: 1;
+}

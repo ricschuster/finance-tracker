@@ -268,6 +268,21 @@ describe('updateTransaction', () => {
     expect(t.editedFields.sort()).toEqual(['notes', 'payee', 'tags'])
   })
 
+  it('sets and clears a note without touching other fields', () => {
+    const id = createTransaction(db, {
+      accountId: chq,
+      date: '2026-11-03',
+      amount: -500,
+      payee: 'X',
+    })
+    updateTransaction(db, id, { notes: 'birthday gift' })
+    expect(getTransaction(db, id)!.notes).toBe('birthday gift')
+    updateTransaction(db, id, { payee: 'Y' })
+    expect(getTransaction(db, id)!.notes).toBe('birthday gift')
+    updateTransaction(db, id, { notes: '' })
+    expect(getTransaction(db, id)!.notes).toBe('')
+  })
+
   it('rescales the line of an unsplit transaction when the amount changes', () => {
     const id = createTransaction(db, {
       accountId: chq,

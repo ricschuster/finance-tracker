@@ -63,7 +63,7 @@ export const MANUAL: ManualSection[] = [
     id: 'transactions',
     title: 'Transactions, search and bulk edits',
     blocks: [
-      'The Transactions view lists everything, newest first. Click a column heading (Date, Payee, Category, Status or Amount) to sort by it; click again to reverse. Sorting covers every match, not just the rows shown. Add transaction (top right) opens the entry form; click a row to edit it. You can change the date, amount, payee, category, tags, notes and status, or split it.',
+      'The Transactions view lists everything, newest first. Click a column heading (Date, Payee, Category, Status or Amount) to sort by it; click again to reverse. Sorting covers every match, not just the rows shown. Add transaction (top right) opens the entry form. Change a category right in the list, or use the actions menu on a row to split it, add or edit a note, or make a rule. A note shows as a small note icon next to the payee (hover it to read the note; click it to edit) and is searchable and included in the CSV export.',
       'Type in the search box to find transactions instantly. Every word must appear somewhere in the payee, bank description, notes, tags or category, in any order. Filters narrow it further: account, category, tag, status, date range, expense or income, amount range and uncategorized only. The totals line shows the number of matches and their sum.',
       'Save a search you use often and recall it later from the saved searches menu.',
       'Select several rows to act on them together: set a category, add or remove a tag, change the status or delete. Bulk edits count as your own edits, so rules will not overwrite them afterwards.',

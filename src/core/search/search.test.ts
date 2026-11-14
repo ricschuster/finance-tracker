@@ -261,7 +261,7 @@ describe('deleteMatching', () => {
     expect(getTransaction(db, keep)).toBeTruthy()
     expect(searchTransactions(db, { accountIds: [chq] }).total).toBe(0)
     expect(searchTransactions(db, {}).total).toBe(1)
-  })
+  }, 30_000) // inserts MAX_BULK + 5 rows; took 14s on the Intel macOS runner
 
   it('deletes everything with an empty query', () => {
     txn({})

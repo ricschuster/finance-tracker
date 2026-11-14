@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CategoryBadge } from './CategoryBadge'
 import { formatCents } from '../../core/money'
 import type { Dashboard as DashboardData } from '../../core/reports/dashboard'
 import { DASHBOARD_WIDGETS, type DashboardWidgetId } from '../../core/reports/widgets'
@@ -136,7 +137,7 @@ export function Dashboard({
                           className="link"
                           onClick={() => onOpenCategory(c.categoryId, period.from, period.to)}
                         >
-                          {c.name}
+                          <CategoryBadge id={c.categoryId} showName />
                         </button>
                       </td>
                       <td>

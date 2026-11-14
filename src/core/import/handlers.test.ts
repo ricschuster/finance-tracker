@@ -94,4 +94,13 @@ describe('import handlers', () => {
     expect(api.commitImport(req)).toMatchObject({ added: 1 })
     expect(api.commitImport(req)).toMatchObject({ added: 0 })
   })
+
+  it('warns when the same file is previewed again after importing', () => {
+    const { accountId, api } = setup()
+    expect(api.previewImport({ text: csv, profile, accountId }).warnings).toEqual([])
+    api.commitImport({ text: csv, profile, accountId, sourceName: 'jan.csv' })
+    const again = api.previewImport({ text: csv.replace(/\n/g, '\r\n'), profile, accountId })
+    expect(again.warnings[0]).toContain('already imported as "jan.csv"')
+    expect(again.items.every((i) => i.outcome === 'duplicate')).toBe(true)
+  })
 })

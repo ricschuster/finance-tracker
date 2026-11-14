@@ -35,7 +35,11 @@ change once code and data exist, so they are fixed before building.
 - Unsplit transactions pay a small cost of one extra row.
 - Importers carry the burden of sign normalisation and need tests per format.
 
-## Starter category children
+## Starter category children (superseded: flat categories)
+
+Migration 8 merged every child into its parent and categories are now flat (no
+subcategories). See `docs/design/11_review_feedback.md`. The text below records
+what migration 3 added.
 
 Added by migration 3. Children inherit the parent kind, nesting is one level
 deep, and names are unique across the whole tree. `Groceries`, `Transfer` and

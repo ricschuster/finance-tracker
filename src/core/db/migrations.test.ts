@@ -103,22 +103,59 @@ describe('migrate', () => {
       expect(() => db.prepare('DELETE FROM accounts WHERE id = 1').run()).toThrow(/FOREIGN KEY/)
     })
 
-    it('seeds children that inherit kind, with globally unique names', () => {
+    it('is flat: no subcategories, globally unique names, one income category', () => {
       const db = fresh()
-      const kids = db
-        .prepare(
-          `SELECT c.name, c.kind, p.name AS parent, p.kind AS parent_kind
-           FROM categories c JOIN categories p ON p.id = c.parent_id`,
-        )
-        .all() as { name: string; kind: string; parent: string; parent_kind: string }[]
-      expect(kids.length).toBeGreaterThan(60)
-      expect(kids.every((k) => k.kind === k.parent_kind)).toBe(true)
+      const kids = db.prepare('SELECT 1 FROM categories WHERE parent_id IS NOT NULL').all()
+      expect(kids).toEqual([])
       const names = (db.prepare('SELECT name FROM categories').all() as { name: string }[]).map(
         (r) => r.name.toLowerCase(),
       )
       expect(new Set(names).size).toBe(names.length)
-      expect(kids.filter((k) => k.parent === 'Income').every((k) => k.kind === 'income')).toBe(true)
-      expect(kids.some((k) => k.parent === 'Transfer' || k.parent === 'Uncategorized')).toBe(false)
+      expect(names.length).toBeLessThanOrEqual(17)
+    })
+
+    it('flattening repoints lines, rules and saved searches at the parent', () => {
+      const db = new Database(':memory:')
+      db.pragma('foreign_keys = ON')
+      migrate(db, migrations.slice(0, 7))
+      const id = (n: string) =>
+        (db.prepare('SELECT id FROM categories WHERE name = ?').get(n) as { id: number }).id
+      const dining = id('Food & Dining')
+      const coffee = id('Coffee Shops')
+      db.prepare("INSERT INTO accounts (name, type) VALUES ('A', 'checking')").run()
+      db.prepare(
+        "INSERT INTO transactions (account_id, date, amount) VALUES (1, '2026-01-01', -5)",
+      ).run()
+      db.prepare(
+        'INSERT INTO transaction_lines (transaction_id, category_id, amount) VALUES (1, ?, -5)',
+      ).run(coffee)
+      db.prepare("INSERT INTO rules (position, conditions, actions) VALUES (1, '[]', ?)").run(
+        JSON.stringify([
+          { type: 'setPayee', payee: 'X' },
+          { type: 'setCategory', categoryId: coffee },
+        ]),
+      )
+      db.prepare("INSERT INTO saved_searches (name, query) VALUES ('s', ?)").run(
+        JSON.stringify({ categoryId: coffee }),
+      )
+      migrate(db)
+      expect(db.prepare('SELECT category_id FROM transaction_lines').get()).toEqual({
+        category_id: dining,
+      })
+      const actions = JSON.parse(
+        (db.prepare('SELECT actions FROM rules').get() as { actions: string }).actions,
+      )
+      expect(actions).toEqual([
+        { type: 'setPayee', payee: 'X' },
+        { type: 'setCategory', categoryId: dining },
+      ])
+      const q = JSON.parse(
+        (db.prepare('SELECT query FROM saved_searches').get() as { query: string }).query,
+      )
+      expect(q).toEqual({ categoryId: dining })
+      expect(
+        db.prepare('SELECT 1 FROM categories WHERE name = ?').get('Coffee Shops'),
+      ).toBeUndefined()
     })
   })
 })

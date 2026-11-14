@@ -60,7 +60,7 @@ describe('searchTransactions', () => {
       desc: 'SHELL 9',
       notes: 'road trip',
       tags: ['vacation'],
-      category: 'Gas & Fuel',
+      category: 'Auto & Transport',
     })
     expect(ids({ text: 'safeway' })).toEqual([a])
     expect(ids({ text: 'SAFE way' })).toEqual([a])
@@ -81,13 +81,13 @@ describe('searchTransactions', () => {
   })
 
   it('filters by account, category tree, tag, status, dates and amounts', () => {
-    const a = txn({ date: '2026-01-10', amount: -500, category: 'Restaurants', tags: ['x'] })
-    const b = txn({ date: '2026-02-10', amount: 20000, accountId: card, category: 'Paycheque' })
+    const a = txn({ date: '2026-01-10', amount: -500, category: 'Food & Dining', tags: ['x'] })
+    const b = txn({ date: '2026-02-10', amount: 20000, accountId: card, category: 'Income' })
     const c = txn({ date: '2026-03-10', amount: -9000, status: 'pending' })
     expect(ids({ accountIds: [card] })).toEqual([b])
     expect(ids({ accountIds: [chq, card] })).toEqual([c, b, a])
     expect(ids({ categoryId: cat('Food & Dining') })).toEqual([a])
-    expect(ids({ categoryId: cat('Restaurants') })).toEqual([a])
+    expect(ids({ categoryId: cat('Food & Dining') })).toEqual([a])
     expect(ids({ tag: 'x' })).toEqual([a])
     expect(ids({ status: 'pending' })).toEqual([c])
     expect(ids({ from: '2026-02-01', to: '2026-02-28' })).toEqual([b])
@@ -167,11 +167,11 @@ describe('bulkUpdate', () => {
     })
     const r = bulkUpdate(db, [a, split, outId, 9999], {
       type: 'setCategory',
-      categoryId: cat('Gifts'),
+      categoryId: cat('Gifts & Donations'),
     })
     expect(r).toEqual({ changed: 1, skipped: 3 })
     const t = getTransaction(db, a)!
-    expect(t.lines[0]!.categoryName).toBe('Gifts')
+    expect(t.lines[0]!.categoryName).toBe('Gifts & Donations')
     expect(t.editedFields).toContain('categories')
     expect(getTransaction(db, split)!.lines).toHaveLength(2)
     expect(() => bulkUpdate(db, [a], { type: 'setCategory', categoryId: 99999 })).toThrow(
@@ -185,9 +185,9 @@ describe('bulkUpdate', () => {
       actions: [{ type: 'setCategory', categoryId: cat('Groceries') }],
     })
     const a = txn({ desc: 'A' })
-    bulkUpdate(db, [a], { type: 'setCategory', categoryId: cat('Gifts') })
+    bulkUpdate(db, [a], { type: 'setCategory', categoryId: cat('Gifts & Donations') })
     applyRules(db)
-    expect(getTransaction(db, a)!.lines[0]!.categoryName).toBe('Gifts')
+    expect(getTransaction(db, a)!.lines[0]!.categoryName).toBe('Gifts & Donations')
   })
 
   it('adds and removes tags case insensitively and sets status', () => {
@@ -242,5 +242,28 @@ describe('handlers', () => {
     h.saveSearch('c', { text: 'coffee' })
     expect(h.listSavedSearches()).toHaveLength(1)
     expect(h.bulkUpdate([a], { type: 'delete' }).changed).toBe(1)
+  })
+})
+
+describe('one category over a year', () => {
+  it('lists every 2026 match and totals only that category, including split shares', () => {
+    const shopping = cat('Shopping')
+    txn({ date: '2026-01-15', amount: -10_000, category: 'Shopping' })
+    txn({ date: '2026-12-31', amount: -2_500, category: 'Shopping' })
+    txn({ date: '2025-12-31', amount: -9_999, category: 'Shopping' }) // last year
+    txn({ date: '2027-01-01', amount: -9_999, category: 'Shopping' }) // next year
+    txn({ date: '2026-06-01', amount: -7_777, category: 'Groceries' }) // other category
+    createTransaction(db, {
+      accountId: chq,
+      date: '2026-06-10',
+      amount: -5_000,
+      lines: [
+        { categoryId: shopping, amount: -1_500 },
+        { categoryId: cat('Groceries'), amount: -3_500 },
+      ],
+    })
+    const r = searchTransactions(db, { categoryId: shopping, from: '2026-01-01', to: '2026-12-31' })
+    expect(r.total).toBe(3)
+    expect(r.sum).toBe(-14_000) // the split counts -1,500, not -5,000
   })
 })

@@ -21,6 +21,8 @@ export interface CommitInput {
   sourceName: string
   format: ImportFormat
   profileId?: number | null
+  /** From `hashFileText`; lets a later preview warn that this file was already imported. */
+  fileHash?: string | null
   decisions: ImportDecision[]
   /** Rows that failed mapping or were skipped as foreign; only counted. */
   rowsError?: number
@@ -97,15 +99,27 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
     const batchId = Number(
       db
         .prepare(
-          'INSERT INTO import_batches (account_id, source_name, format, profile_id) VALUES (?, ?, ?, ?)',
+          'INSERT INTO import_batches (account_id, source_name, format, profile_id, file_hash) VALUES (?, ?, ?, ?, ?)',
         )
-        .run(input.accountId, input.sourceName, input.format, input.profileId ?? null)
-        .lastInsertRowid,
+        .run(
+          input.accountId,
+          input.sourceName,
+          input.format,
+          input.profileId ?? null,
+          input.fileHash ?? null,
+        ).lastInsertRowid,
     )
     const change = db.prepare(
       'INSERT INTO import_changes (batch_id, transaction_id, kind, before) VALUES (?, ?, ?, ?)',
     )
     const claimed = new Set<number>()
+    const idTaken = db.prepare(
+      'SELECT 1 FROM transactions WHERE account_id = ? AND external_id = ?',
+    )
+    // A bank id that is already used in this account (reused by the bank, or repeated in one file)
+    // is dropped for this row so the unique index cannot abort the whole import.
+    const usableId = (id: string | null): string | null =>
+      id !== null && !idTaken.get(input.accountId, id) ? id : null
     const addedIds: number[] = []
     let added = 0
     let merged = 0
@@ -143,7 +157,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         const edited = JSON.parse(row.edited_fields) as string[]
         const status =
           edited.includes('status') || row.status === 'reconciled' ? row.status : c.status
-        const externalId = row.external_id ?? c.externalId
+        const externalId = row.external_id ?? usableId(c.externalId)
         db.prepare(
           `UPDATE transactions SET raw_description = ?, status = ?, external_id = ?,
              updated_at = datetime('now') WHERE id = ?`,
@@ -164,7 +178,7 @@ export function commitImport(db: Database.Database, input: CommitInput): CommitR
         ...(categoryId !== null && { lines: [{ categoryId, amount: c.amount }] }),
       })
       db.prepare('UPDATE transactions SET external_id = ?, import_batch_id = ? WHERE id = ?').run(
-        c.externalId,
+        usableId(c.externalId),
         batchId,
         id,
       )

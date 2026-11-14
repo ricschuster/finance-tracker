@@ -1,5 +1,6 @@
 export * from './accounts'
 export * from './categories'
+export * from './categoryStyle'
 export * from './transactions'
 export * from './tags'
 export * from './handlers'

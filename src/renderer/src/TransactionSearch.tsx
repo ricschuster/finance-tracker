@@ -163,6 +163,7 @@ export function TransactionSearch({
   }, [])
   useEffect(loadSaved, [loadSaved])
 
+  const [year, setYear] = useState('')
   const set = <K extends keyof Filters>(key: K, value: Filters[K]) =>
     setFilters((f) => ({ ...f, [key]: value }))
 
@@ -304,6 +305,24 @@ export function TransactionSearch({
 
       {showMore && (
         <div className="mapper" aria-label="Filters">
+          <label>
+            Year
+            <input
+              type="number"
+              min="1900"
+              max="2999"
+              placeholder="2026"
+              aria-label="Year"
+              value={year}
+              onChange={(e) => {
+                const y = e.target.value
+                setYear(y)
+                if (/^\d{4}$/.test(y)) {
+                  setFilters((f) => ({ ...f, from: `${y}-01-01`, to: `${y}-12-31` }))
+                }
+              }}
+            />
+          </label>
           <label>
             From
             <input type="date" value={filters.from} onChange={(e) => set('from', e.target.value)} />

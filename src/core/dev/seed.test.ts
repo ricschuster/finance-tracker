@@ -31,18 +31,18 @@ describe('seedDemoData', () => {
     expect(dates[dates.length - 1]! <= opts.today).toBe(true)
   })
 
-  it('files spending under child categories', () => {
+  it('files spending under several categories', () => {
     const db = fresh()
     seedDemoData(db, opts)
     const used = db
       .prepare(
         `SELECT DISTINCT c.name FROM transaction_lines l JOIN categories c ON c.id = l.category_id
-         WHERE c.parent_id IS NOT NULL`,
+         WHERE c.kind IN ('expense', 'income')`,
       )
       .all() as { name: string }[]
     const names = used.map((r) => r.name)
     expect(names).toEqual(
-      expect.arrayContaining(['Restaurants', 'Rent', 'Paycheque', 'Gas & Fuel']),
+      expect.arrayContaining(['Food & Dining', 'Home', 'Income', 'Auto & Transport']),
     )
   })
 

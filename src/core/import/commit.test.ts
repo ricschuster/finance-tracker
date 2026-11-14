@@ -112,9 +112,12 @@ describe('commitImport', () => {
     ).toThrow(/twice/)
   })
 
-  it('stores external ids and enforces uniqueness per account', () => {
+  it('keeps an external id unique per account without failing the import', () => {
     commitImport(db, input([add(cand({ externalId: 'F1' }))]))
-    expect(() => commitImport(db, input([add(cand({ externalId: 'F1' }))]))).toThrow()
+    const again = commitImport(db, input([add(cand({ externalId: 'F1' }))]))
+    expect(again.added).toBe(1)
+    const ids = db.prepare('SELECT external_id FROM transactions WHERE account_id = ?').all(chq)
+    expect(ids).toEqual([{ external_id: 'F1' }, { external_id: null }])
     expect(() => commitImport(db, input([add(cand({ externalId: 'F1' }))], card))).not.toThrow()
   })
 })

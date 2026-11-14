@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { CategoryBadge } from './CategoryBadge'
 import { formatCents } from '../../core/money'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { monthPeriod, quarterPeriod, yearPeriod, type Period } from '../../core/reports/period'
@@ -322,7 +323,7 @@ function CategoryRows({
         </td>
         <td>
           <button type="button" className="link" onClick={() => onOpen(c.categoryId)}>
-            {c.name}
+            <CategoryBadge id={c.categoryId} showName />
           </button>
         </td>
         <td>

@@ -1,5 +1,6 @@
 import { Fragment, useState } from 'react'
 import { formatCents } from '../../core/money'
+import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
 import { SplitEditor } from './SplitEditor'
 import type { LedgerState } from './useLedger'
@@ -68,18 +69,21 @@ export function TransactionList({
                   {isTransfer ? (
                     <span className="muted">Transfer</span>
                   ) : single ? (
-                    <CategorySelect
-                      aria-label={`Category for transaction ${t.id}`}
-                      categories={categories}
-                      value={single.categoryId}
-                      onChange={(categoryId) =>
-                        void run(() =>
-                          window.api.ledger.updateTransaction(t.id, {
-                            lines: [{ categoryId, amount: t.amount, memo: single.memo }],
-                          }),
-                        )
-                      }
-                    />
+                    <>
+                      <CategoryBadge id={single.categoryId} />
+                      <CategorySelect
+                        aria-label={`Category for transaction ${t.id}`}
+                        categories={categories}
+                        value={single.categoryId}
+                        onChange={(categoryId) =>
+                          void run(() =>
+                            window.api.ledger.updateTransaction(t.id, {
+                              lines: [{ categoryId, amount: t.amount, memo: single.memo }],
+                            }),
+                          )
+                        }
+                      />
+                    </>
                   ) : (
                     <span className="muted">
                       Split ({t.lines.map((l) => l.categoryName).join(', ')})

@@ -62,8 +62,8 @@ describe('reports', () => {
 
   it('totals income and spending and computes the savings rate', () => {
     const { reports, add } = setup()
-    add('2026-11-01', 400_000, 'Paycheque')
-    add('2026-11-02', -100_000, 'Rent')
+    add('2026-11-01', 400_000, 'Income')
+    add('2026-11-02', -100_000, 'Home')
     add('2026-11-03', -20_000, 'Groceries')
     add('2026-10-30', -99_999, 'Groceries')
     expect(reports.incomeVsExpenses(NOV)).toEqual({
@@ -89,17 +89,17 @@ describe('reports', () => {
 
   it('nets refunds against spending and classifies Uncategorized by sign', () => {
     const { reports, add } = setup()
-    add('2026-11-01', -10_000, 'Clothing')
-    add('2026-11-02', 2_500, 'Clothing')
+    add('2026-11-01', -10_000, 'Shopping')
+    add('2026-11-02', 2_500, 'Shopping')
     add('2026-11-03', -300, 'Uncategorized')
     add('2026-11-04', 1_000, 'Uncategorized')
     expect(reports.incomeVsExpenses(NOV)).toMatchObject({ income: 1_000, spending: 7_800 })
   })
 
-  it('groups spending by parent with children, shares and ordering', () => {
+  it('groups spending by category with shares and ordering', () => {
     const { reports, add } = setup()
-    add('2026-11-01', -3_000, 'Restaurants')
-    add('2026-11-02', -1_000, 'Coffee Shops')
+    add('2026-11-01', -3_000, 'Food & Dining')
+    add('2026-11-02', -1_000, 'Food & Dining')
     add('2026-11-03', -6_000, 'Groceries')
     const rows = reports.spendingByCategory(NOV)
     expect(rows.map((r) => [r.name, r.total, r.count])).toEqual([
@@ -108,10 +108,6 @@ describe('reports', () => {
     ])
     expect(rows[0]!.share).toBeCloseTo(0.6)
     expect(rows[0]!.children).toEqual([])
-    expect(rows[1]!.children.map((c) => [c.name, c.total])).toEqual([
-      ['Restaurants', 3_000],
-      ['Coffee Shops', 1_000],
-    ])
   })
 
   it('counts each split line in its own category', () => {
@@ -122,7 +118,7 @@ describe('reports', () => {
       amount: -10_000,
       lines: [
         { categoryId: cat('Groceries'), amount: -7_000 },
-        { categoryId: cat('Pharmacy'), amount: -3_000 },
+        { categoryId: cat('Health & Fitness'), amount: -3_000 },
       ],
     })
     expect(reports.spendingByCategory(NOV).map((r) => [r.name, r.total])).toEqual([
@@ -134,7 +130,7 @@ describe('reports', () => {
   it('fills empty months in the trend', () => {
     const { reports, add } = setup()
     add('2026-09-10', -1_000, 'Groceries')
-    add('2026-11-10', 5_000, 'Paycheque')
+    add('2026-11-10', 5_000, 'Income')
     expect(
       reports.monthlyTrend({ from: '2026-09-01', to: '2026-11-30' }).map((t) => [t.month, t.net]),
     ).toEqual([
@@ -167,7 +163,7 @@ describe('reports', () => {
     const { reports, add, a, b } = setup()
     add('2026-11-01', -1_000, 'Groceries', 'Small', a)
     add('2026-11-02', -8_000, 'Shopping', 'Big', b)
-    add('2026-11-03', 50_000, 'Paycheque', 'Employer', a)
+    add('2026-11-03', 50_000, 'Income', 'Employer', a)
     expect(reports.biggestTransactions(NOV, 5).map((t) => [t.payee, t.amount])).toEqual([
       ['Big', 8_000],
       ['Small', 1_000],

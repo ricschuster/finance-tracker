@@ -147,6 +147,19 @@ Identity is decided per target account in three tiers, strongest first.
 Candidates are matched in file order against a snapshot of the ledger, then
 against each other, so a file cannot duplicate itself on a re-run.
 
+### File hash and bank id collisions
+
+- Each batch stores a SHA-256 of the file text (migration 7, `file_hash`),
+  ignoring a byte order mark and line ending style. Previewing a file whose
+  hash matches a live batch for the same account shows a warning; rows still
+  go through row matching, so the result is all duplicates. Undoing a batch
+  removes its hash.
+- Row matching is per account, not per file, so two people's CSVs of one
+  joint account collide row by row (tests in `dedupe.test.ts`).
+- A bank id already used in the account, or repeated inside one file, is not
+  stored for the new row. The row still imports; the unique index on
+  `(account_id, external_id)` can no longer abort a whole import.
+
 ## Transfers
 
 On import, a candidate that has an opposite-signed amount of equal size in a

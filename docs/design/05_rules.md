@@ -37,7 +37,14 @@ numbers and punctuation vanish. Every word of the rule's text must match some wo
 description, in any order. A word may differ by typos (an adjacent swap counts as one): none
 for words up to 4 letters, one for 5 to 8, two for 9 or more. It is a rule operator like the
 others, so it is visible in the editor and the preview shows what it would change. It never
-runs silently over history; the history guess for imports is unchanged.
+runs silently over history.
+
+The history guess (import preview and review queue) also falls back to fuzzy matching, with a
+stricter, separate rule so a wrong guess is rare: see note 04, "Similar descriptions in the
+history guess". "shall" still does not match "shell" there, but as a rule a `similar` condition
+on "shell" does, because the rule preview shows exactly what it would change.
+
+Related, not built: payee cleanup suggestions (note 16) and recurrence detection (note 17).
 
 ## Review queue
 

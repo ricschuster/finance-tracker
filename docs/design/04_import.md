@@ -372,6 +372,25 @@ common category is used when at least 60% of those transactions agree (for examp
 confirming; a pick beats rules and is applied after them. Nothing is learned silently: there
 is no model, only the user's own filing history.
 
+### Similar descriptions in the history guess
+
+When the exact `suggestPattern` key was never seen, `guessFromHistory` pools the earlier rows
+whose pattern is similar (same direction, same number of words, same order) and applies the same
+60% agreement threshold to the pooled counts. "SAFWAY STORE 9" then shares guesses with
+"SAFEWAY #4412". An exact match always wins, even if it is a single row, and similar spellings are
+never pooled into it. To avoid over-matching, a word may differ only when both words have at
+least 6 letters (one typo up to 8 letters, two beyond, as in `fuzzy.ts`); shorter words must be
+identical, so "shall" and "shell", or "tim" and "tom", stay apart. The preview and the review
+queue label such a guess "similar guess n/m" instead of "guess n/m". Answers are memoised per
+pattern within one preview. Measured on `test-data/import/large/generic-large.csv` (2000 rows)
+against 3000 synthetic history patterns: about 220 ms before, about 250 ms after; the worst case
+(every row a distinct unseen description) is about 1.8 s.
+
+### Skipped rows in the summary
+
+The summary tiles leave out rows a skip rule drops: they count under "Skipped by rule" (shown
+only when there are any), not under New, Money in or Money out. Import anyway moves a row back.
+
 ### Learning from a correction
 
 Picking a category in the preview that differs from the current one (guess, file category or

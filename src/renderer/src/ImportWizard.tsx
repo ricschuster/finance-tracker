@@ -566,7 +566,23 @@ export function ImportWizard({
         ].filter((i) => i !== NONE)
       : [],
   )
-  const counts = preview?.summary.counts
+  // The preview's totals leave out rows a skip rule drops; "Import anyway" puts a row back.
+  const counts = preview
+    ? (() => {
+        const c = { ...preview.summary.counts }
+        let inflow = preview.summary.inflow
+        let outflow = preview.summary.outflow
+        for (const it of preview.items) {
+          if (it.outcome !== 'new' || !it.skippedByRule) continue
+          if (overrides[it.candidate.line]?.choice !== 'new') continue
+          c.skipped--
+          c.new++
+          if (it.candidate.amount >= 0) inflow += it.candidate.amount
+          else outflow += it.candidate.amount
+        }
+        return { ...c, inflow, outflow }
+      })()
+    : undefined
   /** Lines after the header row (and header itself) that could hold a transaction. */
   const noRows = !!info && !!map && info.totalRows - map.headerRow - (map.hasHeader ? 1 : 0) <= 0
   /** A confidence pill next to a field label while the mapping is still the guess. */
@@ -982,6 +998,12 @@ export function ImportWizard({
                 <span>New</span>
                 <strong>{counts.new}</strong>
               </div>
+              {counts.skipped > 0 && (
+                <div>
+                  <span>Skipped by rule</span>
+                  <strong>{counts.skipped}</strong>
+                </div>
+              )}
               <div>
                 <span>Already imported</span>
                 <strong>{counts.duplicate}</strong>
@@ -1000,11 +1022,11 @@ export function ImportWizard({
               </div>
               <div>
                 <span>Money in</span>
-                <strong className="pos">{formatCents(preview.summary.inflow)}</strong>
+                <strong className="pos">{formatCents(counts.inflow)}</strong>
               </div>
               <div>
                 <span>Money out</span>
-                <strong>{formatCents(preview.summary.outflow)}</strong>
+                <strong>{formatCents(counts.outflow)}</strong>
               </div>
             </div>
           </div>
@@ -1090,7 +1112,8 @@ export function ImportWizard({
                                     className="subtle"
                                     title="Guessed from earlier transactions"
                                   >
-                                    guess {it.category.agree}/{it.category.of}
+                                    {it.category.similar ? 'similar guess' : 'guess'}{' '}
+                                    {it.category.agree}/{it.category.of}
                                   </span>
                                 )}
                               {overrides[it.candidate.line]?.categoryId === undefined &&
@@ -1171,7 +1194,9 @@ export function ImportWizard({
                     ? 'No row could be read; the rows that failed are listed below.'
                     : preview.skippedForeign.length > 0
                       ? 'Every row was in another currency and was skipped.'
-                      : 'This file has no transactions that can be imported.'}
+                      : counts.skipped > 0
+                        ? 'Every new row is dropped by a skip rule. Use Import anyway on a row to keep it.'
+                        : 'This file has no transactions that can be imported.'}
               </Empty>
             )}
           </div>

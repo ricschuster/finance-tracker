@@ -129,4 +129,14 @@ describe('summarisePlan', () => {
     const s = summarisePlan(plan)
     expect(s).toMatchObject({ inflow: 300, outflow: -100, counts: { new: 2 } })
   })
+
+  it('leaves rows a skip rule drops out of new and the money totals', () => {
+    const plan = planImport(
+      1,
+      [cand({ amount: -100, line: 2 }), cand({ amount: 300, rawDescription: 'p', line: 3 })],
+      [],
+    )
+    const s = summarisePlan(plan, new Set([3]))
+    expect(s).toMatchObject({ inflow: 0, outflow: -100, counts: { new: 1, skipped: 1 } })
+  })
 })

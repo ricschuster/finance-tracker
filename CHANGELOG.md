@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- The category guess in the import preview and review queue now also works for misspelt or varied descriptions ("SAFWAY STORE 9" with "SAFEWAY #4412"), labelled "similar guess"; short words must still match exactly.
+- Design notes for payee cleanup suggestions and recurring payment detection (not built yet).
 - Keyboard shortcuts: `/` focuses the Transactions search, `n` opens Add transaction, `g` then `d`, `t`, `b`, `r`, `a` or `i` goes to Dashboard, Transactions, Budgets, Reports, Accounts or Import, and `?` lists them. A keyboard button in the sidebar footer opens the same list. Shortcuts are ignored while typing or in a dialog.
 - Search hint: a "How search works" popover next to the search box, and the empty result explains how terms are matched.
 - First run: the Dashboard shows a Get started checklist (add an account, import or add a transaction, optional rules and budgets) until there is an account and a transaction. Transactions says "No transactions yet" with Add transaction and Import buttons, and asks for an account first when there are none.
@@ -26,6 +28,7 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- The import preview's New, Money in and Money out tiles no longer count rows a skip rule drops; a Skipped by rule tile appears when there are any.
 - Search is predictable: a typed word prefix finds the word, `sho*` works like `sho`, quotes group a phrase, AND/OR/NOT/NEAR are plain words, stray quotes, parentheses and colons no longer return nothing, punctuation-only input (a lone `-`) is ignored, and apostrophes are optional (`mcdonalds` finds McDonald's).
 - Below 900px wide the sidebar collapses to icons only; tabs keep their names for screen readers and show them as tooltips.
 

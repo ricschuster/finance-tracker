@@ -5,6 +5,7 @@ import { createAccount } from '../ledger/accounts'
 import { createTransaction, getTransaction } from '../ledger/transactions'
 import { createRule } from '../rules/store'
 import { categoryIdByName } from './commit'
+import { guessFromHistory, loadHistory } from './enrich'
 import { createImportHandlers } from './handlers'
 import type { MappingProfile } from './mapping'
 
@@ -163,5 +164,70 @@ describe('import enrichment', () => {
       accountId,
     })
     expect(prev.items[0]!.skippedByRule).toBeNull()
+  })
+})
+
+describe('history guess with similar spellings', () => {
+  const hist = (rows: [string, string, number?][]) => {
+    const { db, past, cat } = setup()
+    rows.forEach(([d, c, a], i) =>
+      past(d, c, a ?? -1000, `2025-12-${String(i + 1).padStart(2, '0')}`),
+    )
+    return { map: loadHistory(db), cat }
+  }
+
+  it('pools a misspelt shop with the right one and says so', () => {
+    const { map, cat } = hist([
+      ['SAFEWAY #4412', 'Groceries'],
+      ['SAFEWAY #9', 'Groceries'],
+    ])
+    expect(guessFromHistory(map, 'SAFWAY 12', -500)).toEqual({
+      id: cat('Groceries'),
+      agree: 2,
+      of: 2,
+      similar: true,
+    })
+  })
+
+  it('lets an exact match win over similar ones', () => {
+    const { map, cat } = hist([
+      ['SAFWAY #1', 'Shopping'],
+      ['SAFEWAY #4412', 'Groceries'],
+      ['SAFEWAY #9', 'Groceries'],
+    ])
+    const g = guessFromHistory(map, 'SAFWAY 5', -500)!
+    expect(g).toMatchObject({ id: cat('Shopping'), similar: false, of: 1 })
+  })
+
+  it('keeps the 60% threshold across pooled spellings', () => {
+    const { map } = hist([
+      ['SAFEWAY #1', 'Groceries'],
+      ['SAFWAY #2', 'Shopping'],
+    ])
+    expect(guessFromHistory(map, 'SAFWEAY 7', -500)).toBeNull()
+  })
+
+  it('does not treat short look-alikes as the same shop', () => {
+    const { map } = hist([['SHELL 12', 'Shopping']])
+    expect(guessFromHistory(map, 'SHALL 3', -500)).toBeNull()
+  })
+
+  it('does not cross income and expense', () => {
+    const { map } = hist([['SAFEWAY #1', 'Groceries']])
+    expect(guessFromHistory(map, 'SAFWAY 2', 500)).toBeNull()
+  })
+})
+
+describe('import preview summary with skip rules', () => {
+  it('does not count rows a skip rule drops', () => {
+    const { accountId, api, db } = setup()
+    createRule(db, {
+      name: 'Internal',
+      conditions: [{ type: 'text', field: 'description', op: 'contains', value: 'internal xfer' }],
+      actions: [{ type: 'skipImport' }],
+    })
+    const text = file('2026-01-08,INTERNAL XFER 7,-51.37', '2026-01-09,COFFEE,-5.00')
+    const prev = api.previewImport({ text, profile, accountId })
+    expect(prev.summary).toMatchObject({ outflow: -500, counts: { new: 1, skipped: 1 } })
   })
 })

@@ -1,11 +1,15 @@
 import type Database from 'better-sqlite3'
 import {
+  categoryIdByName,
   commitImport,
   loadExistingForMatching,
   type ImportDecision,
   type ImportFormat,
 } from './commit'
+import { createCategory } from '../ledger/categories'
 import { looksLikeMint, mapMint } from './mint'
+import { looksLikeMonarch, mapMonarch } from './monarch'
+import { looksLikeWealthsimple, mapWealthsimple } from './wealthsimple'
 import { looksLikeOfx, parseOfx } from './ofx'
 import { guessHeaderRow, parseCsv, type Delimiter } from './csv'
 import { alreadyImportedWarning, findBatchByHash, hashFileText } from './filehash'
@@ -14,6 +18,7 @@ import {
   headerFingerprint,
   mapRows,
   type Candidate,
+  type MappingResult,
   type ForeignPolicy,
   type MappingProfile,
   type RowIssue,
@@ -149,7 +154,11 @@ function buildPlan(db: Database.Database, req: PreviewRequest) {
   return { mapped, plan, currency }
 }
 
+export type MultiSource = 'Mint' | 'Monarch' | 'Wealthsimple'
+
 export interface MintInspection {
+  /** Which multi-account export this is; the name is kept for the existing API. */
+  source: MultiSource
   accountNames: string[]
   count: number
 }
@@ -162,6 +171,7 @@ export interface MintRequest {
 }
 
 export interface MintPreview {
+  source: MultiSource
   accounts: Array<{ mintName: string; accountId: number; preview: ImportPreview }>
   /** Category names in the file that we do not have; those rows go to Uncategorized. */
   unknownCategories: string[]
@@ -252,10 +262,38 @@ function decide(
   })
 }
 
-/** Split a Mint file by account and plan each part against its mapped ledger account. */
+/** Recognise a multi-account export (Mint, Monarch or Wealthsimple) and map it; null for anything else. */
+function mapMulti(rows: string[][]): { source: MultiSource; mapped: MappingResult } | null {
+  if (looksLikeMint(rows)) return { source: 'Mint', mapped: mapMint(rows) }
+  if (looksLikeMonarch(rows)) return { source: 'Monarch', mapped: mapMonarch(rows) }
+  if (looksLikeWealthsimple(rows)) return { source: 'Wealthsimple', mapped: mapWealthsimple(rows) }
+  return null
+}
+
+/**
+ * Create the categories a file uses that we do not have (by name or alias), so rows keep the
+ * category they had in the old tool. A name only ever seen on money in becomes an income category.
+ */
+function createMissingCategories(db: Database.Database, candidates: Candidate[]): void {
+  const seen = new Map<string, { name: string; income: boolean }>()
+  for (const c of candidates) {
+    const name = c.categoryName?.trim()
+    if (!name || categoryIdByName(db, name) !== null) continue
+    const key = name.toLowerCase()
+    const entry = seen.get(key) ?? { name, income: true }
+    if (c.amount <= 0) entry.income = false
+    seen.set(key, entry)
+  }
+  for (const { name, income } of seen.values())
+    createCategory(db, { name, kind: income ? 'income' : 'expense' })
+}
+
+/** Split a multi-account file by account and plan each part against its mapped ledger account. */
 function mintGroups(db: Database.Database, req: MintRequest) {
   const { rows } = parseCsv(req.text)
-  const all = mapMint(rows)
+  const found = mapMulti(rows)
+  if (!found) throw new Error('This is not a Mint, Monarch or Wealthsimple export')
+  const all = found.mapped
   const existing = loadExistingForMatching(db)
   const names = [...new Set(all.candidates.map((c) => c.accountName ?? ''))]
   const unmapped = names.filter((n) => req.accountMap[n] === undefined)
@@ -264,9 +302,14 @@ function mintGroups(db: Database.Database, req: MintRequest) {
     const accountId = req.accountMap[mintName]!
     const candidates = all.candidates.filter((c) => (c.accountName ?? '') === mintName)
     // Row errors have no account, so they are reported with the first group only.
-    const errors = mintName === names[0] ? all.errors : []
-    const mapped: Mapped = { candidates, errors, skippedForeign: [] }
+    const first = mintName === names[0]
+    const mapped: Mapped = {
+      candidates,
+      errors: first ? all.errors : [],
+      skippedForeign: first ? all.skippedForeign : [],
+    }
     return {
+      source: found.source,
       mintName,
       accountId,
       candidates,
@@ -326,11 +369,15 @@ export function createImportHandlers(db: Database.Database) {
 
     /** Mint files cover many accounts; null means the text is not a Mint export. */
     inspectMint: (text: string): MintInspection | null => {
-      const { rows } = parseCsv(text)
-      if (!looksLikeMint(rows)) return null
-      const m = mapMint(rows)
+      const found = mapMulti(parseCsv(text).rows)
+      if (!found) return null
+      const m = found.mapped
       const accountNames = [...new Set(m.candidates.map((c) => c.accountName ?? ''))]
-      return { accountNames, count: m.candidates.length + m.errors.length }
+      return {
+        source: found.source,
+        accountNames,
+        count: m.candidates.length + m.errors.length + m.skippedForeign.length,
+      }
     },
 
     /** Make an outside category name (for example from Mint) land in one of our categories. */
@@ -360,6 +407,7 @@ export function createImportHandlers(db: Database.Database) {
           if (c.categoryName && !known.has(c.categoryName.toLowerCase()))
             unknown.add(c.categoryName)
       return {
+        source: groups[0]?.source ?? 'Mint',
         accounts: groups.map((g) => ({
           mintName: g.mintName,
           accountId: g.accountId,
@@ -370,20 +418,27 @@ export function createImportHandlers(db: Database.Database) {
     },
 
     commitMint: (req: MintRequest & { sourceName: string }) =>
-      db.transaction(() =>
-        mintGroups(db, req).map((g) => ({
+      db.transaction(() => {
+        const groups = mintGroups(db, req)
+        createMissingCategories(
+          db,
+          groups.flatMap((g) => g.candidates),
+        )
+        return groups.map((g) => ({
           mintName: g.mintName,
           ...commitImport(db, {
             accountId: g.accountId,
             sourceName: req.sourceName,
-            format: 'mint',
+            // Only Mint has its own batch format value; Monarch and Wealthsimple are stored as csv.
+            format: g.source === 'Mint' ? ('mint' as const) : ('csv' as const),
             fileHash: hashFileText(req.text),
             decisions: decide(db, g.accountId, g.plan, req.overrides),
-            rowsError: g.mapped.errors.length,
-            rowsTotal: g.mapped.candidates.length + g.mapped.errors.length,
+            rowsError: g.mapped.errors.length + g.mapped.skippedForeign.length,
+            rowsTotal:
+              g.mapped.candidates.length + g.mapped.errors.length + g.mapped.skippedForeign.length,
           }),
-        })),
-      )(),
+        }))
+      })(),
 
     listImportBatches: () => listBatches(db),
     getImportBatchRows: (batchId: number) => getBatchRows(db, batchId),

@@ -40,6 +40,8 @@ export interface Candidate {
   /** Mint only: the source account name and category name. */
   accountName?: string
   categoryName?: string
+  /** Monarch only: tags to attach to the new transaction. */
+  tags?: string[]
 }
 
 export interface RowIssue {

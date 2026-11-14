@@ -432,7 +432,8 @@ export function ImportWizard({
             </span>
             <strong>Drop a bank file here, or choose one</strong>
             <span className="muted">
-              CSV, OFX, QFX or a Mint export. Nothing is saved until you confirm.
+              CSV, OFX, QFX, or a Mint, Monarch or Wealthsimple export. Nothing is saved until you
+              confirm.
             </span>
             <button type="button" className="primary" onClick={() => void chooseFile()}>
               <FolderOpen size={16} />

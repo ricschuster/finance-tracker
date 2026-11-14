@@ -250,5 +250,28 @@ Each step is usable on its own and goes through the session PR.
 
 Status (2026-11-13): steps 1 to 5 are built: CSV, OFX/QFX, Mint CSV with
 the per-account mapping step, and RBC, TD and Tangerine presets (all three
-checked against real exports on 2026-11-13: header row and date format). Not built:
+checked against real exports on 2026-11-13: header row and date format). Wealthsimple (added later) is a multi-account export like Mint: header `transaction_date, ..., account_number, account_type, ..., amount, currency, notes`, ISO dates, signed amounts, each row's account is "type number" and is mapped to a ledger account in the Mint-style step; non-CAD rows are skipped; batches are stored as `csv`. The layout comes from the user's header only, not yet checked against real rows. Not built:
 presets for other banks, and Mint label-to-tag import.
+
+## Moving from Monarch
+
+The one-time move from Monarch is specific, not generic: a Monarch transactions
+export (`Date, Merchant, Category, Account, Original Statement, Notes, Amount,
+Tags, Owner, Reviewed, Reviewed At, Reviewed By, Pending, Id`) is detected by
+header and goes through the same per-account mapping step as Mint and
+Wealthsimple. ISO dates, signed amounts, `Merchant` is the payee, `Original
+Statement` the raw description, `Id` the external id (re-imports are caught as
+duplicates), `Pending` sets the status and `Tags` (comma separated) become
+tags. Categories match by name or alias and unknown ones are mapped in the
+preview. Batches are stored as `csv`. Not carried over: opening balances (the
+export has none, so set them on the account), budgets, and Owner/Reviewed
+fields. Transfers are not marked in the file, so Monarch's Transfer rows land
+as ordinary transactions unless matched at import. The layout is taken from
+the user's header only and is not yet checked against real rows.
+
+Accounts and categories are created from the file: an account with no
+same-named ledger account defaults to "Create a new account" with a type
+guessed from its name (`guessAccountType`), and categories we do not have are
+created at commit (income when every row with that name is money in, otherwise
+expense) unless the user maps them to an existing category in the preview.
+This applies to all multi-account imports (Mint, Monarch, Wealthsimple).

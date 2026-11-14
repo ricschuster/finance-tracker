@@ -44,7 +44,7 @@ describe('Mint', () => {
     expect(() => mapMint([['a']])).toThrow(/Mint/)
   })
 
-  it('previews per account, reports unknown categories, and commits atomically', () => {
+  it('previews per account, reports unknown categories, creates them on commit, and commits atomically', () => {
     const db = new Database(':memory:')
     db.pragma('foreign_keys = ON')
     migrate(db)
@@ -53,7 +53,11 @@ describe('Mint', () => {
     const manual = createTransaction(db, { accountId: chq, date: '2026-01-06', amount: -4500 })
     const api = createImportHandlers(db)
 
-    expect(api.inspectMint(csv)).toEqual({ accountNames: ['Chequing', 'Visa'], count: 4 })
+    expect(api.inspectMint(csv)).toEqual({
+      source: 'Mint',
+      accountNames: ['Chequing', 'Visa'],
+      count: 4,
+    })
     expect(api.inspectMint('a,b\n1,2')).toBeNull()
     expect(() => api.previewMint({ text: csv, accountMap: { Chequing: chq } })).toThrow(/Visa/)
 
@@ -74,7 +78,7 @@ describe('Mint', () => {
     const [payroll] = getBatchRows(db, done[0]!.batchId)
     expect(getTransaction(db, payroll!.id)!.lines[0]!.categoryName).toBe('Income')
     const [shop] = getBatchRows(db, done[1]!.batchId)
-    expect(getTransaction(db, shop!.id)!.lines[0]!.categoryName).toBe('Uncategorized')
+    expect(getTransaction(db, shop!.id)!.lines[0]!.categoryName).toBe('Mystery Category')
     expect(api.commitMint({ ...req, sourceName: 'mint.csv' }).every((d) => d.added === 0)).toBe(
       true,
     )

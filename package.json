@@ -1,6 +1,6 @@
 {
   "name": "finance-tracker",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
   "description": "Local personal finance organizer with manual entry and file import",
   "license": "GPL-3.0-only",

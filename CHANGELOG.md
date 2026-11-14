@@ -5,6 +5,20 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
+### Added
+
+- Wealthsimple and Monarch CSV import. Both reuse the per-account mapping step
+  used for Mint.
+- Accounts and categories found in an import file are created, with a guessed
+  account type. Monarch tags are imported.
+
+### Notes
+
+- Both layouts were built from header images only; no real files have been
+  tried yet. Monarch Transfer rows import as ordinary transactions.
+
 ## [0.1.1] - 2026-11-13
 
 ### Added

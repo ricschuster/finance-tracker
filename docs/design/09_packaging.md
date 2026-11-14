@@ -32,6 +32,15 @@ Electron; `npm test` rebuilds it for Node again.
 1. Bump `version` in `package.json` and update `CHANGELOG.md` in a PR.
 2. After merge, tag the commit `vX.Y.Z` and push the tag.
 3. The Release workflow builds all three installers and publishes the release.
+   Installers are attached to the release on the repository's Releases page.
+   `macos-latest` runs on Apple silicon, so the dmg is arm64.
+4. If the run fails before `publish`, no release exists yet: fix on `main`,
+   delete the tag (locally and on `origin`) and push it again on the new
+   commit.
+
+The release run is the only place tests run on Windows and macOS (PR CI is
+Linux only). v0.1.0's first run failed on Windows because tests left SQLite
+files open before deleting them; close every handle in tests.
 
 ## Data and upgrades
 

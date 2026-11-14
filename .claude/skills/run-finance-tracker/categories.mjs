@@ -68,6 +68,20 @@ console.log(
   await groceries.locator('.category-icon svg').first().getAttribute('class'),
 )
 
+// Change type: Groceries moves from Spending to Income and back.
+await menu('Groceries', 'Change type')
+await dialog.getByRole('radio', { name: 'Income' }).click()
+await shot('categories-kind')
+await dialog.getByRole('button', { name: 'Save' }).click()
+await page.waitForTimeout(400)
+const incomeCard = page.locator('.category-card', { has: page.getByRole('heading', { name: 'Income' }) })
+console.log('KIND TO INCOME:', (await incomeCard.innerText()).includes('Groceries'))
+await menu('Groceries', 'Change type')
+await dialog.getByRole('radio', { name: 'Spending' }).click()
+await dialog.getByRole('button', { name: 'Save' }).click()
+await page.waitForTimeout(400)
+console.log('KIND BACK:', !(await incomeCard.innerText()).includes('Groceries'))
+
 // A category in use: the delete dialog names the line count and offers a target.
 await menu('Food & Dining', 'Delete')
 console.log('IN USE PROMPT:', (await dialog.innerText()).replace(/\n+/g, ' | ').slice(0, 200))

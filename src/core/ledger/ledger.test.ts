@@ -13,6 +13,7 @@ import {
   deleteCategory,
   deleteCategories,
   mergeCategory,
+  setCategoryKind,
   setCategoryStyle,
   isCategoryColor,
   isCategoryIcon,
@@ -428,5 +429,15 @@ describe('category style', () => {
     expect(() => setCategoryStyle(db, id, { color: '#123456', icon: null })).toThrow(/colour/)
     expect(() => setCategoryStyle(db, id, { color: null, icon: 'rocket' })).toThrow(/icon/)
     expect(() => setCategoryStyle(db, 9999, { color: null, icon: null })).toThrow(/not found/)
+  })
+
+  it('changes a category kind, but not for system categories', () => {
+    const id = createCategory(db, { name: 'Side gig' })
+    setCategoryKind(db, id, 'income')
+    expect(listCategories(db).find((c) => c.id === id)?.kind).toBe('income')
+    const sys = listCategories(db).find((c) => c.isSystem)!
+    expect(() => setCategoryKind(db, sys.id, 'income')).toThrow(/System/)
+    expect(() => setCategoryKind(db, 9999, 'income')).toThrow(/not found/)
+    expect(() => setCategoryKind(db, id, 'bogus' as never)).toThrow(/kind/)
   })
 })

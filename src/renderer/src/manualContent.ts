@@ -92,7 +92,7 @@ export const MANUAL: ManualSection[] = [
     id: 'categories',
     title: 'Categories',
     blocks: [
-      'Categories are a flat list. Each is an expense, income or transfer category and has a colour and an icon. In the Categories tab you can add, rename, recolour, delete (choosing where its transactions go) and merge two categories into one.',
+      'Categories are a flat list. Each is an expense, income or transfer category and has a colour and an icon. In the Categories tab you can add, rename, recolour, change the type of (for example from spending to income), delete (choosing where its transactions go) and merge two categories into one.',
       'Merging moves transactions, rules, saved searches and budgets across. The old name becomes an alias, so later imports that still use it land in the surviving category.',
       'To remove several at once, tick them (or use Select all or Select unused) and choose Delete selected. Their transactions move to the category you pick, Uncategorized by default.',
       'Uncategorized and Transfer are built in and cannot be renamed or deleted.',

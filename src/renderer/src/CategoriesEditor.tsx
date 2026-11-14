@@ -1,4 +1,14 @@
-import { Check, GitMerge, Lock, Palette, Pencil, Plus, Tags, Trash2 } from 'lucide-react'
+import {
+  ArrowRightLeft,
+  Check,
+  GitMerge,
+  Lock,
+  Palette,
+  Pencil,
+  Plus,
+  Tags,
+  Trash2,
+} from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import type { Category, CategoryKind } from '../../core/ledger/categories'
 import { CATEGORY_COLORS, type CategoryIconKey } from '../../core/ledger/categoryStyle'
@@ -12,6 +22,7 @@ type Pending =
   | { type: 'add' }
   | { type: 'rename'; category: Category }
   | { type: 'style'; category: Category }
+  | { type: 'kind'; category: Category }
   | { type: 'merge'; category: Category }
   | { type: 'delete'; category: Category }
   | { type: 'deleteMany' }
@@ -61,6 +72,7 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
     add: 'Add category',
     rename: 'Rename category',
     style: 'Colour and icon',
+    kind: 'Change type',
     merge: 'Merge category',
     delete: 'Delete category',
     deleteMany: 'Delete categories',
@@ -178,6 +190,11 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
                                 onSelect: () => setPending({ type: 'style', category: c }),
                               },
                               {
+                                label: 'Change type',
+                                icon: <ArrowRightLeft size={14} />,
+                                onSelect: () => setPending({ type: 'kind', category: c }),
+                              },
+                              {
                                 label: 'Merge into...',
                                 icon: <GitMerge size={14} />,
                                 disabled: mergeTargets(c).length === 0,
@@ -242,6 +259,15 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
             onCancel={close}
             onSave={(style) =>
               runAndClose(() => window.api.ledger.setCategoryStyle(pending.category.id, style))
+            }
+          />
+        )}
+        {pending?.type === 'kind' && (
+          <KindForm
+            category={pending.category}
+            onCancel={close}
+            onSave={(kind) =>
+              runAndClose(() => window.api.ledger.setCategoryKind(pending.category.id, kind))
             }
           />
         )}
@@ -405,6 +431,52 @@ function RenameForm({
         label="Save"
         disabled={name.trim() === '' || name.trim() === category.name}
       />
+    </form>
+  )
+}
+
+const KIND_LABEL: Record<CategoryKind, string> = {
+  expense: 'Spending',
+  income: 'Income',
+  transfer: 'Transfer',
+}
+
+function KindForm({
+  category,
+  onSave,
+  onCancel,
+}: {
+  category: Category
+  onSave: (kind: CategoryKind) => void
+  onCancel: () => void
+}) {
+  const [kind, setKind] = useState<CategoryKind>(category.kind)
+  return (
+    <form
+      className="stack"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSave(kind)
+      }}
+    >
+      <p className="move-text">
+        Reports group by type: income counts toward income, spending toward expenses, and transfers
+        are left out of both. Existing transactions keep their amounts.
+      </p>
+      <div className="segmented" role="radiogroup" aria-label="Category type">
+        {(['expense', 'income', 'transfer'] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={kind === k}
+            onClick={() => setKind(k)}
+          >
+            {KIND_LABEL[k]}
+          </button>
+        ))}
+      </div>
+      <DialogButtons onCancel={onCancel} label="Save" disabled={kind === category.kind} />
     </form>
   )
 }

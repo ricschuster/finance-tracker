@@ -11,7 +11,12 @@ Status: skeleton app in place (Electron, React, SQLite). See `docs/design/00_pro
 Download the installer for your OS from the GitHub releases page. Builds are
 unsigned, so the first launch shows a warning:
 
-- macOS: right-click the app and choose Open, then confirm.
+- macOS: pick the dmg for your Mac: `mac-arm64` for Apple silicon (M1 and
+  later), `mac-x64` for Intel (Apple menu, About This Mac shows which). Drag the
+  app to Applications and open it. When macOS says it cannot verify the app,
+  choose Done, then open System Settings, Privacy & Security and click Open
+  Anyway. Alternatively run
+  `xattr -dr com.apple.quarantine "/Applications/Finance Tracker.app"` once.
 - Windows: in SmartScreen choose More info, then Run anyway.
 - Linux: `chmod +x` the AppImage and run it.
 

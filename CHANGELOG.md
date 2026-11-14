@@ -5,6 +5,26 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-13
+
+### Added
+
+- macOS installer for Intel Macs (`mac-x64.dmg`) next to the Apple silicon one.
+- App icon: the sidebar's leaf mark on the teal gradient (`build/icon.svg`,
+  rendered by `scripts/render-icon.mjs`).
+- The Release workflow can be run by hand to build installers without
+  publishing.
+
+### Changed
+
+- The macOS app carries an ad-hoc signature, so it can run on Apple silicon.
+- README: macOS first-launch steps for macOS 15 (Open Anyway in Privacy &
+  Security).
+
+### Fixed
+
+- v0.1.0 had no macOS build for Intel Macs.
+
 ## [0.1.0] - 2026-11-13
 
 First release. Installers are unsigned (ADR 0004): Linux AppImage, Windows

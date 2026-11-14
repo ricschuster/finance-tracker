@@ -15,6 +15,7 @@ import {
   mergeCategory,
   setCategoryStyle,
   listCategories,
+  listCategoryAliases,
   renameCategory,
 } from './categories'
 import type { LedgerMethod } from './methods'
@@ -51,6 +52,7 @@ export function createLedgerHandlers(db: Database.Database) {
       setCategoryStyle(db, id, style),
     mergeCategory: (fromId: number, intoId: number) => mergeCategory(db, fromId, intoId),
     categoryUsage: () => categoryUsage(db),
+    listCategoryAliases: () => listCategoryAliases(db),
     listTags: () => listTags(db),
     getTransaction: (id: number) => getTransaction(db, id) ?? null,
     listTransactions: (filter?: Parameters<typeof listTransactions>[1]) =>

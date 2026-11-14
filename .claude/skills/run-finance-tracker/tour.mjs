@@ -1,7 +1,7 @@
 // Example flow: search, rule, CSV import, undo. Writes screenshots to $SCREENSHOT_DIR.
 import fs from 'node:fs'
 import path from 'node:path'
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const outDir = process.env.SCREENSHOT_DIR || '/tmp/ft-shots'
 const { app, page, errors, shot, stubOpenDialog } = await launch({ outDir })
@@ -19,7 +19,7 @@ await page.getByRole('button', { name: 'New rule' }).click()
 await page.getByLabel('Name').last().fill('Spotify')
 await page.getByLabel('Text', { exact: true }).fill('spotify')
 await page.getByLabel('Set payee').fill('Spotify')
-await page.getByLabel('Category', { exact: true }).selectOption({ label: 'Entertainment' })
+await pickCategory(page, 'Category', 'Entertainment', { exact: true })
 await page.getByRole('button', { name: 'Save rule' }).click()
 await shot('rule-saved')
 

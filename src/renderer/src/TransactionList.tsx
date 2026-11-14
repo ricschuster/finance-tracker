@@ -191,8 +191,8 @@ export function TransactionList({
                       </span>
                     ) : single ? (
                       <span className="cat-select">
-                        <CategoryBadge id={single.categoryId} size="sm" />
                         <CategorySelect
+                          inline
                           aria-label={`Category for transaction ${t.id}`}
                           categories={categories}
                           value={single.categoryId}

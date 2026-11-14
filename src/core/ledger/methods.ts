@@ -13,6 +13,7 @@ export const LEDGER_METHODS = [
   'mergeCategory',
   'setCategoryStyle',
   'categoryUsage',
+  'listCategoryAliases',
   'listTags',
   'getTransaction',
   'listTransactions',

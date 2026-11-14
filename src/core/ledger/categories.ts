@@ -227,3 +227,16 @@ export function setCategoryStyle(
     .run(style.color, style.icon, id)
   if (r.changes === 0) throw new Error(`Category ${id} not found`)
 }
+
+export interface CategoryAlias {
+  alias: string
+  categoryId: number
+}
+
+/** Every alias (an alternative name that import maps to a category), for the category picker. */
+export function listCategoryAliases(db: Database.Database): CategoryAlias[] {
+  const rows = db
+    .prepare('SELECT alias, category_id FROM category_aliases ORDER BY alias')
+    .all() as { alias: string; category_id: number }[]
+  return rows.map((r) => ({ alias: r.alias, categoryId: r.category_id }))
+}

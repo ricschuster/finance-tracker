@@ -1,6 +1,6 @@
 // Click through the Categories tab: add (dialog), merge, rename, delete with reassign,
 // colour and icon. Row actions are in a "..." menu; each opens a dialog.
-import { launch } from './lib.mjs'
+import { launch, pickCategory } from './lib.mjs'
 
 const { app, page, errors, shot } = await launch()
 const list = async () =>
@@ -35,7 +35,7 @@ console.log(
 
 await add('Vet')
 await menu('Vet', 'Merge into...')
-await dialog.getByLabel('Merge into').selectOption({ label: 'Pets' })
+await pickCategory(dialog, 'Merge into', 'Pets')
 await shot('categories-merge')
 await dialog.getByRole('button', { name: 'Merge', exact: true }).click()
 await page.waitForTimeout(400)

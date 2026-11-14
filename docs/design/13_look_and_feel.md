@@ -88,3 +88,15 @@ avoid a flash. System is the default.
   row menu (show rows, undo import).
 - Data: cards for export and restore, CSV export and automatic backups (on or
   off pill, last backup, count, settings form).
+
+## Category picker, and notes (session feedback)
+
+- Category picker: `CategorySelect` is a searchable combobox (button plus a filter box and
+  listbox) used for every category choice. Filtering is `filterCategoryOptions` in
+  `core/ledger/categoryPicker.ts`: every word must match the category name, its parent or an
+  alias, ignoring case and accents. Aliases come from `listCategoryAliases` via `useLedger`.
+  Keys: arrows move, Enter picks, Escape closes only the picker (also inside a dialog).
+  The budget add dialog keeps a plain select because its options carry spent amounts.
+- Notes: `transactions.notes` is edited from the row menu (Add or Edit note) in an inline
+  row, shown as a note icon next to the payee with the text as tooltip, searched by the
+  main search box and written to the CSV export. Rules do not match on notes.

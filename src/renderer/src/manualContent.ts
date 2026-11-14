@@ -46,11 +46,11 @@ export const MANUAL: ManualSection[] = [
     id: 'accounts',
     title: 'Accounts',
     blocks: [
-      'Accounts live in the sidebar, grouped by type (chequing, savings, credit card, cash, loan, other). Click one to see only its transactions; click Transactions to see everything.',
+      'Accounts are listed on the Accounts tab, grouped by type (chequing, savings, credit card, cash, loan, other). Click one to see only its transactions. On the Transactions tab, which shows everything, use Filters then Account to look at a single account.',
       {
         list: [
           'Add an account with Add account on the Accounts tab. Give it a name, a type and an opening balance.',
-          'Edit, archive or delete an account from its page. Archiving hides it from the sidebar but keeps its history in reports.',
+          'Edit, archive or delete an account with Edit account on its row. Archiving moves it to the Archived card on the Accounts tab but keeps its history in reports.',
           'The balance shown is the opening balance plus every transaction. If it does not match your bank, you have a missing or duplicated transaction, or the opening balance is off.',
         ],
       },

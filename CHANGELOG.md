@@ -15,6 +15,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Changed
 
+- The sidebar no longer lists accounts; use the Accounts tab, or the new Account filter on
+  Transactions.
 - Add account moved from the sidebar to the Accounts tab; the sidebar no longer shows net worth.
 - Sidebar account rows show names only; the "Owing" summary line is gone.
 - The Transactions tab always shows all accounts.

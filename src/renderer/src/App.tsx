@@ -24,13 +24,7 @@ import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import {
-  ACCOUNT_GROUPS,
-  ACCOUNT_ICONS,
-  accountTypeLabel,
-  balanceText,
-  isLiability,
-} from './accountTypes'
+import { accountTypeLabel, balanceText, isLiability } from './accountTypes'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { CategoryAliasProvider } from './CategorySelect'
@@ -189,23 +183,6 @@ function Shell() {
           : `All accounts · ${ledger.accounts.length} account${ledger.accounts.length === 1 ? '' : 's'}`
         : SUBTITLES[view]
 
-  const accountButton = (a: AccountWithBalance) => {
-    const Icon = ACCOUNT_ICONS[a.type]
-    return (
-      <li key={a.id} className="account-row">
-        <button
-          type="button"
-          className="nav-item"
-          aria-current={accountId === a.id}
-          onClick={() => pickAccount(a.id)}
-        >
-          <Icon size={16} aria-hidden="true" />
-          <span className="grow">{a.name}</span>
-        </button>
-      </li>
-    )
-  }
-
   return (
     <CategoryStyleProvider value={ledger.categories}>
       <CategoryAliasProvider value={ledger.categoryAliases}>
@@ -244,25 +221,6 @@ function Shell() {
                       </div>
                     </div>
                   ))}
-                </nav>
-                <nav aria-label="Accounts" className="nav-group">
-                  <div className="nav-heading">Accounts</div>
-                  {ACCOUNT_GROUPS.map((g) => {
-                    const list = ledger.accounts.filter((a) => g.types.includes(a.type))
-                    if (list.length === 0) return null
-                    return (
-                      <div key={g.label}>
-                        <div className="account-type">{g.label}</div>
-                        <ul>{list.map(accountButton)}</ul>
-                      </div>
-                    )
-                  })}
-                  {archived.length > 0 && (
-                    <details>
-                      <summary>Archived ({archived.length})</summary>
-                      <ul>{archived.map(accountButton)}</ul>
-                    </details>
-                  )}
                 </nav>
               </div>
               <footer className="sidebar-footer">
@@ -401,11 +359,12 @@ function Shell() {
                 {view === 'history' && <ImportHistory run={ledger.run} />}
                 {view === 'ledger' && (
                   <TransactionSearch
-                    accounts={ledger.accounts}
+                    accounts={[...ledger.accounts, ...archived]}
                     categories={ledger.categories}
                     run={ledger.run}
                     version={ledger.version}
                     accountId={accountId}
+                    onAccountChange={setAccountId}
                     preset={preset}
                     onSuggestRule={(id) =>
                       void ledger.run(async () => {

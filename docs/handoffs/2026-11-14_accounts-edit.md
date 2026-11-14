@@ -13,7 +13,10 @@ Follow-up to the Accounts page (PR #38): the sidebar's "All accounts" duplicated
 - Manual, changelog, design note 15, `accounts-page.mjs` and README screenshots updated.
 
 - Add account is now a button on the Accounts page header. The sidebar's "+" and its Net worth
-  block are gone (net worth is on the Accounts page). The sidebar still lists accounts by name.
+  block are gone (net worth is on the Accounts page). - The sidebar account list (and archived group) is removed. Transactions has an Account filter in
+  Filters (also lists archived accounts, counts in the filter badge, reset by Clear); opening an
+  account from the Accounts page sets it. UI scripts (`accounts-dashboard.mjs`, `duplicates.mjs`,
+  `accounts-page.mjs`) were moved to the new flow.
 
 ## Current state
 
@@ -22,6 +25,6 @@ works), no page errors. Still v0.4.0; no release cut on purpose.
 
 ## Next actions
 
-1. Decide whether to drop the sidebar account list: it needs an account filter in the Transactions
-   Filters first (today account scoping only comes from the sidebar or Accounts page).
+1. Owner tries the sidebar-less flow. Possible follow-up: show the account filter outside the
+   collapsed Filters panel.
 2. Remaining items from the v0.4.0 handoff (real-UI checks, budget rollover decision).

@@ -152,6 +152,26 @@ Identity is decided per target account in three tiers, strongest first.
 Candidates are matched in file order against a snapshot of the ledger, then
 against each other, so a file cannot duplicate itself on a re-run.
 
+### Finding duplicates already in the ledger
+
+Status: built (migration 14). `findDuplicateGroups` in `src/core/ledger/duplicates.ts`
+reuses the import normalisation (`normaliseDescription`, `daysBetween`). A pair is
+flagged when both rows are in the same account, have the same total amount, are
+within a window (default 2 days, 0 means same day only) and their text agrees:
+`strict` needs identical normalised text, `normal` also accepts one text containing the
+other or at least 60 percent shared words. Both legs of a transfer, zero amounts and
+archived accounts are skipped; split transactions are compared by their total, never
+by their lines. Pairs sharing a row merge into one group, with a score (0 to 100,
+lower for larger date gaps and looser text) and a reason string.
+
+False-positive guards: the same amount a month apart (subscriptions) is outside any
+window, and identical purchases on different days are not flagged at window 0. A group
+marked "Not a duplicate" stores every pair of its rows in `duplicate_dismissals`
+(ordered ids, cascade on delete), so it is not shown again, while a new look-alike row
+can still surface. The "Find duplicates" dialog in the page toolbar has a window and
+a strictness control, and deletes through the confirm dialog with an Undo toast that
+re-creates the row (its id changes, and the hand-edited field markers are not restored).
+
 ### File hash and bank id collisions
 
 - Each batch stores a SHA-256 of the file text (migration 7, `file_hash`),

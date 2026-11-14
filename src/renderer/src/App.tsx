@@ -2,6 +2,7 @@ import {
   ArrowLeftRight,
   BarChart3,
   BookOpen,
+  Copy,
   Database,
   LayoutDashboard,
   Leaf,
@@ -42,6 +43,7 @@ import { ImportWizard } from './ImportWizard'
 import { PageActionsContext } from './PageActions'
 import { Reports } from './Reports'
 import { RulesEditor } from './RulesEditor'
+import { DuplicatesForm } from './DuplicatesForm'
 import { LinkPaymentsForm } from './LinkPaymentsForm'
 import { TransferForm } from './TransferForm'
 import { TransactionForm } from './TransactionForm'
@@ -123,7 +125,7 @@ function Shell() {
   } | null>(null)
   const [ruleDraft, setRuleDraft] = useState<RuleInput | null>(null)
   const [dialog, setDialog] = useState<
-    'account' | 'editAccount' | 'transaction' | 'transfer' | 'linkPayments' | null
+    'account' | 'editAccount' | 'transaction' | 'transfer' | 'linkPayments' | 'duplicates' | null
   >(null)
   const [theme, setTheme] = useTheme()
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
@@ -326,6 +328,10 @@ function Shell() {
                           Link card payments
                         </button>
                       )}
+                      <button type="button" onClick={() => setDialog('duplicates')}>
+                        <Copy size={15} />
+                        Find duplicates
+                      </button>
                       <button
                         type="button"
                         className="primary"
@@ -481,6 +487,15 @@ function Shell() {
               run={ledger.run}
               onDone={() => setDialog(null)}
             />
+          </Dialog>
+          <Dialog
+            open={dialog === 'duplicates'}
+            onOpenChange={(o) => setDialog(o ? 'duplicates' : null)}
+            title="Find duplicates"
+            description="Transactions in the same account with the same amount, close dates and similar text. Nothing is deleted unless you choose Delete."
+            wide
+          >
+            {dialog === 'duplicates' && <DuplicatesForm run={ledger.run} />}
           </Dialog>
           <Dialog
             open={dialog === 'linkPayments'}

@@ -37,10 +37,12 @@ export function Dialog({
         <RDialog.Overlay className="dialog-overlay" />
         <RDialog.Content
           className={wide ? 'dialog wide' : 'dialog'}
-          {...(persistent && {
-            onInteractOutside: (e: Event) => e.preventDefault(),
-            onEscapeKeyDown: (e: KeyboardEvent) => e.preventDefault(),
-          })}
+          onInteractOutside={(e: Event) => {
+            // A toast action (for example Undo) is not an outside click.
+            if (persistent || (e.target as Element | null)?.closest?.('.toast-region'))
+              e.preventDefault()
+          }}
+          {...(persistent && { onEscapeKeyDown: (e: KeyboardEvent) => e.preventDefault() })}
           {...(description ? {} : { 'aria-describedby': undefined })}
         >
           <RDialog.Title className="dialog-title">{title}</RDialog.Title>

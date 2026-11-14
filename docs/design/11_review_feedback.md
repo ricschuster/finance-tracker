@@ -92,6 +92,7 @@ Status: built (file hash warning, id collision fix, joint account tests).
 Today: duplicates are detected per row (external id, then date, amount and
 payee, note 04). There is no file-level check.
 Change:
+
 - Record a SHA-256 of each imported file in `import_batches`. A file with a
   known hash is reported as "already imported" before parsing.
 - Row-level matching is per account, not per file, so two people's CSVs of

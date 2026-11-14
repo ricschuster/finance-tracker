@@ -95,6 +95,16 @@ describe('categories', () => {
     expect(() => createCategory(db, { name: 'salary' })).toThrow(/UNIQUE/)
   })
 
+  it('creates a category with a colour and icon in one step', () => {
+    const id = createCategory(db, { name: 'Pets', color: '#e15759', icon: 'pet' })
+    expect(listCategories(db).find((c) => c.id === id)).toMatchObject({
+      color: '#e15759',
+      icon: 'pet',
+    })
+    expect(() => createCategory(db, { name: 'Vet', icon: 'nope' })).toThrow(/Unknown icon/)
+    expect(listCategories(db).some((c) => c.name === 'Vet')).toBe(false)
+  })
+
   it('counts transaction lines per category', () => {
     createTransaction(db, {
       accountId: chq,

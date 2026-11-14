@@ -32,7 +32,9 @@ await page.getByRole('button', { name: 'Import', exact: true }).last().click()
 await shot('import-done')
 
 await page.getByRole('tab', { name: 'Import history' }).click()
-await page.getByRole('button', { name: 'Undo' }).click()
+await page.getByRole('button', { name: /^Actions for import / }).first().click()
+await page.getByRole('menuitem', { name: 'Undo import' }).click()
+await page.getByTestId('confirm-dialog').getByRole('button', { name: 'Undo import' }).click()
 await page.waitForTimeout(800)
 await shot('undo')
 

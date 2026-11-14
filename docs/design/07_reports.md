@@ -54,9 +54,12 @@ category opens the Transactions tab filtered to that category and period.
 
 A Customize button on the dashboard opens a checklist of sections: income,
 spending, net and savings rate, the uncategorized reminder, top categories,
-last six months and biggest this month. The choice is saved as JSON in the
-`settings` table (`dashboard_widgets`), so it travels with database export and
-restore. Everything is shown until the user changes it; display order is fixed.
+budgets, last six months and biggest this month. The choice is saved as JSON in
+the `settings` table (`dashboard_widgets`), so it travels with database export
+and restore. Everything is shown until the user changes it; display order is
+fixed. The JSON holds the hidden ids (`{"hidden": [...]}`), so a widget added in
+a later version shows by default. The first format held the visible ids; when
+it is read, widgets added since (Budgets) are shown too.
 Logic is in `src/core/reports/widgets.ts`.
 
 ## Out of scope

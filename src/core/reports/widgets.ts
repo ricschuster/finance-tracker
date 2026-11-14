@@ -7,6 +7,7 @@ export const DASHBOARD_WIDGETS = [
   { id: 'net', label: 'Net and savings rate' },
   { id: 'review', label: 'Uncategorized reminder' },
   { id: 'topCategories', label: 'Top categories' },
+  { id: 'budgets', label: 'Budgets' },
   { id: 'trend', label: 'Last six months' },
   { id: 'biggest', label: 'Biggest this month' },
 ] as const
@@ -16,14 +17,34 @@ export type DashboardWidgetId = (typeof DASHBOARD_WIDGETS)[number]['id']
 const KEY = 'dashboard_widgets'
 const ALL: DashboardWidgetId[] = DASHBOARD_WIDGETS.map((w) => w.id)
 
-/** Ids of the widgets to show. Everything is shown until the user chooses otherwise. */
+/**
+ * Widgets added after selections were first saved as a list of visible ids. A saved list
+ * predates them, so they are shown rather than silently hidden.
+ */
+const ADDED_AFTER_LIST_FORMAT: DashboardWidgetId[] = ['budgets']
+
+/**
+ * Ids of the widgets to show. Everything is shown until the user chooses otherwise. The
+ * choice is stored as the hidden ids, so widgets added later appear by default.
+ */
 export function getDashboardWidgets(db: Database.Database): DashboardWidgetId[] {
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(KEY) as
     { value: string } | undefined
   if (!row) return [...ALL]
   try {
     const saved: unknown = JSON.parse(row.value)
-    if (Array.isArray(saved)) return ALL.filter((id) => saved.includes(id))
+    if (Array.isArray(saved)) {
+      // Older format: the visible ids.
+      return ALL.filter((id) => saved.includes(id) || ADDED_AFTER_LIST_FORMAT.includes(id))
+    }
+    if (
+      saved &&
+      typeof saved === 'object' &&
+      Array.isArray((saved as { hidden?: unknown }).hidden)
+    ) {
+      const hidden = (saved as { hidden: unknown[] }).hidden
+      return ALL.filter((id) => !hidden.includes(id))
+    }
   } catch {
     // fall through to the default
   }
@@ -35,8 +56,9 @@ export function setDashboardWidgets(db: Database.Database, ids: string[]): Dashb
   const unknown = ids.filter((id) => !(ALL as string[]).includes(id))
   if (unknown.length > 0) throw new Error(`Unknown dashboard widget: ${unknown.join(', ')}`)
   const visible = ALL.filter((id) => ids.includes(id))
+  const hidden = ALL.filter((id) => !ids.includes(id))
   db.prepare(
     'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value',
-  ).run(KEY, JSON.stringify(visible))
+  ).run(KEY, JSON.stringify({ hidden }))
   return visible
 }

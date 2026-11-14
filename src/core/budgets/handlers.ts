@@ -9,4 +9,11 @@ export function createBudgetsHandlers(db: Database.Database) {
   } satisfies Record<BudgetsMethod, (...args: never[]) => unknown>
 }
 
-export type BudgetsApi = ReturnType<typeof createBudgetsHandlers>
+export type BudgetsHandlers = ReturnType<typeof createBudgetsHandlers>
+
+/** The renderer-side view: every handler becomes async. */
+export type BudgetsApi = {
+  [K in keyof BudgetsHandlers]: (
+    ...args: Parameters<BudgetsHandlers[K]>
+  ) => Promise<ReturnType<BudgetsHandlers[K]>>
+}

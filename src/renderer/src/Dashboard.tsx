@@ -238,7 +238,7 @@ export function Dashboard({
                       <td>
                         <div className="txn-cell">
                           <PayeeAvatar name={t.payee} />
-                          <div>
+                          <div title={t.payee || undefined}>
                             {t.payee || 'No payee'}
                             <span className="sub">
                               {shortDate(t.date)} · {accountName(t.accountId)}

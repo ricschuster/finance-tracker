@@ -884,9 +884,28 @@ td select {
   font-size: 13px;
 }
 .stat.clickable {
+  /* Undo the global button look: the tile is a column of label, value and note. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 4px;
+  height: auto;
+  min-width: 0;
+  padding: 16px 18px;
+  border-radius: var(--radius-lg);
   font: inherit;
+  font-size: 13px;
+  font-weight: 400;
   text-align: left;
+  white-space: normal;
   cursor: pointer;
+}
+.stat .stat-head {
+  width: 100%;
+}
+.stat .muted {
+  overflow-wrap: anywhere;
 }
 .stat.clickable:hover {
   border-color: var(--accent);
@@ -1386,7 +1405,7 @@ form.stack {
 }
 .meter {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 4px 12px;
   width: 100%;
@@ -1475,8 +1494,21 @@ form.stack {
   gap: 10px;
   min-width: 0;
 }
+td:has(> .txn-cell) {
+  /* Take the leftover width and let long names truncate instead of widening the table. */
+  width: 100%;
+  max-width: 0;
+}
+.txn-cell > div {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .txn-cell .sub {
   display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 12px;
   color: var(--text-3);
 }
@@ -1597,10 +1629,29 @@ form.stack {
   background: var(--accent-soft);
 }
 .txn-table td.payee {
-  min-width: 180px;
+  /* max-width 0 lets the cell take the leftover width and truncate long text. */
+  width: 100%;
+  min-width: 140px;
+  max-width: 0;
 }
 .payee-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
   font-weight: 500;
+}
+.payee-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.payee-name .note-indicator {
+  flex: none;
+}
+.payee-sub {
+  min-width: 0;
 }
 .payee-sub {
   display: flex;
@@ -1761,7 +1812,7 @@ form.stack {
 }
 .budget-row {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   padding: 12px 0;
@@ -1890,7 +1941,7 @@ form.stack {
 }
 .rule-item {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 14px;
   padding: 12px 18px;
@@ -1920,6 +1971,7 @@ form.stack {
 }
 .rule-body {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 6px;
   min-width: 0;
 }
@@ -1927,6 +1979,13 @@ form.stack {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+}
+.rule-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .rule-actions {
   display: flex;
@@ -1940,6 +1999,11 @@ form.stack {
   gap: 6px;
 }
 .chip {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -2695,4 +2759,73 @@ th.num .sort-head {
   border: 1px solid var(--border);
   border-radius: 4px;
   opacity: 0.8;
+}
+
+/* ---------- Narrow windows ---------- */
+
+@media (max-width: 1000px) {
+  .page-header {
+    flex-wrap: wrap;
+    padding: 12px 20px;
+  }
+  .page-actions {
+    flex-wrap: wrap;
+  }
+  .content {
+    padding: 20px 20px 40px;
+  }
+  .txn-table .col-status {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 56px 1fr;
+  }
+  .brand {
+    justify-content: center;
+    padding: 18px 0 14px;
+  }
+  .brand h1,
+  .nav-heading,
+  .nav-item .grow,
+  .sidebar-footer > span:first-child {
+    display: none;
+  }
+  .nav-group {
+    margin-bottom: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--sidebar-border);
+  }
+  .nav-group:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+  .sidebar-scroll {
+    padding: 4px 8px 12px;
+  }
+  .nav-item {
+    justify-content: center;
+    padding: 0;
+  }
+  .sidebar-footer {
+    flex-direction: column;
+    padding: 10px 4px;
+  }
+  .theme-switch {
+    flex-direction: column;
+  }
+}
+
+.review-card h3,
+.review-card .subtle {
+  overflow-wrap: anywhere;
+}
+.import-table td.desc-cell {
+  width: 40%;
+  min-width: 140px;
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

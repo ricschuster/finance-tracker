@@ -20,8 +20,15 @@ All notable changes to this project are documented here. The format is based on
 - Dashboard drill-down: click the Income, Spending or Net tile, or a month in the six-month chart,
   to see the transactions behind the figure. Transactions has a Hide transfers filter for this.
 
+### Changed
+
+- Below 900px wide the sidebar collapses to icons only; tabs keep their names for screen readers and show them as tooltips.
+
 ### Fixed
 
+- Dashboard Income, Spending and Net tiles were squashed and their captions clipped under the next card; the tiles now show in full in light and dark. The empty six-month chart axis shows $0 to $100 instead of "$1 $1 $1 $0".
+- A very long payee, description or rule name no longer pushes columns off screen: Transactions, Reports, the dashboard, Rules and the import preview truncate it with an ellipsis and show the full text on hover.
+- At narrow window widths the page header buttons wrap and the Transactions page no longer scrolls sideways (the Status column is hidden below 1000px).
 - Typing 5,5 or 1,50 as an amount recorded $55.00 or $150.00. A single comma before one or two final digits is now a decimal comma (1.234,56 and 1 234,56 work too); other commas stay thousands separators.
 - The dashboard's uncategorized Review button and category drill-downs now always search every
   account; a previously chosen account could hide the rows.

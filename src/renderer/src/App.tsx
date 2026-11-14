@@ -223,6 +223,8 @@ function Shell() {
                             type="button"
                             role="tab"
                             className="nav-item"
+                            aria-label={label}
+                            title={label}
                             aria-selected={navView === v}
                             onClick={() => (v === 'ledger' ? pickAccount(null) : go(v))}
                           >

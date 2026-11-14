@@ -136,7 +136,7 @@ export function TransactionList({
             {head('date', 'Date')}
             {head('payee', 'Payee')}
             {head('category', 'Category')}
-            {head('status', 'Status')}
+            {head('status', 'Status', 'col-status')}
             {head('amount', 'Amount', 'num')}
             <th />
           </tr>
@@ -160,7 +160,13 @@ export function TransactionList({
                   <td className="nowrap muted">{displayDate(t.date)}</td>
                   <td className="payee">
                     <div className="payee-name">
-                      {t.payee || t.rawDescription || <span className="muted">(none)</span>}
+                      {t.payee || t.rawDescription ? (
+                        <span className="payee-text" title={t.payee || t.rawDescription}>
+                          {t.payee || t.rawDescription}
+                        </span>
+                      ) : (
+                        <span className="muted">(none)</span>
+                      )}
                       {t.notes && (
                         <button
                           type="button"
@@ -225,7 +231,7 @@ export function TransactionList({
                       </span>
                     )}
                   </td>
-                  <td className="nowrap">
+                  <td className="nowrap col-status">
                     <span className={STATUS_PILL[t.status] ?? 'pill'}>{t.status}</span>
                     {t.excludeFromBudgets && (
                       <span

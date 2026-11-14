@@ -1014,7 +1014,9 @@ export function ImportWizard({
                       <tr key={it.candidate.line}>
                         <td className="subtle">{it.candidate.line}</td>
                         <td className="nowrap">{it.candidate.date}</td>
-                        <td>{it.candidate.rawDescription}</td>
+                        <td className="desc-cell" title={it.candidate.rawDescription}>
+                          {it.candidate.rawDescription}
+                        </td>
                         <td className={`num amount ${it.candidate.amount < 0 ? '' : 'pos'}`}>
                           {formatCents(it.candidate.amount)}
                         </td>

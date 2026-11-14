@@ -7,6 +7,8 @@ All notable changes to this project are documented here. The format is based on
 
 ### Added
 
+- Accounts tab: every account with type and balance, plus assets, owing and net worth; opened by
+  All accounts in the sidebar.
 - Find duplicates: "Keep first, delete rest" per group and "Keep one of each" for all groups, with
   one Undo; a group always keeps one row.
 - Find duplicates can match across accounts (on by default).

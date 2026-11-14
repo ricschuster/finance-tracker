@@ -15,7 +15,10 @@ artifactName: finance-tracker-${version}-${os}-${arch}.${ext}
 mac:
   category: public.app-category.finance
   target: [dmg]
-  identity: null
+  # Ad-hoc signature (no certificate). Apple silicon refuses to run unsigned arm64 code at all.
+  # Hardened runtime would reject the Electron frameworks under an ad-hoc signature.
+  identity: '-'
+  hardenedRuntime: false
 win:
   target: [nsis]
 nsis:

@@ -13,7 +13,13 @@ macOS and Windows.
 
 ## Decision
 
-- Installers are unsigned: a dmg, an NSIS installer and an AppImage.
+- Installers are unsigned: a dmg, an NSIS installer and an AppImage. The macOS
+  app carries an ad-hoc signature (no certificate, no notarization), because
+  Apple silicon will not run arm64 code without any signature. Gatekeeper
+  still treats it as unidentified. (Amended for v0.1.1.)
+- macOS gets two dmgs, arm64 and x64, each built on a runner of that
+  architecture. (Amended for v0.1.1, after v0.1.0 shipped arm64 only and did
+  not run on an Intel Mac.)
 - No auto-update. Users reinstall a newer version by hand. The database lives
   in the user data folder, outside the install, so reinstalling keeps data, and
   migrations run on the next start.

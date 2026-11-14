@@ -1,10 +1,13 @@
 name: Release
 
-# Builds unsigned installers for Linux, Windows and macOS when a version tag is
-# pushed (for example v0.1.0) and attaches them to a GitHub release.
+# Builds unsigned installers for Linux, Windows and macOS (Apple silicon and
+# Intel) when a version tag is pushed (for example v0.1.0) and attaches them to
+# a GitHub release. Run it by hand on a branch to build the installers as run
+# artifacts without publishing.
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -14,7 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        # macos-latest is Apple silicon (arm64 dmg); macos-15-intel builds the x64 dmg.
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
@@ -38,6 +42,7 @@ jobs:
 
   publish:
     needs: package
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

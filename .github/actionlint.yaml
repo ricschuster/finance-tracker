@@ -1,0 +1,6 @@
+# The pinned actionlint (1.7.7) predates GitHub's macos-15-intel runner label.
+# Declaring it here keeps the lint strict for every other label. Remove after
+# bumping actionlint to a release that knows it.
+self-hosted-runner:
+  labels:
+    - macos-15-intel

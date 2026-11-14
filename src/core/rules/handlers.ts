@@ -9,6 +9,7 @@ import {
   setRuleEnabled,
   updateRule,
 } from './store'
+import { reviewQueue } from './review'
 import { suggestRule } from './suggest'
 import type { RuleInput } from './types'
 
@@ -24,6 +25,7 @@ export function createRulesHandlers(db: Database.Database) {
     previewRules: (opts?: { ids?: number[] }) => previewRules(db, opts),
     applyRules: (opts?: { ids?: number[] }) => applyRules(db, opts),
     suggestRule: (transactionId: number) => suggestRule(db, transactionId),
+    reviewQueue: (limit?: number) => reviewQueue(db, limit),
   } satisfies Record<RulesMethod, (...args: never[]) => unknown>
 }
 

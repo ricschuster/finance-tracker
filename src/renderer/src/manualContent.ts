@@ -114,6 +114,7 @@ export const MANUAL: ManualSection[] = [
           'Rules run in order and the first one that matches wins, so put specific rules above general ones. Disable a rule to pause it without deleting it.',
         ],
       },
+      'The dashboard banner for uncategorized transactions opens the Review queue: one transaction at a time, with the category guessed from how the same description was filed before. Press Enter to apply it (or pick another category first), R to apply and also save a rule, S to skip; Open as list shows them all in Transactions instead.',
       'Each new row in the import preview shows the category it will get. A rule sets it first; otherwise, if the same kind of description was filed the same way (and direction) in your earlier transactions, the most common category is guessed and marked with how many agree, for example "guess 8/8". Pick another category on the row to override it; a toast then offers to create a rule so the same description is filed that way next time. A rule with "Skip on import" leaves matching rows out; the preview marks them "Skipped by rule" and Import anyway brings one back.',
       'Rules run on every import. To fix your existing history, use the preview to see what would change, then apply. Applying twice changes nothing the second time.',
       'A rule never overwrites something you set by hand. If you correct a payee or category yourself, rules leave that field alone for that transaction.',

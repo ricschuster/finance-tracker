@@ -9,6 +9,7 @@ export const RULES_METHODS = [
   'previewRules',
   'applyRules',
   'suggestRule',
+  'reviewQueue',
 ] as const
 
 export type RulesMethod = (typeof RULES_METHODS)[number]

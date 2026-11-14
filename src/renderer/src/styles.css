@@ -2657,3 +2657,38 @@ th.num .sort-head {
 .import-table tr.row-bad td {
   background: color-mix(in srgb, var(--neg, #c0392b) 10%, transparent);
 }
+
+.review-card {
+  max-width: 560px;
+  margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.review-card h3 {
+  margin: 0;
+  font-size: 20px;
+}
+.review-meta {
+  display: flex;
+  gap: 16px;
+  color: var(--text-2);
+}
+.review-pick {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.review-actions kbd {
+  margin-left: 6px;
+  padding: 0 5px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  opacity: 0.8;
+}

@@ -31,8 +31,27 @@ interface HistoryRow {
   n: number
 }
 
+export interface HistoryGuess {
+  id: number
+  agree: number
+  of: number
+}
+
+/** The most common category for this description and direction, if enough earlier rows agree. */
+export function guessFromHistory(
+  history: Map<string, Map<number, number>>,
+  rawDescription: string,
+  amount: number,
+): HistoryGuess | null {
+  const counts = history.get(`${suggestPattern(rawDescription).toLowerCase()}|${amount < 0}`)
+  if (!counts) return null
+  const total = [...counts.values()].reduce((a, b) => a + b, 0)
+  const [id, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]!
+  return n / total >= MIN_SHARE ? { id, agree: n, of: total } : null
+}
+
 /** Earlier single-category, non-transfer transactions by description pattern and direction. */
-function loadHistory(db: Database.Database): Map<string, Map<number, number>> {
+export function loadHistory(db: Database.Database): Map<string, Map<number, number>> {
   const rows = db
     .prepare(
       `SELECT t.raw_description AS d, t.amount < 0 AS expense, l.category_id, COUNT(*) AS n
@@ -103,14 +122,14 @@ export function enrichPlan(
       const id = categoryIdByName(db, c.categoryName)
       if (id !== null) category = { id, name: names.get(id) ?? c.categoryName, source: 'file' }
     } else {
-      const counts = history.get(
-        `${suggestPattern(c.rawDescription).toLowerCase()}|${c.amount < 0}`,
-      )
-      if (counts) {
-        const total = [...counts.values()].reduce((a, b) => a + b, 0)
-        const [id, n] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0]!
-        if (n / total >= MIN_SHARE) {
-          category = { id, name: names.get(id) ?? '', source: 'history', agree: n, of: total }
+      const g = guessFromHistory(history, c.rawDescription, c.amount)
+      if (g) {
+        category = {
+          id: g.id,
+          name: names.get(g.id) ?? '',
+          source: 'history',
+          agree: g.agree,
+          of: g.of,
         }
       }
     }

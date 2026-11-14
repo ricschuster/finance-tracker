@@ -39,6 +39,18 @@ for words up to 4 letters, one for 5 to 8, two for 9 or more. It is a rule opera
 others, so it is visible in the editor and the preview shows what it would change. It never
 runs silently over history; the history guess for imports is unchanged.
 
+## Review queue
+
+The dashboard's uncategorized banner opens a Review screen (`ReviewQueue.tsx`) that steps through
+uncategorized, unsplit, non-transfer transactions one at a time, newest first. `reviewQueue`
+(`core/rules/review.ts`) supplies each with the history guess used at import
+(`guessFromHistory`, 60% agreement). The app only proposes; nothing is applied until the user
+acts. Enter applies the picked or guessed category, R also saves a `description contains` rule
+for the `suggestPattern` phrase, S or the right arrow skips, and "Open as list" falls back to the
+filtered Transactions view. Choices go through `updateTransaction`, so they lock the category
+against later rule runs like any hand edit. The queue is loaded once when the screen opens and
+holds at most 500 rows.
+
 ## Locking
 
 A rule never writes a field listed in `edited_fields` (`payee`, `categories`,

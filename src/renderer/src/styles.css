@@ -2916,3 +2916,89 @@ kbd {
     flex-direction: column;
   }
 }
+
+/* Spending donut on the Cashflow page */
+.pie {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: center;
+}
+.pie-chart {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  flex: none;
+}
+.pie-slice {
+  cursor: pointer;
+  outline: none;
+  transition: opacity 0.12s;
+}
+.pie-chart:has(.pie-slice.active) .pie-slice:not(.active) {
+  opacity: 0.55;
+}
+.pie-slice:focus-visible {
+  stroke-opacity: 0.8;
+}
+.pie-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  padding: 0 40px;
+}
+.pie-center strong {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.pie-center span {
+  font-size: 11px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pie-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  min-width: 240px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.pie-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 5px 6px;
+  text-align: left;
+  font-size: 13px;
+}
+.pie-legend-row:hover {
+  background: var(--surface-2, var(--bar-track));
+}
+.pie-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+}
+.pie-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pie-pct {
+  width: 40px;
+  text-align: right;
+}

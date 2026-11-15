@@ -359,7 +359,7 @@ function GetStarted(props: {
             Rules
           </button>
           <button type="button" onClick={props.onOpenBudgets}>
-            Budgets
+            Cashflow
           </button>
         </li>
       </ol>

@@ -25,7 +25,7 @@ export const MANUAL: ManualSection[] = [
           'Otherwise add an account with Add account on the Accounts tab, then import a bank file into it, or add transactions by hand.',
           'Check the Categories tab and tidy it to match how you think about spending.',
           'Create rules for payees that come up again and again, then apply them to your past transactions.',
-          'Open Dashboard and Reports to see the result, and set up Budgets for the categories you want to watch.',
+          'Open Dashboard and Reports to see the result, and set up budgets on the Cashflow page for the categories you want to watch.',
           'Turn on automatic backups in Data.',
         ],
       },
@@ -67,7 +67,7 @@ export const MANUAL: ManualSection[] = [
     blocks: [
       'The Transactions view lists everything, newest first. Click a column heading (Date, Payee, Category, Status or Amount) to sort by it; click again to reverse. Sorting covers every match, not just the rows shown. Only the newest 500 rows load at first; Load more and Show all under the list reveal the rest, and the count above the list always covers every match. Add transaction (top right) opens the entry form. To record a refund or reimbursement, choose Income / refund and use the category it refunds, so it nets against that spending. Amounts accept a dot or a comma as the decimal mark (5,5 is 5.50, 1.234,56 is 1234.56); a lone 1,234 is read as 1234.00. An unreadable amount says what is wrong, and a zero or very large amount, or a date over a year ahead or 20 years back, shows a warning you can confirm with Save anyway. Change a category right in the list, or use the actions menu on a row to edit it (date, amount, payee, account, direction and notes; edited fields are left alone by rules), split it, add or edit a note, or make a rule. A note shows as a small note icon next to the payee (hover it to read the note; click it to edit) and is searchable and included in the CSV export.',
       "Every category menu (in the list, the forms, split lines, bulk actions, filters and the rule editor) is searchable: open it and start typing to filter by category name, parent or alias, use the arrow keys and Enter to choose, and Escape to close. Type in the search box to find transactions instantly. Every word must appear somewhere in the payee, bank description, notes, tags or category, in any order. A word matches inside longer text, so sho finds Shopify and Shoppers; a trailing * is allowed and ignored. Put words in double quotes to match them together as a phrase. AND, OR and NOT are ordinary words, not operators. Apostrophes are optional (mcdonalds finds McDonald's), and punctuation on its own is ignored. Amounts are not searched as text; use the amount range filters. Filters narrow it further: account, category, tag, status, date range, expense or income, amount range and uncategorized only. The totals line shows the number of matches and their sum.",
-      'Keyboard shortcuts (when you are not typing in a field): / jumps to the transaction search, n adds a transaction, g then d, t, b, r, a or i goes to Dashboard, Transactions, Budgets, Reports, Accounts or Import, and ? shows the list. The keyboard button at the bottom of the sidebar opens the same list.',
+      'Keyboard shortcuts (when you are not typing in a field): / jumps to the transaction search, n adds a transaction, g then d, t, b, r, a or i goes to Dashboard, Transactions, Cashflow, Reports, Accounts or Import, and ? shows the list. The keyboard button at the bottom of the sidebar opens the same list.',
       'Save a search you use often and recall it later from the saved searches menu.',
       'Select several rows to act on them together: set a category, add or remove a tag, change the status or delete. Bulk edits count as your own edits, so rules will not overwrite them afterwards.',
       'Delete all N (next to the result count) deletes every transaction the current search or account view matches, not only the rows shown on screen. With no filters that is the whole ledger. It cannot be undone, so back up first.',
@@ -134,8 +134,10 @@ export const MANUAL: ManualSection[] = [
   },
   {
     id: 'budgets',
-    title: 'Budgets',
+    title: 'Cashflow',
     blocks: [
+      "The Cashflow page (called Budgets in earlier versions) shows where a month's money went and tracks monthly budgets. For now it covers spending only.",
+      "The Spending by category donut shows each category's share of the month's spending, using the category colours. Click a slice, or its row in the legend beside it, to see that category's transactions for the month. Categories whose refunds exceed their spending cannot be drawn in a pie, so they are left out and listed beneath it.",
       'A budget is a standing monthly amount for a category. Pick a month with the stepper at the top. For each budgeted category you see what you have spent, what is left and a bar that turns amber near the limit and red when you are over.',
       'Spent counts every transaction line in the category for that month, so a refund reduces it. If refunds exceed spending, the row shows the positive amount as a net refund (for example +$120.00 net refund). Rows are ordered with the largest spending first. Transfers and transactions flagged to hide from budgets are left out.',
       'Spending in categories without a budget is listed underneath with a Budget button to set one quickly. Unspent money does not roll over to the next month yet.',

@@ -15,6 +15,7 @@ import { formatCents, parseAmountToCents } from '../../core/money'
 import { Bar, percent } from './Bars'
 import { CategoryIcon, useCategoryLookup } from './CategoryBadge'
 import { PageActions } from './PageActions'
+import { SpendingPie } from './SpendingPie'
 import type { LedgerState } from './useLedger'
 import { ActionMenu, Dialog, Empty, StatTile, useConfirm } from './ui'
 
@@ -23,12 +24,14 @@ const NEAR = 0.85
 
 type Editing = { mode: 'add' } | { mode: 'edit'; row: BudgetRow }
 
-/** Monthly budgets per expense category against spending. See docs/design/12_budgets.md. */
+/** The Cashflow page: monthly budgets against spending, plus a spending pie. See docs/design/12_budgets.md. */
 export function Budgets({
   run,
   version,
+  onOpenCategory,
 }: Pick<LedgerState, 'run'> & {
   version: number
+  onOpenCategory: (categoryId: number, from: string, to: string) => void
 }) {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
@@ -127,10 +130,23 @@ export function Budgets({
   const remaining = data.totalBudget - data.totalSpent
   const overRows = data.rows.filter((r) => r.spent > r.budget)
   const unbudgetedSpending = data.unbudgeted.filter((u) => u.spent > 0)
+  const spendingRows = [...data.rows, ...data.unbudgeted]
+  const pieSlices = spendingRows
+    .filter((r) => r.spent > 0)
+    .map((r) => ({
+      categoryId: r.categoryId,
+      name: r.categoryName,
+      amount: r.spent,
+      color: category(r.categoryId)?.color,
+    }))
+    .sort((a, b) => b.amount - a.amount)
+  const netRefunds = spendingRows.filter((r) => r.spent < 0)
+  const monthFrom = `${year}-${String(month).padStart(2, '0')}-01`
+  const monthTo = `${year}-${String(month).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`
 
   return (
-    <section aria-label="Budgets">
-      <h2>Budgets</h2>
+    <section aria-label="Cashflow">
+      <h2>Cashflow</h2>
       {header}
 
       {data.rows.length > 0 && (
@@ -167,6 +183,32 @@ export function Budgets({
                   : 'All within budget'
             }
           />
+        </div>
+      )}
+
+      {(pieSlices.length > 0 || netRefunds.length > 0) && (
+        <div className="card">
+          <div className="card-header">
+            <h3>Spending by category</h3>
+            <span className="subtle">{label}</span>
+          </div>
+          {pieSlices.length > 0 ? (
+            <SpendingPie
+              slices={pieSlices}
+              onSelect={(id) => onOpenCategory(id, monthFrom, monthTo)}
+            />
+          ) : (
+            <p className="subtle">No spending this month.</p>
+          )}
+          {netRefunds.length > 0 && (
+            <p className="subtle budget-note">
+              Left out because refunds exceed spending:{' '}
+              {netRefunds
+                .map((r) => `${r.categoryName} (+${formatCents(-r.spent)} net refund)`)
+                .join(', ')}
+              .
+            </p>
+          )}
         </div>
       )}
 

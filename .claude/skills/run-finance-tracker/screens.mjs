@@ -7,7 +7,7 @@ const TABS = [
   'Dashboard',
   'Transactions',
   'Reports',
-  'Budgets',
+  'Cashflow',
   'Import',
   'Import history',
   'Rules',

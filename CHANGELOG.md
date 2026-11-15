@@ -5,6 +5,8 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-14
+
 ### Added
 
 - Transactions: "Showing N of M" with Load more and Show all, so every transaction can be reached (the list no longer stops at 500).

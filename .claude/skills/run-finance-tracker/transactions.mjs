@@ -40,7 +40,7 @@ await shot('bulk')
 await page.getByRole('button', { name: 'Clear selection' }).click()
 
 // Row menu and split
-const firstMenu = page.getByRole('button', { name: /^Actions for transaction/ }).nth(1)
+const firstMenu = page.getByRole("button", { name: /^Actions for transaction/ }).nth(0)
 await firstMenu.click()
 await shot('row-menu')
 await page.getByRole('menuitem', { name: 'Split' }).click()

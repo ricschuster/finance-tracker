@@ -61,9 +61,14 @@ export interface BigTransaction {
  * system Transfer category). Categories have no kind: spending and income are decided by sign.
  * Each report nets amounts first (so a refund reduces its category) and then classifies the net:
  * negative is spending, positive is income. Uncategorized is the exception: it is a catch-all of
- * unrelated money, so each of its lines is classified by its own sign. See docs/design/07_reports.md and ADR 0007.
+ * unrelated money, so each of its lines is classified by its own sign. Transactions hidden from
+ * budgets are left out of every total and graph (they only appear in the biggest-transactions list). See docs/design/07_reports.md and ADR 0007.
  */
-function base(period: Period, f: ReportFilter): { from: string; params: unknown[] } {
+function base(
+  period: Period,
+  f: ReportFilter,
+  includeHidden = false,
+): { from: string; params: unknown[] } {
   const params: unknown[] = [period.from, period.to]
   let accounts = ''
   if (f.accountIds?.length) {
@@ -82,6 +87,7 @@ function base(period: Period, f: ReportFilter): { from: string; params: unknown[
      JOIN transactions t ON t.id = l.transaction_id
      JOIN categories c ON c.id = l.category_id
      WHERE t.transfer_peer_id IS NULL AND NOT (c.is_system = 1 AND c.name = 'Transfer')
+       ${includeHidden ? '' : 'AND t.exclude_from_budgets = 0'}
        AND t.date BETWEEN ? AND ? ${accounts}) AS x`
   return { from, params }
 }
@@ -193,7 +199,8 @@ export function biggestTransactions(
   limit = 10,
   f: ReportFilter = {},
 ): BigTransaction[] {
-  const { from, params } = base(period, f)
+  // A list, not a total: hidden transactions stay visible here, flagged by excludeFromBudgets.
+  const { from, params } = base(period, f, true)
   return db
     .prepare(
       `SELECT tid AS id, date, payee, account_id AS accountId, hidden AS excludeFromBudgets,

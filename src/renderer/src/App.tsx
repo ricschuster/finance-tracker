@@ -70,7 +70,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
     items: [
       { view: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { view: 'ledger', label: 'Transactions', icon: ArrowLeftRight },
-      { view: 'budgets', label: 'Budgets', icon: Target },
+      { view: 'budgets', label: 'Cashflow', icon: Target },
       { view: 'reports', label: 'Reports', icon: BarChart3 },
     ],
   },
@@ -91,7 +91,7 @@ const SUBTITLES: Partial<Record<View, string>> = {
   accounts: 'Balances across every account',
   review: 'Step through uncategorized transactions',
   reports: 'Where your money comes from and goes',
-  budgets: 'Monthly spending targets by category',
+  budgets: 'Monthly spending targets and where the money goes',
   import: 'Bring in transactions from your bank',
   history: 'Bring in transactions from your bank',
   rules: 'Categorize transactions automatically',
@@ -405,7 +405,13 @@ function Shell() {
                     }}
                   />
                 )}
-                {view === 'budgets' && <Budgets run={ledger.run} version={ledger.version} />}
+                {view === 'budgets' && (
+                  <Budgets
+                    run={ledger.run}
+                    version={ledger.version}
+                    onOpenCategory={openCategory}
+                  />
+                )}
                 {view === 'import' && (
                   <ImportWizard
                     categories={ledger.categories}

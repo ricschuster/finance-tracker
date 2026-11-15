@@ -1,4 +1,6 @@
-# 12 Budgets
+# 12 Budgets (the Cashflow page)
+
+Renamed in the UI: the Budgets tab is now called Cashflow (sidebar, page title, manual, shortcuts). This is a rename only. Scope stays spending budgets; internal names (`budgets` view, `budgets` module) are unchanged.
 
 Post-MVP. Status: first version built. Scope is deliberately small.
 
@@ -31,7 +33,7 @@ negative (over budget).
 
 ## Screen
 
-A Budgets tab with a month stepper in the page header. Tiles show the total
+A Cashflow tab (formerly Budgets) with a month stepper in the page header. Tiles show the total
 budgeted, spent and remaining (or over). One row per expense category that has
 a budget, with spent of budget, what is left and a bar that turns amber from
 85% and red when over. Spending in categories without a budget is listed with
@@ -43,7 +45,7 @@ budget is in the row menu and asks first. See design note 13 for the look.
 A Budgets card on the dashboard (one of the Customize sections, on by default)
 shows the current month: total spent of total budgeted with a bar, then up to
 five budgets, the ones closest to or past their limit first. It links to the
-Budgets tab, or offers Set up when there are no budgets. It reads the same
+Cashflow tab, or offers Set up when there are no budgets. It reads the same
 `getBudgetMonth` as the tab, so the two always agree.
 
 ## Out for now
@@ -56,3 +58,12 @@ goals and alerts. Each needs its own decision.
 Migration 12: `budgets (category_id PRIMARY KEY REFERENCES categories ON DELETE
 CASCADE, amount INTEGER NOT NULL CHECK (amount > 0))`. Merging categories adds
 the amounts when both have a budget (the survivor keeps the sum).
+
+## Spending pie
+
+Under the tiles, a donut chart shows spending by category for the selected
+month (budgeted and unbudgeted categories with spent above zero), in the
+category colours, with a legend of amount and share. Slices and legend rows
+are buttons that open the Transactions list for that category and month, the
+same drill-down the dashboard uses. A pie cannot show negatives, so categories
+with net refunds are left out and named in a note beneath it.

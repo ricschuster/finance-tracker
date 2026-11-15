@@ -6,7 +6,7 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['n'], label: 'Add a transaction' },
   { keys: ['g', 'd'], label: 'Go to Dashboard' },
   { keys: ['g', 't'], label: 'Go to Transactions' },
-  { keys: ['g', 'b'], label: 'Go to Budgets' },
+  { keys: ['g', 'b'], label: 'Go to Cashflow' },
   { keys: ['g', 'r'], label: 'Go to Reports' },
   { keys: ['g', 'a'], label: 'Go to Accounts' },
   { keys: ['g', 'i'], label: 'Go to Import' },

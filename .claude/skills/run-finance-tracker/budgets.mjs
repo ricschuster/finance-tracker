@@ -1,9 +1,9 @@
-// Click through the Budgets tab: add a budget in the dialog, edit it from the row menu,
+// Click through the Cashflow tab: add a budget in the dialog, edit it from the row menu,
 // step months, and remove it through the in-app confirm.
 import { launch } from './lib.mjs'
 
 const { app, page, errors, shot } = await launch()
-await page.getByRole('tab', { name: 'Budgets', exact: true }).click()
+await page.getByRole('tab', { name: 'Cashflow', exact: true }).click()
 await page.waitForTimeout(400)
 await page.getByRole('button', { name: 'Add budget' }).click()
 const dialog = page.getByRole('dialog')

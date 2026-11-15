@@ -12,7 +12,7 @@ const tab = async (name) => {
 }
 
 // Give the demo some budgets and rules so those screens are not empty.
-await tab('Budgets')
+await tab('Cashflow')
 for (const [cat, amount] of [
   ['Groceries', '600'],
   ['Food & Dining', '150'],
@@ -47,7 +47,7 @@ for (const scheme of ['light', 'dark']) {
     ['Dashboard', 'dashboard'],
     ['Transactions', 'transactions'],
     ['Reports', 'reports'],
-    ['Budgets', 'budgets'],
+    ['Cashflow', 'budgets'],
     ['Rules', 'rules'],
     ['Categories', 'categories'],
     ['Import', 'import'],

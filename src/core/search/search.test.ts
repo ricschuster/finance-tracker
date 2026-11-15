@@ -114,6 +114,13 @@ describe('searchTransactions', () => {
     expect(r.transactions[0]!.date).toBe('2026-02-04')
   })
 
+  it('can return more than 1000 rows in one call', () => {
+    for (let i = 0; i < 1200; i++) txn({ desc: 'BULK', amount: -100 })
+    const r = searchTransactions(db, { text: 'bulk', limit: 5000 })
+    expect(r.transactions).toHaveLength(1200)
+    expect(r.total).toBe(1200)
+  })
+
   it('returns an empty result with zero sum, and rejects bad ranges', () => {
     expect(searchTransactions(db, { text: 'nothing' })).toEqual({
       transactions: [],

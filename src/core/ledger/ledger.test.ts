@@ -296,6 +296,20 @@ describe('updateTransaction', () => {
     ])
   })
 
+  it('flips direction and date, marking only the touched fields', () => {
+    const id = createTransaction(db, {
+      accountId: chq,
+      date: '2026-11-03',
+      amount: -500,
+      lines: [{ categoryId: groceries, amount: -500 }],
+    })
+    updateTransaction(db, id, { amount: 500, date: '2026-11-04' })
+    const t = getTransaction(db, id)!
+    expect(t).toMatchObject({ amount: 500, date: '2026-11-04' })
+    expect(t.lines).toMatchObject([{ categoryName: 'Groceries', amount: 500 }])
+    expect(t.editedFields.sort()).toEqual(['amount', 'date'])
+  })
+
   it('requires new lines when changing the amount of a split transaction', () => {
     const id = createTransaction(db, {
       accountId: chq,

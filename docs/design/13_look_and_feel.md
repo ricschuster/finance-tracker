@@ -35,7 +35,7 @@ avoid a flash. System is the default.
 
 ## Layout and navigation
 
-- Sidebar: brand, primary views (Dashboard, Transactions, Budgets, Reports),
+- Sidebar: brand, primary views (Dashboard, Transactions, Cashflow, Reports),
   a Manage group (Import, Rules, Categories, Data), then accounts grouped by
   type under a net worth figure. The add account button sits on the Accounts
   heading.
@@ -67,7 +67,7 @@ avoid a flash. System is the default.
 
 ## Screens
 
-- Budgets: month stepper and Add budget in the page header; stat tiles for
+- Cashflow (budgets): month stepper and Add budget in the page header; stat tiles for
   budgeted, spent and remaining (or over, with a per-day figure for the
   current month); one row per budget with a progress bar that turns amber
   from 85% and red when over, plus an over-budget pill; a card listing

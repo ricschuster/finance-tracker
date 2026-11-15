@@ -195,7 +195,7 @@ export function searchTransactions(db: Database.Database, q: SearchQuery = {}): 
         .get(q.categoryId, q.categoryId, ...params) as { s: number }
     ).s
   }
-  const limit = Math.min(Math.max(q.limit ?? 100, 1), 1000)
+  const limit = Math.min(Math.max(q.limit ?? 100, 1), MAX_LIMIT)
   const rows = db
     .prepare(
       `SELECT t.* FROM transactions t WHERE ${sql}
@@ -204,6 +204,9 @@ export function searchTransactions(db: Database.Database, q: SearchQuery = {}): 
     .all(...params, limit, Math.max(q.offset ?? 0, 0)) as TxnRow[]
   return { transactions: hydrate(db, rows), total: agg.n, sum }
 }
+
+/** Upper bound on rows per search call; the UI pages in steps up to the full match count. */
+export const MAX_LIMIT = 100_000
 
 /** Ids of every match, for bulk actions on a whole result. Refuses more than MAX_BULK. */
 export function searchTransactionIds(db: Database.Database, q: SearchQuery = {}): number[] {

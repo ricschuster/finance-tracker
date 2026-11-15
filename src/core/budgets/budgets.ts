@@ -58,7 +58,7 @@ export function getBudgetMonth(db: Database.Database, year: number, month: numbe
                     AND t.date BETWEEN ? AND ?) l ON l.category_id = c.id
        WHERE NOT (c.is_system = 1 AND c.name = 'Transfer')
        GROUP BY c.id
-       ORDER BY c.name COLLATE NOCASE`,
+       ORDER BY spent DESC, c.name COLLATE NOCASE`,
     )
     .all(p.from, p.to) as Array<{
     categoryId: number

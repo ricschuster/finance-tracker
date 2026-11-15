@@ -5,6 +5,19 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+### Added
+
+- Transactions: "Showing N of M" with Load more and Show all, so every transaction can be reached (the list no longer stops at 500).
+- Edit transaction dialog (account, date, payee, amount and direction, notes) from the row menu.
+- Cashflow page: a spending donut by category; click a slice or legend row to see its transactions. Categories with net refunds are listed beneath it.
+
+### Changed
+
+- The Budgets page is now called Cashflow (spending budgets only; scope unchanged).
+- Transactions hidden from budgets are now left out of dashboard and report totals and graphs (the biggest-transactions list still shows them, labelled).
+- Budget categories pushed positive by a refund show "+$X net refund"; budgets are ordered by spending, highest first.
+- The Add transaction toggle reads "Income / refund", with a hint on entering reimbursements.
+
 ## [0.5.0] - 2026-11-14
 
 ### Added

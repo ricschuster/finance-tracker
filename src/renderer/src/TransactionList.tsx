@@ -4,6 +4,7 @@ import {
   EyeOff,
   Eye,
   NotebookPen,
+  Pencil,
   Split,
   StickyNote,
   Trash2,
@@ -11,12 +12,14 @@ import {
   Receipt,
 } from 'lucide-react'
 import { Fragment, useState } from 'react'
+import type { Transaction } from '../../core/ledger/transactions'
 import { formatCents } from '../../core/money'
 import type { SortKey } from '../../core/search/query'
 import { CategoryBadge } from './CategoryBadge'
 import { CategorySelect } from './CategorySelect'
+import { EditTransactionForm } from './EditTransactionForm'
 import { SplitEditor } from './SplitEditor'
-import { ActionMenu, Empty, useConfirm, useToast } from './ui'
+import { ActionMenu, Dialog, Empty, useConfirm, useToast } from './ui'
 import type { LedgerState } from './useLedger'
 
 const thisYear = String(new Date().getFullYear())
@@ -118,6 +121,7 @@ export function TransactionList({
   )
   const [splitting, setSplitting] = useState<number | null>(null)
   const [noting, setNoting] = useState<number | null>(null)
+  const [editing, setEditing] = useState<Transaction | null>(null)
   const confirm = useConfirm()
   const toast = useToast()
   const accountName = new Map(accounts.map((a) => [a.id, a.name]))
@@ -284,6 +288,11 @@ export function TransactionList({
                     <ActionMenu
                       label={`Actions for transaction ${t.id}`}
                       actions={[
+                        {
+                          label: 'Edit',
+                          icon: <Pencil size={15} />,
+                          onSelect: () => setEditing(t),
+                        },
                         ...(isTransfer
                           ? []
                           : [
@@ -371,6 +380,20 @@ export function TransactionList({
           })}
         </tbody>
       </table>
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(o) => !o && setEditing(null)}
+        title="Edit transaction"
+      >
+        {editing && (
+          <EditTransactionForm
+            transaction={editing}
+            accounts={accounts}
+            run={run}
+            onDone={() => setEditing(null)}
+          />
+        )}
+      </Dialog>
     </div>
   )
 }

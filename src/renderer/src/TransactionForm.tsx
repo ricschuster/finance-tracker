@@ -82,10 +82,16 @@ export function TransactionForm(
             aria-checked={direction === d}
             onClick={() => setDirection(d)}
           >
-            {d === 'expense' ? 'Expense' : 'Income'}
+            {d === 'expense' ? 'Expense' : 'Income / refund'}
           </button>
         ))}
       </div>
+      {direction === 'income' && (
+        <p className="muted">
+          Enter a refund or reimbursement as income, in the category it refunds, so it nets against
+          that spending.
+        </p>
+      )}
       <div className="form-grid">
         <label className="field">
           Account

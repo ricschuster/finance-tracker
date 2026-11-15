@@ -132,6 +132,7 @@ export function TransactionSearch({
     key: 'date',
     dir: 'desc',
   })
+  const [limit, setLimit] = useState(PAGE)
   const [bulkCategory, setBulkCategory] = useState(0)
   const [bulkTag, setBulkTag] = useState('')
   const [bulkStatus, setBulkStatus] = useState<TransactionStatus>('reconciled')
@@ -171,12 +172,15 @@ export function TransactionSearch({
     [query, accountId],
   )
 
+  // A new search or sort starts again from the first page.
+  useEffect(() => setLimit(PAGE), [query, accountId, sort])
+
   useEffect(() => {
     if (typeof query === 'string') return setBadInput(query)
     setBadInput(null)
     let stale = false
     void window.api.search
-      .searchTransactions({ ...fullQuery, limit: PAGE, sort: sort.key, dir: sort.dir })
+      .searchTransactions({ ...fullQuery, limit, sort: sort.key, dir: sort.dir })
       .then((r) => {
         if (stale) return
         setResult(r)
@@ -193,7 +197,7 @@ export function TransactionSearch({
     return () => {
       stale = true
     }
-  }, [query, fullQuery, version, sort])
+  }, [query, fullQuery, version, sort, limit])
 
   const loadSaved = useCallback(() => {
     void window.api.search.listSavedSearches().then(setSaved)
@@ -514,7 +518,10 @@ export function TransactionSearch({
           <span>
             <strong>{total.toLocaleString('en-CA')}</strong> transaction{total === 1 ? '' : 's'}
             {total > shown.length && (
-              <span className="muted"> (showing the newest {shown.length})</span>
+              <span className="muted">
+                {' '}
+                (showing {shown.length.toLocaleString('en-CA')} of {total.toLocaleString('en-CA')})
+              </span>
             )}
           </span>
           <span>
@@ -692,6 +699,19 @@ export function TransactionSearch({
           )
         }
       />
+      {total > shown.length && (
+        <div className="toolbar" style={{ justifyContent: 'center' }}>
+          <span className="muted">
+            Showing {shown.length.toLocaleString('en-CA')} of {total.toLocaleString('en-CA')}
+          </span>
+          <button type="button" onClick={() => setLimit((l) => l + PAGE)}>
+            Load more
+          </button>
+          <button type="button" onClick={() => setLimit(Math.max(total, PAGE))}>
+            Show all
+          </button>
+        </div>
+      )}
     </section>
   )
 }

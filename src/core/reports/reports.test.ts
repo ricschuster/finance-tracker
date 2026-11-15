@@ -87,6 +87,22 @@ describe('reports', () => {
     expect(reports.incomeVsExpenses(NOV)).toMatchObject({ income: 0, spending: 500 })
   })
 
+  it('leaves transactions hidden from budgets out of totals but keeps them in the biggest list', () => {
+    const { reports, db, add } = setup()
+    add('2026-11-01', -1_000, 'Groceries', 'Shop')
+    const big = add('2026-11-02', -50_000, 'Shopping', 'Laptop')
+    db.prepare('UPDATE transactions SET exclude_from_budgets = 1 WHERE id = ?').run(big)
+    expect(reports.incomeVsExpenses(NOV)).toMatchObject({ spending: 1_000 })
+    expect(reports.spendingByCategory(NOV).map((c) => c.name)).toEqual(['Groceries'])
+    expect(reports.topPayees(NOV).map((p) => p.payee)).toEqual(['Shop'])
+    expect(reports.biggestTransactions(NOV, 5).map((t) => [t.payee, t.excludeFromBudgets])).toEqual(
+      [
+        ['Laptop', true],
+        ['Shop', false],
+      ],
+    )
+  })
+
   it('nets refunds against spending and classifies Uncategorized by sign', () => {
     const { reports, add } = setup()
     add('2026-11-01', -10_000, 'Shopping')

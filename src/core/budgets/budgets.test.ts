@@ -65,6 +65,23 @@ describe('budgets', () => {
     expect(getBudgetMonth(db, 2026, 3).rows[0]!.spent).toBe(1000)
   })
 
+  it('keeps a net refund as a negative spent amount and orders rows by spending', () => {
+    setBudget(db, cat('Groceries'), 10000)
+    setBudget(db, cat('Food & Dining'), 10000)
+    setBudget(db, cat('Shopping'), 10000)
+    spend('2026-03-02', -2000, 'Groceries')
+    spend('2026-03-02', -9000, 'Food & Dining')
+    spend('2026-03-02', -3000, 'Shopping')
+    spend('2026-03-05', 15000, 'Shopping')
+    const m = getBudgetMonth(db, 2026, 3)
+    expect(m.rows.map((r) => [r.categoryName, r.spent])).toEqual([
+      ['Food & Dining', 9000],
+      ['Groceries', 2000],
+      ['Shopping', -12000],
+    ])
+    expect(m.rows[2]!.remaining).toBe(22000)
+  })
+
   it('lists categories without a budget, removes a budget at zero, and validates input', () => {
     spend('2026-03-02', -4000, 'Groceries')
     expect(

@@ -196,7 +196,11 @@ export function Budgets({
                       {near && <span className="pill warn">Almost there</span>}
                       <span className="spacer" />
                       <span className="budget-figures">
-                        <strong>{formatCents(r.spent)}</strong>
+                        <strong className={r.spent < 0 ? 'pos' : undefined}>
+                          {r.spent < 0
+                            ? `+${formatCents(-r.spent)} net refund`
+                            : formatCents(r.spent)}
+                        </strong>
                         <span className="muted"> of {formatCents(r.budget)}</span>
                       </span>
                     </div>

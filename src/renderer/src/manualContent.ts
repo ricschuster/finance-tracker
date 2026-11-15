@@ -102,7 +102,7 @@ export const MANUAL: ManualSection[] = [
       'Merging moves transactions, rules, saved searches and budgets across. The old name becomes an alias, so later imports that still use it land in the surviving category.',
       'To remove several at once, tick them (or use Select all or Select unused) and choose Delete selected. Their transactions move to the category you pick, Uncategorized by default.',
       'Uncategorized and Transfer are built in and cannot be renamed or deleted.',
-      'A transaction can be hidden from budgets with its exclude flag, which is useful for one-off items you do not want to count against a monthly target.',
+      'A transaction can be hidden from budgets with its exclude flag, which is useful for one-off items you do not want to count against a monthly target. Hidden transactions are also left out of every report total, chart and dashboard figure; they still appear in the Biggest transactions lists, marked as hidden.',
     ],
   },
   {
@@ -137,7 +137,7 @@ export const MANUAL: ManualSection[] = [
     title: 'Budgets',
     blocks: [
       'A budget is a standing monthly amount for a category. Pick a month with the stepper at the top. For each budgeted category you see what you have spent, what is left and a bar that turns amber near the limit and red when you are over.',
-      'Spent counts every transaction line in the category for that month, so a refund reduces it. Transfers and transactions flagged to hide from budgets are left out.',
+      'Spent counts every transaction line in the category for that month, so a refund reduces it. If refunds exceed spending, the row shows the positive amount as a net refund (for example +$120.00 net refund). Rows are ordered with the largest spending first. Transfers and transactions flagged to hide from budgets are left out.',
       'Spending in categories without a budget is listed underneath with a Budget button to set one quickly. Unspent money does not roll over to the next month yet.',
     ],
   },

@@ -2982,6 +2982,7 @@ kbd {
   box-shadow: none;
   padding: 5px 6px;
   text-align: left;
+  justify-content: flex-start;
   font-size: 13px;
 }
 .pie-legend-row:hover {
@@ -2994,6 +2995,8 @@ kbd {
   flex: none;
 }
 .pie-name {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

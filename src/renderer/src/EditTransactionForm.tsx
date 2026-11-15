@@ -66,6 +66,12 @@ export function EditTransactionForm(
           ))}
         </div>
       )}
+      {!isSplit && !isTransfer && direction === 'income' && (
+        <p className="muted">
+          Enter a refund or reimbursement as income, in the category it refunds, so it nets against
+          that spending.
+        </p>
+      )}
       <div className="form-grid">
         <label className="field">
           Account
@@ -83,7 +89,12 @@ export function EditTransactionForm(
         </label>
         <label className="field">
           Payee
-          <input value={payee} onChange={(e) => setPayee(e.target.value)} autoFocus />
+          <input
+            value={payee}
+            placeholder={t.rawDescription}
+            onChange={(e) => setPayee(e.target.value)}
+            autoFocus
+          />
         </label>
         <label className="field">
           Amount

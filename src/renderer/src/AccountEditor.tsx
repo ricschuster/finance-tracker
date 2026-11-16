@@ -22,6 +22,8 @@ export function AccountEditor({
   const [type, setType] = useState<AccountType>(account.type)
   const [opening, setOpening] = useState((account.openingBalance / 100).toFixed(2))
   const [impact, setImpact] = useState<AccountImpact | null>(null)
+  const [balDate, setBalDate] = useState(() => new Date().toLocaleDateString('en-CA'))
+  const [balAmount, setBalAmount] = useState('')
 
   useEffect(() => {
     setName(account.name)
@@ -98,6 +100,52 @@ export function AccountEditor({
             </button>
           </div>
           <button type="submit">Save</button>
+        </div>
+      </form>
+      <form
+        className="stack"
+        aria-label="Set balance"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (!balAmount.trim() || !balDate) return
+          void run(() =>
+            window.api.ledger.setBalanceAsOf(account.id, balDate, parseAmountToCents(balAmount)),
+          ).then((ok) => {
+            if (ok) {
+              setBalAmount('')
+              onDone?.()
+            }
+          })
+        }}
+      >
+        <h3>Set balance on a date</h3>
+        <p className="subtle">
+          Type the real balance from your bank. The opening balance is adjusted so the account
+          matches on that day; transactions are not changed, and later ones add on top.
+          {isLiability(type) && ' Enter what you owe as a negative number.'}
+        </p>
+        <div className="form-grid">
+          <label className="field">
+            Date
+            <input
+              type="date"
+              value={balDate}
+              onChange={(e) => setBalDate(e.target.value)}
+              required
+            />
+          </label>
+          <label className="field">
+            Balance
+            <input
+              value={balAmount}
+              onChange={(e) => setBalAmount(e.target.value)}
+              placeholder={(account.balance / 100).toFixed(2)}
+              required
+            />
+          </label>
+        </div>
+        <div className="dialog-actions">
+          <button type="submit">Set balance</button>
         </div>
       </form>
       {impact && (

@@ -1,0 +1,26 @@
+// Set balance on a date (Edit account dialog) and the Back button after a drill-down.
+import { launch } from './lib.mjs'
+const { page, errors, shot } = await launch({ outDir: process.env.SCREENSHOT_DIR ?? '/tmp/ft-shots' })
+await page.getByRole('tab', { name: 'Accounts' }).click()
+await page.getByRole('button', { name: 'Open Visa' }).click()
+console.log('before:', await page.locator('.page-header .subtitle').innerText())
+await page.getByRole('button', { name: 'Edit account', exact: true }).click()
+const dlg = page.getByRole('dialog')
+await dlg.getByLabel('Balance', { exact: true }).fill('-123.45')
+await shot('balance-dialog')
+await dlg.getByRole('button', { name: 'Set balance' }).click()
+await page.waitForTimeout(500)
+console.log('dialog still open:', await page.getByRole('dialog').count())
+if (await page.getByRole('dialog').count()) await page.keyboard.press('Escape')
+console.log('after:', await page.locator('.page-header .subtitle').innerText())
+// Back button: Accounts -> open account -> Back
+console.log('back visible on account:', await page.getByRole('button', { name: 'Back' }).count())
+await page.getByRole('button', { name: 'Back' }).click()
+console.log('after back:', await page.locator('.page-header h2').innerText())
+// Dashboard drill-down then Back
+await page.getByRole('tab', { name: 'Dashboard' }).click()
+console.log('back on dashboard:', await page.getByRole('button', { name: 'Back' }).count())
+await page.getByRole('tab', { name: 'Reports' }).click()
+await shot('reports')
+console.log('ERRORS', errors)
+process.exit(0)

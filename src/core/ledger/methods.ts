@@ -3,6 +3,7 @@ export const LEDGER_METHODS = [
   'listAccounts',
   'createAccount',
   'updateAccount',
+  'setBalanceAsOf',
   'deleteAccount',
   'accountImpact',
   'listCategories',

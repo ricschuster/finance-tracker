@@ -6,6 +6,7 @@ import {
   createAccount,
   deleteAccount,
   listAccountsWithBalance,
+  setBalanceAsOf,
   updateAccount,
 } from './accounts'
 import {
@@ -41,6 +42,8 @@ export function createLedgerHandlers(db: Database.Database) {
     createAccount: (input: Parameters<typeof createAccount>[1]) => createAccount(db, input),
     updateAccount: (id: number, patch: Parameters<typeof updateAccount>[2]) =>
       updateAccount(db, id, patch),
+    setBalanceAsOf: (id: number, date: string, balance: number) =>
+      setBalanceAsOf(db, id, date, balance),
     deleteAccount: (id: number, opts?: Parameters<typeof deleteAccount>[2]) =>
       deleteAccount(db, id, opts),
     accountImpact: (id: number) => accountImpact(db, id),

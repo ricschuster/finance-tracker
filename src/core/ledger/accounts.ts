@@ -90,6 +90,27 @@ export function accountBalance(db: Database.Database, id: number): number {
   return row.balance
 }
 
+/**
+ * Make the balance on `date` equal `balance` by moving the opening balance. Transactions are never
+ * touched, so later activity keeps adding to the corrected figure.
+ */
+export function setBalanceAsOf(
+  db: Database.Database,
+  id: number,
+  date: string,
+  balance: number,
+): void {
+  if (!Number.isInteger(balance)) throw new Error('Balance must be integer cents')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Date must be YYYY-MM-DD')
+  if (!getAccount(db, id)) throw new Error(`Account ${id} not found`)
+  const row = db
+    .prepare(
+      'SELECT COALESCE(SUM(amount), 0) AS s FROM transactions WHERE account_id = ? AND date <= ?',
+    )
+    .get(id, date) as { s: number }
+  db.prepare('UPDATE accounts SET opening_balance = ? WHERE id = ?').run(balance - row.s, id)
+}
+
 export type AccountWithBalance = Account & { balance: number }
 
 export function listAccountsWithBalance(

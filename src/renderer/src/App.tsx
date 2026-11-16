@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ArrowLeftRight,
   BarChart3,
   BookOpen,
@@ -147,12 +148,33 @@ function Shell() {
     void window.api.getAppInfo().then(setInfo)
   }, [])
 
+  // Where Back returns to: each screen reached from another screen (a drill-down, a dashboard
+  // link) pushes the one it left. Sidebar navigation starts a fresh trail.
+  const [trail, setTrail] = useState<
+    { view: View; accountId: number | null; preset: typeof preset }[]
+  >([])
+  const remember = () => setTrail((t) => [...t.slice(-19), { view, accountId, preset }])
+  const goBack = () => {
+    const last = trail[trail.length - 1]
+    if (!last) return
+    setTrail(trail.slice(0, -1))
+    setAccountId(last.accountId)
+    setPreset(last.preset)
+    setView(last.view)
+  }
+  const goTop = (v: View) => {
+    setTrail([])
+    setPreset(null)
+    setView(v)
+  }
   const go = (v: View) => {
+    remember()
     setPreset(null)
     setView(v)
   }
   // A drill-down always looks at every account, so a previously picked account cannot hide rows.
   const drillDown = (p: Omit<NonNullable<typeof preset>, 'key'>) => {
+    remember()
     setAccountId(null)
     setPreset({ key: Date.now(), ...p })
     setView('ledger')
@@ -163,9 +185,12 @@ function Shell() {
     drillDown({ categoryId: 0, from, to, ...(direction && { direction }), noTransfers: true })
   const reviewUncategorized = () =>
     drillDown({ categoryId: 0, from: '', to: '', uncategorized: true, noTransfers: true })
-  const pickAccount = (id: number | null) => {
+  const pickAccount = (id: number | null, top = false) => {
+    if (top) setTrail([])
+    else remember()
     setAccountId(id)
-    go('ledger')
+    setPreset(null)
+    setView('ledger')
   }
 
   const goKeys: Record<string, View> = {
@@ -187,8 +212,8 @@ function Shell() {
     go: (k) => {
       const v = goKeys[k]
       if (!v) return false
-      if (v === 'ledger') pickAccount(null)
-      else go(v)
+      if (v === 'ledger') pickAccount(null, true)
+      else goTop(v)
       return true
     },
   })
@@ -265,7 +290,7 @@ function Shell() {
                             aria-label={label}
                             title={label}
                             aria-selected={navView === v}
-                            onClick={() => (v === 'ledger' ? pickAccount(null) : go(v))}
+                            onClick={() => (v === 'ledger' ? pickAccount(null, true) : goTop(v))}
                           >
                             <Icon size={17} aria-hidden="true" />
                             <span className="grow">{label}</span>
@@ -296,9 +321,17 @@ function Shell() {
             </aside>
             <div className="main">
               <header className="page-header">
-                <div>
-                  <h2>{title}</h2>
-                  {subtitle && <div className="subtitle">{subtitle}</div>}
+                <div className="header-title">
+                  {trail.length > 0 && (
+                    <button type="button" className="ghost" onClick={goBack} aria-label="Back">
+                      <ArrowLeft size={16} />
+                      Back
+                    </button>
+                  )}
+                  <div>
+                    <h2>{title}</h2>
+                    {subtitle && <div className="subtitle">{subtitle}</div>}
+                  </div>
                 </div>
                 <div className="page-actions" ref={setSlot}>
                   {view === 'ledger' && (

@@ -3005,3 +3005,8 @@ kbd {
   width: 40px;
   text-align: right;
 }
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}

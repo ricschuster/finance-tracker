@@ -24,6 +24,7 @@ import {
   listCategories,
   listTransactions,
   renameCategory,
+  setBalanceAsOf,
   updateAccount,
   updateTransaction,
 } from './index'
@@ -61,6 +62,15 @@ describe('accounts', () => {
     createTransaction(db, { accountId: chq, date: '2026-11-02', amount: 50_000 })
     expect(accountBalance(db, chq)).toBe(100_000 - 2_500 + 50_000)
     expect(accountBalance(db, visa)).toBe(0)
+  })
+
+  it('sets the balance as of a date and keeps later transactions adding up', () => {
+    createTransaction(db, { accountId: chq, date: '2026-11-01', amount: -2_500 })
+    createTransaction(db, { accountId: chq, date: '2026-11-10', amount: 1_000 })
+    setBalanceAsOf(db, chq, '2026-11-05', 80_000)
+    expect(accountBalance(db, chq)).toBe(81_000)
+    createTransaction(db, { accountId: chq, date: '2026-11-12', amount: -500 })
+    expect(accountBalance(db, chq)).toBe(80_500)
   })
 })
 

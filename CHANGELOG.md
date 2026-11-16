@@ -5,6 +5,13 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-16
+
+### Added
+
+- Edit account: "Set balance on a date" adjusts the opening balance so the account matches your bank on that day; later transactions add on top.
+- A Back button in the page header returns from drill-downs (dashboard, reports, budgets, Accounts tab). Sidebar tabs start a fresh trail.
+
 ## [0.6.0] - 2026-11-14
 
 ### Added

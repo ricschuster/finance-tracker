@@ -26,7 +26,13 @@ import type { Api } from '../../preload'
 import { AccountEditor } from './AccountEditor'
 import { AccountForm } from './AccountForm'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
-import { accountTypeLabel, balanceText, isLiability } from './accountTypes'
+import {
+  ACCOUNT_GROUPS,
+  ACCOUNT_ICONS,
+  accountTypeLabel,
+  balanceText,
+  isLiability,
+} from './accountTypes'
 import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { CategoryAliasProvider } from './CategorySelect'
@@ -299,6 +305,39 @@ function Shell() {
                       </div>
                     </div>
                   ))}
+                </nav>
+                <nav aria-label="Accounts">
+                  {ACCOUNT_GROUPS.map((g) => {
+                    const list = ledger.accounts.filter((a) => g.types.includes(a.type))
+                    if (list.length === 0) return null
+                    return (
+                      <div key={g.label} className="nav-group">
+                        <div className="nav-heading">{g.label}</div>
+                        <ul>
+                          {list.map((a) => {
+                            const Icon = ACCOUNT_ICONS[a.type]
+                            return (
+                              <li key={a.id}>
+                                <button
+                                  type="button"
+                                  className="nav-item"
+                                  title={a.name}
+                                  aria-current={view === 'ledger' && accountId === a.id}
+                                  onClick={() => pickAccount(a.id, true)}
+                                >
+                                  <Icon size={17} aria-hidden="true" />
+                                  <span className="grow">{a.name}</span>
+                                  <span className={`amount${a.balance < 0 ? ' neg' : ''}`}>
+                                    {balanceText(a.type, a.balance)}
+                                  </span>
+                                </button>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      </div>
+                    )
+                  })}
                 </nav>
               </div>
               <footer className="sidebar-footer">

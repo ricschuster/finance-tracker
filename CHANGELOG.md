@@ -5,6 +5,12 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-16
+
+### Changed
+
+- The sidebar lists your accounts again (grouped, with balances) under the main tabs; click one to see its transactions. Net worth and Add account stay on the Accounts page.
+
 ## [0.7.0] - 2026-11-16
 
 ### Added

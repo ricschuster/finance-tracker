@@ -6,6 +6,7 @@ All notable changes to this project are documented here. The format is based on
 ## [Unreleased]
 
 ## [0.8.0] - 2026-11-20
+
 ### Removed
 
 - Budget targets (monthly amounts per category), the Budgets dashboard section and the budgets table (migration 15).

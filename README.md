@@ -45,9 +45,9 @@ All screenshots use a synthetic demo database. No real data is shown.
 | --- | --- |
 | ![Transactions list with search, filters and a split transaction](docs/images/transactions.png) | ![Reports: spending by category and income and spending by month](docs/images/reports.png) |
 | **Cashflow** | **Rules** |
-| ![Budgets with progress bars and an over-budget category](docs/images/budgets.png) | ![Rules listed in the order they are checked](docs/images/rules.png) |
+| ![Cashflow: income, spending and net with a spending donut and category list](docs/images/cashflow.png) | ![Rules listed in the order they are checked](docs/images/rules.png) |
 | **Import** | **Dark theme** |
-| ![Import wizard with a drop zone and watched folder](docs/images/import.png) | ![Budgets screen in the dark theme](docs/images/budgets-dark.png) |
+| ![Import wizard with a drop zone and watched folder](docs/images/import.png) | ![Cashflow screen in the dark theme](docs/images/cashflow-dark.png) |
 
 ## Install
 

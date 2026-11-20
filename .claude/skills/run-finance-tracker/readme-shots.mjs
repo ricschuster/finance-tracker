@@ -11,20 +11,7 @@ const tab = async (name) => {
   await page.waitForTimeout(500)
 }
 
-// Give the demo some budgets and rules so those screens are not empty.
-await tab('Cashflow')
-for (const [cat, amount] of [
-  ['Groceries', '600'],
-  ['Food & Dining', '150'],
-  ['Entertainment', '60'],
-  ['Shopping', '120'],
-]) {
-  await page.getByRole('button', { name: 'Add budget' }).first().click()
-  await dialog.getByLabel('Category to budget').selectOption({ label: cat })
-  await dialog.getByLabel('Monthly budget amount').fill(amount)
-  await dialog.getByRole('button', { name: 'Add budget' }).click()
-  await page.waitForTimeout(400)
-}
+// Give the demo some rules so that screen is not empty.
 await tab('Rules')
 for (const [name, text, category] of [
   ['Groceries', 'safeway', 'Groceries'],
@@ -47,7 +34,7 @@ for (const scheme of ['light', 'dark']) {
     ['Dashboard', 'dashboard'],
     ['Transactions', 'transactions'],
     ['Reports', 'reports'],
-    ['Cashflow', 'budgets'],
+    ['Cashflow', 'cashflow'],
     ['Rules', 'rules'],
     ['Categories', 'categories'],
     ['Import', 'import'],

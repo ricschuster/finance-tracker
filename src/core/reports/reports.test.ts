@@ -251,11 +251,11 @@ describe('dashboard widgets', () => {
       value: string
     }
     expect(JSON.parse(stored.value).hidden).toContain('trend')
-    // The older format stored the visible ids; Budgets did not exist then, so it shows.
+    // The older format stored the visible ids; None were added since, so only the saved ids show.
     db.prepare("UPDATE settings SET value = ? WHERE key = 'dashboard_widgets'").run(
       JSON.stringify(['income', 'trend']),
     )
-    expect(reports.getDashboardWidgets()).toEqual(['income', 'budgets', 'trend'])
+    expect(reports.getDashboardWidgets()).toEqual(['income', 'trend'])
   })
 
   it('rejects unknown widgets', () => {

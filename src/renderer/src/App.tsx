@@ -37,7 +37,7 @@ import { CategoriesEditor } from './CategoriesEditor'
 import { CategoryStyleProvider } from './CategoryBadge'
 import { CategoryAliasProvider } from './CategorySelect'
 import { Accounts } from './Accounts'
-import { Budgets } from './Budgets'
+import { Cashflow, type CashflowMonthKey } from './Cashflow'
 import { Dashboard } from './Dashboard'
 import { Manual } from './Manual'
 import { DataPanel } from './DataPanel'
@@ -62,7 +62,7 @@ type View =
   | 'dashboard'
   | 'ledger'
   | 'accounts'
-  | 'budgets'
+  | 'cashflow'
   | 'reports'
   | 'import'
   | 'history'
@@ -77,7 +77,7 @@ const NAV: { heading?: string; items: { view: View; label: string; icon: LucideI
     items: [
       { view: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
       { view: 'ledger', label: 'Transactions', icon: ArrowLeftRight },
-      { view: 'budgets', label: 'Cashflow', icon: Target },
+      { view: 'cashflow', label: 'Cashflow', icon: Target },
       { view: 'reports', label: 'Reports', icon: BarChart3 },
     ],
   },
@@ -98,7 +98,7 @@ const SUBTITLES: Partial<Record<View, string>> = {
   accounts: 'Balances across every account',
   review: 'Step through uncategorized transactions',
   reports: 'Where your money comes from and goes',
-  budgets: 'Monthly spending targets and where the money goes',
+  cashflow: 'Money in and out of each category, month by month',
   import: 'Bring in transactions from your bank',
   history: 'Bring in transactions from your bank',
   rules: 'Categorize transactions automatically',
@@ -147,6 +147,11 @@ function Shell() {
   const [theme, setTheme] = useTheme()
   const [slot, setSlot] = useState<HTMLDivElement | null>(null)
   const alert = useAlert()
+  // Owned here so Back from a Cashflow drill-down returns to the month being looked at.
+  const [cashflowMonth, setCashflowMonth] = useState<CashflowMonthKey>(() => {
+    const now = new Date()
+    return { year: now.getFullYear(), month: now.getMonth() + 1 }
+  })
   const clearDraft = useCallback(() => setRuleDraft(null), [])
   const ledger = useLedger(accountId)
 
@@ -202,7 +207,7 @@ function Shell() {
   const goKeys: Record<string, View> = {
     d: 'dashboard',
     t: 'ledger',
-    b: 'budgets',
+    b: 'cashflow',
     r: 'reports',
     a: 'accounts',
     i: 'import',
@@ -451,7 +456,7 @@ function Shell() {
                     onOpenCategory={openCategory}
                     onOpenRange={openRange}
                     onReviewUncategorized={() => go('review')}
-                    onOpenBudgets={() => go('budgets')}
+                    onOpenCashflow={() => go('cashflow')}
                     onAddAccount={() => setDialog('account')}
                     onAddTransaction={() => setDialog('transaction')}
                     onImport={() => go('import')}
@@ -477,10 +482,11 @@ function Shell() {
                     }}
                   />
                 )}
-                {view === 'budgets' && (
-                  <Budgets
-                    run={ledger.run}
+                {view === 'cashflow' && (
+                  <Cashflow
                     version={ledger.version}
+                    period={cashflowMonth}
+                    onPeriod={setCashflowMonth}
                     onOpenCategory={openCategory}
                   />
                 )}

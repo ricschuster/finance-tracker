@@ -273,7 +273,7 @@ export function TransactionList({
                     {t.excludeFromBudgets && (
                       <span
                         className="pill"
-                        title="Counted in reports, skipped by budgets"
+                        title="Hidden from reports and Cashflow"
                         style={{ marginLeft: 4 }}
                       >
                         <EyeOff size={11} /> not in budgets
@@ -313,8 +313,8 @@ export function TransactionList({
                               },
                               {
                                 label: t.excludeFromBudgets
-                                  ? 'Include in budgets'
-                                  : 'Hide from budgets',
+                                  ? 'Include in reports'
+                                  : 'Hide from reports',
                                 icon: t.excludeFromBudgets ? (
                                   <Eye size={15} />
                                 ) : (

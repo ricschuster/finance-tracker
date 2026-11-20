@@ -1787,7 +1787,7 @@ td:has(> .txn-cell) {
   color: var(--text-2);
 }
 
-/* ---------- Budgets ---------- */
+/* ---------- Cashflow ---------- */
 
 .month-stepper {
   display: inline-flex;
@@ -1804,56 +1804,6 @@ td:has(> .txn-cell) {
   text-align: center;
   font-size: 13px;
   font-weight: 600;
-}
-.budget-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.budget-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border);
-}
-.budget-row:first-child {
-  padding-top: 2px;
-}
-.budget-row:last-child {
-  border-bottom: 0;
-}
-.budget-main {
-  display: grid;
-  gap: 5px;
-  min-width: 0;
-}
-.budget-line {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-}
-.budget-line .spacer {
-  flex: 1;
-}
-.budget-name {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.budget-figures {
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.budget-main .bar-track {
-  height: 8px;
-  margin: 0;
-}
-.budget-note {
-  margin: 14px 0 0;
 }
 
 /* ---------- Categories ---------- */
@@ -2476,25 +2426,6 @@ details.card ul {
   font-size: 14px;
   font-weight: 500;
   color: var(--text);
-}
-.budget-summary {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-.budget-summary strong {
-  font-size: 20px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.budget-widget {
-  margin-top: 14px;
-}
-.budget-widget .meter:hover {
-  background: transparent;
 }
 .meter-share.neg {
   color: var(--neg);

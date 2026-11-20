@@ -23,7 +23,7 @@ xvfb-run -a -s "-screen 0 1440x900x24" node .claude/skills/run-finance-tracker/t
 ```
 
 `tour.mjs` covers search, rules and CSV import; `import-formats.mjs` covers OFX, QFX (fitid duplicates) and Mint import from `test-data/import/`; `reports.mjs` covers the dashboard,
-reports and the drill-down; `categories.mjs` covers the Categories tab (add, merge, rename, delete with reassign); `accounts-dashboard.mjs` covers account edit, archive and delete and the dashboard Customize panel; `budgets.mjs` covers the Budgets tab (add and edit dialogs, month stepper, remove); `rules.mjs` covers the Rules tab (editor dialog, reorder, turn off, preview and apply, delete); `data.mjs` covers the Data tab (backups, export, CSV, staged restore); `accounts-page.mjs` covers the Accounts tab; `duplicates.mjs` covers Find duplicates (keep one, cross-account), the names-only sidebar and the all-accounts Transactions tab; `transactions.mjs` covers the Transactions dialogs, filters, bulk bar, row menu, split and the in-app confirms; `screens.mjs [outDir]` screenshots every screen in light and dark for look-and-feel review. The app opens on the Dashboard tab.
+reports and the drill-down; `categories.mjs` covers the Categories tab (add, merge, rename, delete with reassign); `accounts-dashboard.mjs` covers account edit, archive and delete and the dashboard Customize panel; `cashflow.mjs` covers the Cashflow tab (signed categories, search, drill-down, Back keeps the month); `rules.mjs` covers the Rules tab (editor dialog, reorder, turn off, preview and apply, delete); `data.mjs` covers the Data tab (backups, export, CSV, staged restore); `accounts-page.mjs` covers the Accounts tab; `duplicates.mjs` covers Find duplicates (keep one, cross-account), the names-only sidebar and the all-accounts Transactions tab; `transactions.mjs` covers the Transactions dialogs, filters, bulk bar, row menu, split and the in-app confirms; `screens.mjs [outDir]` screenshots every screen in light and dark for look-and-feel review. The app opens on the Dashboard tab.
 
 `lib.mjs` exports `launch()` returning `{ app, page, errors, shot, stubOpenDialog }`.
 Write new flows as small scripts that import it. Then read the PNGs.
@@ -36,7 +36,7 @@ Write new flows as small scripts that import it. Then read the PNGs.
   delete are in the Edit account dialog in the page header.
 - Row actions are in a "..." menu on every list screen: click the button labelled
   `Actions for ...` (for example `Actions for transaction 12`, `Actions for Groceries`,
-  `Actions for rule 2`, `Actions for import sample.csv`, `Actions for Home budget`),
+  `Actions for rule 2`, `Actions for import sample.csv`, `Actions for Groceries`),
   then `getByRole('menuitem', ...)`. Forms open as dialogs: scope with `page.getByRole('dialog')`.
 - Confirms and alerts are in-app Radix dialogs, not `window.confirm`:
   `page.getByTestId('confirm-dialog')` and click its button. No screen uses

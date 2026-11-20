@@ -178,7 +178,7 @@ export interface MintRequest {
   overrides?: ChoiceOverride[]
   /**
    * Setup import: drop the categories we have that the file does not use, so the file's set
-   * replaces ours. Only categories nothing refers to (no lines, rules, budgets or saved searches)
+   * replaces ours. Only categories nothing refers to (no lines, rules or saved searches)
    * are dropped, so no history is lost.
    */
   replaceCategories?: boolean
@@ -319,7 +319,7 @@ function createMissingCategories(db: Database.Database, candidates: Candidate[])
 
 /**
  * Our non-system categories that a setup import would remove: not named in the file (by name or
- * alias) and not referenced by any line, rule action, budget or saved search.
+ * alias) and not referenced by any line, rule action or saved search.
  */
 function replaceableCategories(
   db: Database.Database,
@@ -333,7 +333,6 @@ function replaceableCategories(
   const used = new Set<number>()
   const add = (rows: Array<{ id: number }>) => rows.forEach((r) => used.add(r.id))
   add(db.prepare('SELECT DISTINCT category_id AS id FROM transaction_lines').all() as never)
-  add(db.prepare('SELECT category_id AS id FROM budgets').all() as never)
   const refs = [
     ...(db.prepare('SELECT actions AS j FROM rules').all() as Array<{ j: string }>),
     ...(db.prepare('SELECT query AS j FROM saved_searches').all() as Array<{ j: string }>),

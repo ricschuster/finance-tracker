@@ -1,4 +1,12 @@
-# 12 Budgets (the Cashflow page)
+# 12 Cashflow (budgets removed)
+
+Status: budget targets were removed on owner request (2026-11-20, migration 15 drops the `budgets` table). The rest of this note is kept as history; only the Cashflow page and the spending donut remain.
+
+The Cashflow page now has a month stepper (the month lives in `App.tsx` so Back from a drill-down returns to it), Income, Spending and Net tiles, the spending donut, and a searchable list of every category with activity in the month. Amounts are signed (spending negative), so net refunds and income are visible. Each row opens the Transactions list for that category and month. Same exclusions as reports: transfers and transactions hidden from reports. Core: `src/core/cashflow/`.
+
+---
+
+## Original design (history)
 
 Renamed in the UI: the Budgets tab is now called Cashflow (sidebar, page title, manual, shortcuts). This is a rename only. Scope stays spending budgets; internal names (`budgets` view, `budgets` module) are unchanged.
 

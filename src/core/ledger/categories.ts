@@ -153,15 +153,6 @@ export function mergeCategory(db: Database.Database, fromId: number, intoId: num
     if (from.is_system) throw new Error('System categories cannot be merged')
     if (into.is_system) throw new Error('Cannot merge into a system category')
     moveReferences(db, fromId, intoId)
-    const fromBudget = db
-      .prepare('SELECT amount FROM budgets WHERE category_id = ?')
-      .get(fromId) as { amount: number } | undefined
-    if (fromBudget) {
-      db.prepare(
-        `INSERT INTO budgets (category_id, amount) VALUES (?, ?)
-         ON CONFLICT(category_id) DO UPDATE SET amount = amount + excluded.amount`,
-      ).run(intoId, fromBudget.amount)
-    }
     const name = (
       db.prepare('SELECT name FROM categories WHERE id = ?').get(fromId) as {
         name: string

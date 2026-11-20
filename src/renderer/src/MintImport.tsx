@@ -209,7 +209,7 @@ export function MintImport({
                 {preview.removedCategories.length === 0
                   ? 'No categories will be removed.'
                   : `Removed on import (unused): ${preview.removedCategories.join(', ')}.`}{' '}
-                Categories that have transactions, rules or budgets are always kept.
+                Categories that have transactions or rules are always kept.
               </div>
             )}
             {preview.unknownCategories.length > 0 && (

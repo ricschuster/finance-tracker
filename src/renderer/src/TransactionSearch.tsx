@@ -632,13 +632,13 @@ export function TransactionSearch({
             label="More bulk actions"
             actions={[
               {
-                label: 'Hide from budgets',
+                label: 'Hide from reports',
                 icon: <EyeOff size={15} />,
                 onSelect: () =>
                   void bulk({ type: 'setExcludeFromBudgets', exclude: true }, [...selected]),
               },
               {
-                label: 'Include in budgets',
+                label: 'Include in reports',
                 icon: <Eye size={15} />,
                 onSelect: () =>
                   void bulk({ type: 'setExcludeFromBudgets', exclude: false }, [...selected]),

@@ -7,10 +7,8 @@ import {
   Circle,
   Scale,
   SlidersHorizontal,
-  Target,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import type { BudgetMonth } from '../../core/budgets/budgets'
 import type { AccountWithBalance } from '../../core/ledger/accounts'
 import { formatCents } from '../../core/money'
 import type { Dashboard as DashboardData } from '../../core/reports/dashboard'
@@ -37,7 +35,7 @@ export function Dashboard({
   onOpenCategory,
   onOpenRange,
   onReviewUncategorized,
-  onOpenBudgets,
+  onOpenCashflow,
   onAddAccount,
   onAddTransaction,
   onImport,
@@ -48,7 +46,7 @@ export function Dashboard({
   onOpenCategory: (categoryId: number, from: string, to: string) => void
   onOpenRange: (from: string, to: string, direction?: 'expense' | 'income') => void
   onReviewUncategorized: () => void
-  onOpenBudgets: () => void
+  onOpenCashflow: () => void
   onAddAccount: () => void
   onAddTransaction: () => void
   onImport: () => void
@@ -79,20 +77,6 @@ export function Dashboard({
       stale = true
     }
   }, [version])
-
-  const [budgets, setBudgets] = useState<BudgetMonth | null>(null)
-  const wantBudgets = shown?.includes('budgets') ?? false
-  useEffect(() => {
-    if (!wantBudgets) return
-    let stale = false
-    const now = new Date()
-    void window.api.budgets.getBudgetMonth(now.getFullYear(), now.getMonth() + 1).then((b) => {
-      if (!stale) setBudgets(b)
-    })
-    return () => {
-      stale = true
-    }
-  }, [version, wantBudgets])
 
   if (!data || !shown) return <p className="muted">Loading</p>
   const show = (id: DashboardWidgetId) => shown.includes(id)
@@ -136,7 +120,7 @@ export function Dashboard({
           onAddTransaction={onAddTransaction}
           onImport={onImport}
           onOpenRules={onOpenRules}
-          onOpenBudgets={onOpenBudgets}
+          onOpenCashflow={onOpenCashflow}
         />
       )}
 
@@ -234,7 +218,6 @@ export function Dashboard({
               )}
             </div>
           )}
-          {show('budgets') && budgets && <BudgetsWidget data={budgets} onOpen={onOpenBudgets} />}
           {show('trend') && (
             <div className="card">
               <div className="card-header">
@@ -269,7 +252,7 @@ export function Dashboard({
                               {t.payee || 'No payee'}
                               <span className="sub">
                                 {shortDate(t.date)} · {accountName(t.accountId)}
-                                {t.excludeFromBudgets ? ' · hidden from budgets' : ''}
+                                {t.excludeFromBudgets ? ' · hidden from reports' : ''}
                               </span>
                             </div>
                           </div>
@@ -299,7 +282,7 @@ function GetStarted(props: {
   onAddTransaction: () => void
   onImport: () => void
   onOpenRules: () => void
-  onOpenBudgets: () => void
+  onOpenCashflow: () => void
 }) {
   const mark = (done: boolean) =>
     done ? (
@@ -350,87 +333,20 @@ function GetStarted(props: {
         <li>
           <Circle size={20} className="subtle" aria-hidden="true" />
           <div className="grow">
-            <strong>3. Optional: set up rules and budgets</strong>
+            <strong>3. Optional: set up rules</strong>
             <span className="subtle">
-              Rules categorize new transactions for you; budgets track a monthly target.
+              Rules categorize new transactions for you. Cashflow shows where the money goes each
+              month.
             </span>
           </div>
           <button type="button" onClick={props.onOpenRules}>
             Rules
           </button>
-          <button type="button" onClick={props.onOpenBudgets}>
+          <button type="button" onClick={props.onOpenCashflow}>
             Cashflow
           </button>
         </li>
       </ol>
-    </div>
-  )
-}
-
-/** Budgets for the current month, the ones closest to their limit first. */
-function BudgetsWidget({ data, onOpen }: { data: BudgetMonth; onOpen: () => void }) {
-  const category = useCategoryLookup()
-  const share = (spent: number, budget: number) => (budget > 0 ? spent / budget : 0)
-  const rows = [...data.rows]
-    .sort((x, y) => share(y.spent, y.budget) - share(x.spent, x.budget))
-    .slice(0, 5)
-  const over = data.rows.filter((r) => r.spent > r.budget).length
-  const remaining = data.totalBudget - data.totalSpent
-  return (
-    <div className="card">
-      <div className="card-header">
-        <h3>Budgets</h3>
-        <button type="button" className="link" onClick={onOpen}>
-          {data.rows.length === 0 ? 'Set up' : 'See all'}
-        </button>
-      </div>
-      {data.rows.length === 0 ? (
-        <Empty icon={<Target size={26} />} title="No budgets yet">
-          Set a monthly target for a category to see how you are tracking.
-        </Empty>
-      ) : (
-        <>
-          <div className="budget-summary">
-            <div>
-              <strong>{formatCents(data.totalSpent)}</strong>
-              <span className="muted"> of {formatCents(data.totalBudget)}</span>
-            </div>
-            <span className={remaining < 0 ? 'neg' : 'muted'}>
-              {remaining < 0 ? `${formatCents(-remaining)} over` : `${formatCents(remaining)} left`}
-              {over > 0 && ` · ${over} over budget`}
-            </span>
-          </div>
-          <Bar
-            fraction={share(data.totalSpent, data.totalBudget)}
-            tone="pos"
-            color={remaining < 0 ? 'var(--neg)' : undefined}
-          />
-          <ul className="meter-list budget-widget">
-            {rows.map((r) => {
-              const cat = category(r.categoryId)
-              const f = share(r.spent, r.budget)
-              return (
-                <li key={r.categoryId} className="meter">
-                  <CategoryIcon color={cat?.color} icon={cat?.icon} />
-                  <span className="meter-name">{r.categoryName}</span>
-                  <span className="meter-value">
-                    {formatCents(r.spent)}
-                    <span className="subtle"> / {formatCents(r.budget)}</span>
-                  </span>
-                  <Bar
-                    fraction={f}
-                    tone={f >= 0.85 ? 'warn' : 'pos'}
-                    color={r.spent > r.budget ? 'var(--neg)' : undefined}
-                  />
-                  <span className={r.spent > r.budget ? 'meter-share neg' : 'meter-share'}>
-                    {percent(Math.max(0, f))}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </>
-      )}
     </div>
   )
 }

@@ -306,6 +306,11 @@ CREATE TABLE duplicate_dismissals (
 );
 `
 
+/** Migration 15: budget targets were removed from the app (docs/design/12_budgets.md). */
+const DROP_BUDGETS = `
+DROP TABLE IF EXISTS budgets;
+`
+
 /**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
@@ -329,6 +334,7 @@ export const migrations: readonly string[] = [
   BUDGETS,
   DROP_CATEGORY_KIND,
   DUPLICATE_DISMISSALS,
+  DROP_BUDGETS,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

@@ -7,7 +7,6 @@ export const DASHBOARD_WIDGETS = [
   { id: 'net', label: 'Net and savings rate' },
   { id: 'review', label: 'Uncategorized reminder' },
   { id: 'topCategories', label: 'Top categories' },
-  { id: 'budgets', label: 'Budgets' },
   { id: 'trend', label: 'Last six months' },
   { id: 'biggest', label: 'Biggest this month' },
 ] as const
@@ -21,7 +20,7 @@ const ALL: DashboardWidgetId[] = DASHBOARD_WIDGETS.map((w) => w.id)
  * Widgets added after selections were first saved as a list of visible ids. A saved list
  * predates them, so they are shown rather than silently hidden.
  */
-const ADDED_AFTER_LIST_FORMAT: DashboardWidgetId[] = ['budgets']
+const ADDED_AFTER_LIST_FORMAT: DashboardWidgetId[] = []
 
 /**
  * Ids of the widgets to show. Everything is shown until the user chooses otherwise. The

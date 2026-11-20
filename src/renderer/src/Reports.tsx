@@ -337,7 +337,7 @@ export function Reports({
                               {t.payee || 'No payee'}
                               <span className="sub">
                                 {displayDate(t.date)} · {accountName(t.accountId)}
-                                {t.excludeFromBudgets && ' · not in budgets'}
+                                {t.excludeFromBudgets && ' · hidden from reports'}
                               </span>
                             </div>
                           </div>

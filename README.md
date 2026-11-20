@@ -11,7 +11,7 @@ account to create: your data lives in a single file on your own computer.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/dashboard-dark.png">
-  <img alt="The dashboard: income, spending and net for the month, top categories, budgets, a six month chart and the biggest transactions" src="docs/images/dashboard.png">
+  <img alt="The dashboard: income, spending and net for the month, top categories, a six month chart and the biggest transactions" src="docs/images/dashboard.png">
 </picture>
 
 ## Features
@@ -32,7 +32,7 @@ account to create: your data lives in a single file on your own computer.
 - **Reports and dashboard.** Spending by category, income versus expenses,
   trends, top payees and the biggest transactions, with drill-down to the
   transactions behind every figure. The dashboard is customizable.
-- **Cashflow and budgets.** A monthly amount per category, a spending-by-category donut and progress on the dashboard.
+- **Cashflow.** Income, spending and net by month, a spending-by-category donut and a searchable category list that drills into transactions.
 - **Data safety.** Automatic backups, database export and restore, and a CSV
   export of your transactions.
 - **Light and dark themes**, and an in-app manual.
@@ -45,9 +45,9 @@ All screenshots use a synthetic demo database. No real data is shown.
 | --- | --- |
 | ![Transactions list with search, filters and a split transaction](docs/images/transactions.png) | ![Reports: spending by category and income and spending by month](docs/images/reports.png) |
 | **Cashflow** | **Rules** |
-| ![Budgets with progress bars and an over-budget category](docs/images/budgets.png) | ![Rules listed in the order they are checked](docs/images/rules.png) |
+| ![Cashflow: income, spending and net with a spending donut and category list](docs/images/cashflow.png) | ![Rules listed in the order they are checked](docs/images/rules.png) |
 | **Import** | **Dark theme** |
-| ![Import wizard with a drop zone and watched folder](docs/images/import.png) | ![Budgets screen in the dark theme](docs/images/budgets-dark.png) |
+| ![Import wizard with a drop zone and watched folder](docs/images/import.png) | ![Cashflow screen in the dark theme](docs/images/cashflow-dark.png) |
 
 ## Install
 

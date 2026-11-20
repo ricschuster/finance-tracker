@@ -6,7 +6,7 @@ The Cashflow page now has a month stepper (the month lives in `App.tsx` so Back 
 
 ---
 
-# 12 Budgets (the Cashflow page)
+## Original design (history)
 
 Renamed in the UI: the Budgets tab is now called Cashflow (sidebar, page title, manual, shortcuts). This is a rename only. Scope stays spending budgets; internal names (`budgets` view, `budgets` module) are unchanged.
 

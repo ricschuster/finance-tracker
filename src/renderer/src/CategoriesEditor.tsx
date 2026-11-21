@@ -1,4 +1,15 @@
-import { Check, GitMerge, Lock, Palette, Pencil, Plus, Tags, Trash2 } from 'lucide-react'
+import {
+  Check,
+  Eye,
+  EyeOff,
+  GitMerge,
+  Lock,
+  Palette,
+  Pencil,
+  Plus,
+  Tags,
+  Trash2,
+} from 'lucide-react'
 import { useEffect, useState, type FormEvent } from 'react'
 import type { Category } from '../../core/ledger/categories'
 import { CATEGORY_COLORS, type CategoryIconKey } from '../../core/ledger/categoryStyle'
@@ -151,40 +162,60 @@ export function CategoriesEditor({ ledger }: { ledger: LedgerState }) {
                               Built in
                             </span>
                           )}
+                          {c.hideFromTrends && (
+                            <span className="pill" title="Left out of Cashflow and the reports">
+                              <EyeOff size={10} />
+                              Hidden from trends
+                            </span>
+                          )}
                         </span>
                       </td>
                       <td className="num muted">{n > 0 ? lines(n) : 'Not used'}</td>
                       <td className="actions">
-                        {!c.isSystem && (
+                        {
                           <ActionMenu
                             label={`Actions for ${c.name}`}
                             actions={[
                               {
-                                label: 'Rename',
-                                icon: <Pencil size={14} />,
-                                onSelect: () => setPending({ type: 'rename', category: c }),
+                                label: c.hideFromTrends
+                                  ? 'Show in Cashflow and trends'
+                                  : 'Hide from Cashflow and trends',
+                                icon: c.hideFromTrends ? <Eye size={14} /> : <EyeOff size={14} />,
+                                onSelect: () =>
+                                  void ledger.run(() =>
+                                    window.api.ledger.setCategoryHidden(c.id, !c.hideFromTrends),
+                                  ),
                               },
-                              {
-                                label: 'Colour and icon',
-                                icon: <Palette size={14} />,
-                                onSelect: () => setPending({ type: 'style', category: c }),
-                              },
-                              {
-                                label: 'Merge into...',
-                                icon: <GitMerge size={14} />,
-                                disabled: mergeTargets(c).length === 0,
-                                onSelect: () => setPending({ type: 'merge', category: c }),
-                              },
-                              {
-                                label: 'Delete',
-                                icon: <Trash2 size={14} />,
-                                danger: true,
-                                separatorBefore: true,
-                                onSelect: () => setPending({ type: 'delete', category: c }),
-                              },
+                              ...(c.isSystem
+                                ? []
+                                : [
+                                    {
+                                      label: 'Rename',
+                                      icon: <Pencil size={14} />,
+                                      onSelect: () => setPending({ type: 'rename', category: c }),
+                                    },
+                                    {
+                                      label: 'Colour and icon',
+                                      icon: <Palette size={14} />,
+                                      onSelect: () => setPending({ type: 'style', category: c }),
+                                    },
+                                    {
+                                      label: 'Merge into...',
+                                      icon: <GitMerge size={14} />,
+                                      disabled: mergeTargets(c).length === 0,
+                                      onSelect: () => setPending({ type: 'merge', category: c }),
+                                    },
+                                    {
+                                      label: 'Delete',
+                                      icon: <Trash2 size={14} />,
+                                      danger: true,
+                                      separatorBefore: true,
+                                      onSelect: () => setPending({ type: 'delete', category: c }),
+                                    },
+                                  ]),
                             ]}
                           />
-                        )}
+                        }
                       </td>
                     </tr>
                   )

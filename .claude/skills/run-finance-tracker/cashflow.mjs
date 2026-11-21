@@ -14,10 +14,10 @@ for (let i = 0; i < 6 && (await rows.count()) === 0; i++) {
   await page.getByRole('button', { name: 'Previous month' }).click()
   await page.waitForTimeout(300)
 }
-const label = await page.locator('.month-stepper strong').innerText()
+const label = await page.getByLabel('Jump to month').inputValue()
 const texts = await rows.allInnerTexts()
 console.log('MONTH:', label, '| ROWS:', texts.length)
-console.log('NEGATIVE ROWS:', texts.filter((t) => /-\$|−\$|\(\$/.test(t)).length, '| POSITIVE ROWS:', texts.filter((t) => !/-\$|−\$|\(\$/.test(t)).length)
+console.log('MINUS SIGNS:', texts.filter((t) => /-\$|−\$/.test(t)).length, '(want 0) | GREEN ROWS:', await page.locator('section[aria-label="Cashflow"] td.pos').count())
 await shot('cashflow')
 
 // Move off the current month so Back has something to get wrong, then pick a month with rows.
@@ -27,7 +27,7 @@ for (let i = 0; i < 6 && (await rows.count()) === 0; i++) {
   await page.getByRole('button', { name: 'Previous month' }).click()
   await page.waitForTimeout(300)
 }
-const label2 = await page.locator('.month-stepper strong').innerText()
+const label2 = await page.getByLabel('Jump to month').inputValue()
 console.log('DRILL MONTH:', label2, '| ROWS:', await rows.count())
 
 // Search narrows the list.
@@ -46,7 +46,7 @@ console.log('DRILLED TO:', await page.locator('.page-header h2, h2').first().inn
 await shot('cashflow-drill')
 await page.getByRole('button', { name: 'Back' }).click()
 await page.waitForTimeout(400)
-const after = await page.locator('.month-stepper strong').innerText()
+const after = await page.getByLabel('Jump to month').inputValue()
 console.log('BACK MONTH:', after, after === label2 ? 'OK' : 'MISMATCH')
 
 // Dashboard has no Budgets card or customize option.

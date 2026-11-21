@@ -138,7 +138,7 @@ export const MANUAL: ManualSection[] = [
     id: 'cashflow',
     title: 'Cashflow',
     blocks: [
-      "The Cashflow page shows where a month's money went. Pick a month with the stepper at the top; Back from a drill-down returns to the same month.",
+      "The Cashflow page shows where a month's money went. Pick a month with the stepper at the top, or jump straight to any month with the month field in the middle; expenses are shown as positive black amounts and income in green, and Show income hides the income and net tiles and rows; Back from a drill-down returns to the same month.",
       'The tiles show income, spending and net. Under them, every category with activity in the month is listed with its net amount: negative is money spent, positive is income or net refunds. Type in Search categories to narrow the list.',
       "The Spending by category donut shows each category's share of the month's spending, using the category colours. Click a slice, its legend row, or a category in the list to see that category's transactions for the month.",
       'Transfers and transactions flagged to hide from reports are left out. Budget targets were removed in this version.',

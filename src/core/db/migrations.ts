@@ -312,6 +312,15 @@ DROP TABLE IF EXISTS budgets;
 `
 
 /**
+ * Migration 16: a per-category flag that leaves the category out of Cashflow and the reports
+ * (for example a credit card payment category that is not linked as a transfer).
+ */
+const CATEGORY_HIDE_FROM_TRENDS = `
+ALTER TABLE categories ADD COLUMN hide_from_trends INTEGER NOT NULL DEFAULT 0
+  CHECK (hide_from_trends IN (0,1));
+`
+
+/**
  * Ordered, append-only list of migrations. Never edit one that has shipped;
  * add a new entry. The schema version is stored in SQLite's user_version.
  */
@@ -335,6 +344,7 @@ export const migrations: readonly string[] = [
   DROP_CATEGORY_KIND,
   DUPLICATE_DISMISSALS,
   DROP_BUDGETS,
+  CATEGORY_HIDE_FROM_TRENDS,
 ]
 
 export function migrate(db: Database.Database, list: readonly string[] = migrations): number {

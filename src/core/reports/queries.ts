@@ -87,7 +87,7 @@ function base(
      JOIN transactions t ON t.id = l.transaction_id
      JOIN categories c ON c.id = l.category_id
      WHERE t.transfer_peer_id IS NULL AND NOT (c.is_system = 1 AND c.name = 'Transfer')
-       ${includeHidden ? '' : 'AND t.exclude_from_budgets = 0'}
+       ${includeHidden ? '' : 'AND t.exclude_from_budgets = 0 AND c.hide_from_trends = 0'}
        AND t.date BETWEEN ? AND ? ${accounts}) AS x`
   return { from, params }
 }

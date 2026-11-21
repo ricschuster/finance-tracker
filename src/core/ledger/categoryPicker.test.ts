@@ -12,6 +12,7 @@ const cat = (id: number, name: string, parentId: number | null = null): Category
   sortOrder: id,
   color: null,
   icon: null,
+  hideFromTrends: false,
 })
 const cats = [cat(1, 'Food'), cat(2, 'Groceries', 1), cat(3, 'Café', 1), cat(4, 'Auto')]
 const aliases = [{ alias: 'Supermarket', categoryId: 2 }]

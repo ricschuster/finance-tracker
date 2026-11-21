@@ -2,8 +2,10 @@ import Database from 'better-sqlite3'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { migrate } from '../db/migrations'
 import { createAccount } from '../ledger/accounts'
-import { createCategory } from '../ledger/categories'
+import { createCategory, setCategoryHidden } from '../ledger/categories'
 import { createTransaction, createTransfer } from '../ledger/transactions'
+import { incomeVsExpenses } from '../reports/queries'
+import { monthPeriod } from '../reports/period'
 import { getCashflowMonth } from './cashflow'
 
 let db: Database.Database
@@ -60,6 +62,18 @@ describe('cashflow', () => {
     const hidden = add('2026-03-06', -7000, 'Groceries')
     db.prepare('UPDATE transactions SET exclude_from_budgets = 1 WHERE id = ?').run(hidden)
     expect(getCashflowMonth(db, 2026, 3).categories).toEqual([])
+  })
+
+  it('leaves out categories hidden from trends, in Cashflow and the reports', () => {
+    add('2026-03-02', -15000, 'Groceries')
+    add('2026-03-03', -90000, 'Paycheque')
+    setCategoryHidden(db, cat('Paycheque'), true)
+    expect(getCashflowMonth(db, 2026, 3).categories.map((c) => c.categoryName)).toEqual([
+      'Groceries',
+    ])
+    expect(incomeVsExpenses(db, monthPeriod(2026, 3)).spending).toBe(15000)
+    setCategoryHidden(db, cat('Paycheque'), false)
+    expect(getCashflowMonth(db, 2026, 3).categories).toHaveLength(2)
   })
 
   it('rejects an invalid month', () => {

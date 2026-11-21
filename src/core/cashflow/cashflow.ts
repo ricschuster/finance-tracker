@@ -23,7 +23,7 @@ export interface CashflowMonth {
 
 /**
  * Money in and out of each category for one month. Excluded, matching the reports: transfers
- * and transactions hidden from reports. Split transactions count per line. Negative nets (spending)
+ * and transactions hidden from reports, and categories hidden from trends. Split transactions count per line. Negative nets (spending)
  * are kept, so nothing is dropped from the list. See docs/design/12_budgets.md.
  */
 export function getCashflowMonth(
@@ -42,6 +42,7 @@ export function getCashflowMonth(
        JOIN transactions t ON t.id = l.transaction_id
        JOIN categories c ON c.id = l.category_id
        WHERE t.transfer_peer_id IS NULL AND t.exclude_from_budgets = 0
+         AND c.hide_from_trends = 0
          AND NOT (c.is_system = 1 AND c.name = 'Transfer')
          AND t.date BETWEEN ? AND ?
        GROUP BY c.id

@@ -11,6 +11,8 @@ export interface Category {
   color: string | null
   /** A key of `CATEGORY_ICONS`, or null. */
   icon: string | null
+  /** Left out of Cashflow and the reports. */
+  hideFromTrends: boolean
 }
 
 interface CategoryRow {
@@ -21,6 +23,7 @@ interface CategoryRow {
   sort_order: number
   color: string | null
   icon: string | null
+  hide_from_trends: number
 }
 
 const toCategory = (r: CategoryRow): Category => ({
@@ -31,6 +34,7 @@ const toCategory = (r: CategoryRow): Category => ({
   sortOrder: r.sort_order,
   color: r.color,
   icon: r.icon,
+  hideFromTrends: r.hide_from_trends === 1,
 })
 
 export function listCategories(db: Database.Database): Category[] {
@@ -216,6 +220,14 @@ export function setCategoryStyle(
   const r = db
     .prepare('UPDATE categories SET color = ?, icon = ? WHERE id = ?')
     .run(style.color, style.icon, id)
+  if (r.changes === 0) throw new Error(`Category ${id} not found`)
+}
+
+/** Leave a category out of (or put it back into) Cashflow and the reports. Allowed on every category. */
+export function setCategoryHidden(db: Database.Database, id: number, hidden: boolean): void {
+  const r = db
+    .prepare('UPDATE categories SET hide_from_trends = ? WHERE id = ?')
+    .run(hidden ? 1 : 0, id)
   if (r.changes === 0) throw new Error(`Category ${id} not found`)
 }
 

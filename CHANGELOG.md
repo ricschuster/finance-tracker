@@ -5,6 +5,17 @@ All notable changes to this project are documented here. The format is based on
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-11-21
+
+### Added
+
+- Hide a category from Cashflow and trends (migration 16), from its actions menu on the Categories tab. It works on built-in categories too, and is meant for things like credit card payments that are not linked as transfers.
+- A "Show income" checkbox on Cashflow, and a month field to jump to any month directly.
+
+### Changed
+
+- Cashflow shows spending as positive black amounts and income in green, instead of signed amounts.
+
 ## [0.8.0] - 2026-11-20
 
 ### Removed

@@ -32,6 +32,9 @@ export function Cashflow({
   const { year, month } = period
   const [data, setData] = useState<CashflowMonth | null>(null)
   const [query, setQuery] = useState('')
+  const [showIncome, setShowIncome] = useState(
+    () => localStorage.getItem('cashflow.showIncome') !== '0',
+  )
   const category = useCategoryLookup()
 
   const load = useCallback(async () => {
@@ -68,7 +71,18 @@ export function Cashflow({
         >
           <ChevronLeft size={16} />
         </button>
-        <strong aria-live="polite">{label}</strong>
+        <label className="month-picker">
+          <input
+            type="month"
+            aria-label="Jump to month"
+            value={`${year}-${String(month).padStart(2, '0')}`}
+            max={`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`}
+            onChange={(e) => {
+              const [y, m] = e.target.value.split('-').map(Number)
+              if (y && m) onPeriod({ year: y, month: m })
+            }}
+          />
+        </label>
         <button
           type="button"
           className="ghost icon small"
@@ -101,33 +115,51 @@ export function Cashflow({
     }))
     .sort((a, b) => b.amount - a.amount)
   const needle = query.trim().toLowerCase()
-  const shown = data.categories.filter((c) => c.categoryName.toLowerCase().includes(needle))
+  const shown = data.categories.filter(
+    (c) => (showIncome || c.amount < 0) && c.categoryName.toLowerCase().includes(needle),
+  )
 
   return (
     <section aria-label="Cashflow">
       <h2>Cashflow</h2>
       {header}
 
-      <div className="stat-row">
-        <StatTile
-          label="Income"
-          value={formatCents(data.income)}
-          icon={<TrendingUp size={16} />}
-          iconTone="pos"
+      <label className="field inline">
+        <input
+          type="checkbox"
+          checked={showIncome}
+          onChange={(e) => {
+            setShowIncome(e.target.checked)
+            localStorage.setItem('cashflow.showIncome', e.target.checked ? '1' : '0')
+          }}
         />
+        Show income
+      </label>
+
+      <div className="stat-row">
+        {showIncome && (
+          <StatTile
+            label="Income"
+            value={formatCents(data.income)}
+            icon={<TrendingUp size={16} />}
+            iconTone="pos"
+          />
+        )}
         <StatTile
           label="Spending"
           value={formatCents(data.spending)}
           icon={<TrendingDown size={16} />}
           iconTone="neg"
         />
-        <StatTile
-          label="Net"
-          value={formatCents(data.net)}
-          tone={data.net < 0 ? 'neg' : 'pos'}
-          icon={<Wallet size={16} />}
-          iconTone={data.net < 0 ? 'neg' : 'pos'}
-        />
+        {showIncome && (
+          <StatTile
+            label="Net"
+            value={formatCents(data.net)}
+            tone={data.net < 0 ? 'neg' : 'pos'}
+            icon={<Wallet size={16} />}
+            iconTone={data.net < 0 ? 'neg' : 'pos'}
+          />
+        )}
       </div>
 
       {pieSlices.length > 0 && (
@@ -188,8 +220,8 @@ export function Cashflow({
                             </span>
                           </button>
                         </td>
-                        <td className={c.amount < 0 ? 'num neg' : 'num pos'}>
-                          {formatCents(c.amount)}
+                        <td className={c.amount < 0 ? 'num' : 'num pos'}>
+                          {formatCents(Math.abs(c.amount))}
                         </td>
                       </tr>
                     )
@@ -200,8 +232,8 @@ export function Cashflow({
           </>
         )}
         <p className="subtle">
-          Transfers and transactions hidden from reports are not counted. A negative amount is money
-          spent; a positive one is income or net refunds.
+          Transfers, transactions hidden from reports and categories hidden from trends are not
+          counted. Black amounts are money spent; green ones are income or net refunds.
         </p>
       </div>
     </section>

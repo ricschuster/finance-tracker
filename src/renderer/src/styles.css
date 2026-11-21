@@ -1799,11 +1799,12 @@ td:has(> .txn-cell) {
   border-radius: var(--radius);
   background: var(--surface);
 }
-.month-stepper strong {
-  min-width: 128px;
-  text-align: center;
+.month-picker input {
+  border: 0;
+  background: transparent;
   font-size: 13px;
   font-weight: 600;
+  min-width: 128px;
 }
 
 /* ---------- Categories ---------- */

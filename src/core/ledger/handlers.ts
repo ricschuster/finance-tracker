@@ -16,6 +16,7 @@ import {
   deleteCategory,
   mergeCategory,
   setCategoryStyle,
+  setCategoryHidden,
   listCategories,
   listCategoryAliases,
   renameCategory,
@@ -54,6 +55,7 @@ export function createLedgerHandlers(db: Database.Database) {
     deleteCategories: (ids: number[], reassignTo?: number) => deleteCategories(db, ids, reassignTo),
     setCategoryStyle: (id: number, style: Parameters<typeof setCategoryStyle>[2]) =>
       setCategoryStyle(db, id, style),
+    setCategoryHidden: (id: number, hidden: boolean) => setCategoryHidden(db, id, hidden),
     mergeCategory: (fromId: number, intoId: number) => mergeCategory(db, fromId, intoId),
     categoryUsage: () => categoryUsage(db),
     listCategoryAliases: () => listCategoryAliases(db),
